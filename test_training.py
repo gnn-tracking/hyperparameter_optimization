@@ -1,14 +1,22 @@
+#!/usr/bin/env python3
+
 from pathlib import Path
 
 import numpy as np
 import torch
 from torch_geometric.data import DataLoader
 
+import random
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 
+# set up a model and trainer
+torch.manual_seed(0)
+np.random.seed(0)
+random.seed(0)
+
 graph_builder = GraphBuilder(str(Path("~/data/gnn_tracking/point_clouds").expanduser()), str(Path("~/data/gnn_tracking/graphs").expanduser()), redo=False)
-graph_builder.process(verbose=True, n=None)
+graph_builder.process(verbose=True, n=2)
 
 
 from gnn_tracking.training.graph_tcn_trainer import GraphTCNTrainer
@@ -44,12 +52,6 @@ loaders = {'train': train_loader, 'test': test_loader,
            'val': val_loader}
 print('Loader sizes:', [(k, len(v)) for k, v in loaders.items()])
 
-# set up a model and trainer
-torch.manual_seed(0)
-import numpy as np
-np.random.seed(0)
-import random
-random.seed(0)
 
 
 # from gnn_tracking.utils.early_stopping import StopEarly
