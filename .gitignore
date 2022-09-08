@@ -1,1 +1,2 @@
 *.lprof
+*.ipynb_checkpoints/**
