@@ -18,7 +18,8 @@ import random
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.training.graph_tcn_trainer import GraphTCNTrainer
-from gnn_tracking.utils.losses import EdgeWeightLoss, PotentialLoss, BackgroundLoss
+from gnn_tracking.utils.losses import PotentialLoss, BackgroundLoss, \
+    EdgeWeightBCELoss
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
 from hyperopt import hp
 
@@ -75,7 +76,7 @@ def train(config: dict[str, Any], test=False):
     print(f"Utilizing {device}")
 
     loss_functions = {
-        "edge": EdgeWeightLoss().to(device),
+        "edge": EdgeWeightBCELoss().to(device),
         "potential": PotentialLoss(q_min=config["q_min"], device=device),
         "background": BackgroundLoss(device=device, sb=config["sb"]),
     }

@@ -11,7 +11,8 @@ from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 
 # set up a model and trainer
-from gnn_tracking.utils.losses import EdgeWeightLoss, PotentialLoss, BackgroundLoss
+from gnn_tracking.utils.losses import PotentialLoss, BackgroundLoss, \
+    EdgeWeightBCELoss
 
 torch.manual_seed(0)
 np.random.seed(0)
@@ -71,7 +72,7 @@ q_min = 0.01
 sb = 1
 
 loss_functions = {
-    "edge": EdgeWeightLoss().to(device),
+    "edge": EdgeWeightBCELoss().to(device),
     "potential": PotentialLoss(q_min=q_min, device=device),
     "background": BackgroundLoss(device=device, sb=sb),
 }
