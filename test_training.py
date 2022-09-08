@@ -89,7 +89,7 @@ def train(config: dict[str, Any], test=False):
         lr=config["lr"]
     )
 
-    epochs = 2 if test else None
+    epochs = 2 if test else 1000
     max_batches = 1 if test else None
     trainer.train(epochs=epochs, max_batches=max_batches)
 
