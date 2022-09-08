@@ -30,7 +30,7 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
         str(Path("~/data/gnn_tracking/graphs").expanduser()),
         redo=False,
     )
-    n_graphs = 1 if test else None
+    n_graphs = 3 if test else None
     graph_builder.process(n=n_graphs)
 
     # partition graphs into train, test, val splits
@@ -82,13 +82,17 @@ def train(config: dict[str, Any], test=False):
     }
 
     model = get_model(graph_builder, config=subdict_with_prefix_stripped(config, "model_"))
+
+
     trainer = GraphTCNTrainer(
         model=model,
         loaders=loaders,
         loss_functions=loss_functions,
         loss_weights=subdict_with_prefix_stripped(config, "loss_weight_"),
-        lr=config["lr"]
+        lr=config["lr"],
     )
+    callback = lambda model, foms: tune.report(**foms)
+    trainer.add_hook(callback, "test")
 
     epochs = 2 if test else 1000
     max_batches = 1 if test else None
@@ -117,13 +121,13 @@ def main(test=False):
     }
 
     hyperopt_search = HyperOptSearch(
-        space, metric="mean_accuracy", mode="max", n_initial_points=40
+        space, metric="test_acc", mode="max", n_initial_points=10
     )
 
     tuner = tune.Tuner(
         partial(train, test=test),
         tune_config=tune.TuneConfig(
-            scheduler=ASHAScheduler(metric="mean_accuracy", mode="max"),
+            scheduler=ASHAScheduler(metric="test_acc", mode="max"),
             num_samples=50,
             search_alg=hyperopt_search,
         ),
