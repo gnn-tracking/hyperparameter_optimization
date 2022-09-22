@@ -132,13 +132,16 @@ def main(test=False):
     }
 
     hyperopt_search = HyperOptSearch(
-        space, metric="test_acc", mode="max", n_initial_points=10
+        space,
+        metric="trk.double_majority",
+        mode="max",
+        n_initial_points=10 if not test else 1,
     )
 
     tuner = tune.Tuner(
         partial(train, test=test),
         tune_config=tune.TuneConfig(
-            scheduler=ASHAScheduler(metric="test_acc", mode="max"),
+            scheduler=ASHAScheduler(metric="trk.double_majority", mode="max"),
             num_samples=10 if not test else 1,
             search_alg=hyperopt_search,
         ),
