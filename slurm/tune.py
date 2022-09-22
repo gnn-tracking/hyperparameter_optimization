@@ -5,23 +5,24 @@ from pathlib import Path
 from typing import Any
 
 import click
-import numpy as np
 import sklearn.model_selection
 import torch
+from gnn_tracking.graph_construction.graph_builder import GraphBuilder
+from gnn_tracking.models.track_condensation_networks import GraphTCN
+from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
+from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.utils.losses import (BackgroundLoss, EdgeWeightBCELoss,
+                                       PotentialLoss)
+from gnn_tracking.utils.seeds import fix_seeds
+from gnn_tracking.utils.training import subdict_with_prefix_stripped
+from hyperopt import hp
 from ray import tune
 from ray.air import RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
 from torch_geometric.loader import DataLoader
-import random
-from gnn_tracking.graph_construction.graph_builder import GraphBuilder
-from gnn_tracking.models.track_condensation_networks import GraphTCN
-from gnn_tracking.training.tcn_trainer import TCNTrainer
-from gnn_tracking.utils.losses import PotentialLoss, BackgroundLoss, \
-    EdgeWeightBCELoss
-from gnn_tracking.utils.training import subdict_with_prefix_stripped
-from hyperopt import hp
+from torch.optim.lr_scheduler import StepLR
 
 
 def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
@@ -65,10 +66,7 @@ def get_model(graph_builder, config: dict[str, Any]) -> GraphTCN:
 
 
 def train(config: dict[str, Any], test=False):
-    torch.manual_seed(0)
-    np.random.seed(0)
-    random.seed(0)
-
+    fix_seeds()
     graph_builder, loaders = get_loaders(test=test)
 
     use_cuda = torch.cuda.is_available()
@@ -81,26 +79,30 @@ def train(config: dict[str, Any], test=False):
         "background": BackgroundLoss(device=device, sb=config["sb"]),
     }
 
-    model = get_model(graph_builder, config=subdict_with_prefix_stripped(config, "model_"))
+    model = get_model(
+        graph_builder, config=subdict_with_prefix_stripped(config, "model_")
+    )
 
-
+    scheduler = partial(StepLR, gamma=0.95, step_size=4)
     trainer = TCNTrainer(
         model=model,
         loaders=loaders,
         loss_functions=loss_functions,
         loss_weights=subdict_with_prefix_stripped(config, "loss_weight_"),
         lr=config["lr"],
+        lr_scheduler=scheduler,
+        cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
     )
     callback = lambda model, foms: tune.report(**foms)
     trainer.add_hook(callback, "test")
 
-    epochs = 2 if test else 1000
+    epochs = 2 if test else 10
     max_batches = 1 if test else None
     trainer.train(epochs=epochs, max_batches=max_batches)
 
 
 @click.command()
-@click.option("--test", is_flag=True, default=False, help="Test the script with a test run (only 1 epoch, batch, etc.)")
+@click.option("--test", is_flag=True, default=False)
 def main(test=False):
     """
 
@@ -112,12 +114,19 @@ def main(test=False):
     """
     space = {
         "q_min": hp.loguniform("q_min", -3, 0),
-        "sb": 1,
+        "sb": hp.uniform("sb", 0, 1),
         "lr": hp.loguniform("lr", -11, -7),  # 2e-6 to 1e-3
         # Everything with prefix "model_" is passed to the model
-        "model_hidden_dim": hp.choice("hidden_dim", [32, 64, 128, 256]),
+        "model_hidden_dim": hp.choice("model_hidden_dim", [64, 128, 256]),
+        "model_h_dim": 10,
+        "model_e_dim": 10,
+        "model_L_ec": hp.choice("model_L_ec", [3, 5, 7]),
+        "model_L_hc": hp.choice("model_L_hc", [1, 2, 3, 4]),
         # Everything with prefix "loss_weight_" is treated as loss weight
-        "loss_weight_potential_repulsive": hp.loguniform("loss_weight_potential_repulsive", -3, 5),
+        "loss_weight_edge": 500,
+        "loss_weight_potential_attractive": hp.choice("loss_weight_potential_attractive", [100, 500]),
+        "loss_weight_potential_repulsive": 5,
+        "loss_weight_background": 0.05,
     }
 
     hyperopt_search = HyperOptSearch(
@@ -128,7 +137,7 @@ def main(test=False):
         partial(train, test=test),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(metric="test_acc", mode="max"),
-            num_samples=50 if not test else 1,
+            num_samples=10 if not test else 1,
             search_alg=hyperopt_search,
         ),
         run_config=RunConfig(
