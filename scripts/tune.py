@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import click
+import optuna
 import sklearn.model_selection
 import torch
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
@@ -17,13 +18,12 @@ from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightBCELoss, PotentialLoss
 from gnn_tracking.utils.seeds import fix_seeds
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
-from hyperopt import hp
 from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
-from ray.tune.search.hyperopt import HyperOptSearch
+from ray.tune.search.optuna import OptunaSearch
 from torch.optim.lr_scheduler import StepLR
 from torch_geometric.loader import DataLoader
 
@@ -116,6 +116,25 @@ class TCNTrainable(tune.Trainable):
         self.trainer.load_checkpoint(checkpoint_path)
 
 
+def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
+    trial.suggest_loguniform("q_min", 1e-3, 1),
+    trial.suggest_float("sb", 0, 1),
+    trial.suggest_loguniform("lr", 2e-6, 1e-3),
+    trial.suggest_categorical("m_hidden_dim", [64, 128, 256]),
+    trial.suggest_categorical("m_L_ec", [3, 5, 7]),
+    trial.suggest_categorical("m_L_hc", [1, 2, 3, 4]),
+    trial.suggest_categorical("lw_potential_attractive", [100, 500]),
+    fixed_config = {
+        # Everything with prefix "m_" is passed to the model
+        # Everything with prefix "lw_" is treated as loss weight
+        "lw_edge": 500,
+        "lw_potential_repulsive": 5,
+        "lw_background": 0.05,
+        "test": test,
+    }
+    return fixed_config
+
+
 @click.command()
 @click.option("--test", is_flag=True, default=False)
 def main(test=False):
@@ -127,27 +146,11 @@ def main(test=False):
     Returns:
 
     """
-    space = {
-        "q_min": hp.loguniform("q_min", -3, 0),
-        "sb": hp.uniform("sb", 0, 1),
-        "lr": hp.loguniform("lr", -11, -7),  # 2e-6 to 1e-3
-        # Everything with prefix "m_" is passed to the model
-        "m_hidden_dim": hp.choice("model_hidden_dim", [64, 128, 256]),
-        "m_L_ec": hp.choice("model_L_ec", [3, 5, 7]),
-        "m_L_hc": hp.choice("model_L_hc", [1, 2, 3, 4]),
-        # Everything with prefix "lw_" is treated as loss weight
-        "lw_edge": 500,
-        "lw_potential_attractive": hp.choice("lw_potential_attractive", [100, 500]),
-        "lw_potential_repulsive": 5,
-        "lw_background": 0.05,
-        "test": test,
-    }
 
-    hyperopt_search = HyperOptSearch(
-        space,
+    optuna_search = OptunaSearch(
+        partial(suggest_config, test=test),
         metric="trk.double_majority",
         mode="max",
-        n_initial_points=10 if not test else 1,
     )
 
     tuner = tune.Tuner(
@@ -155,7 +158,7 @@ def main(test=False):
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(metric="trk.double_majority", mode="max"),
             num_samples=10 if not test else 1,
-            search_alg=hyperopt_search,
+            search_alg=optuna_search,
         ),
         run_config=RunConfig(
             name="tcn",
