@@ -1,3 +1,4 @@
 *.lprof
 *.ipynb_checkpoints/**
 *.out
+*.log
