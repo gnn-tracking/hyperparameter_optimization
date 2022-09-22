@@ -19,7 +19,7 @@ from gnn_tracking.utils.seeds import fix_seeds
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
 from hyperopt import hp
 from ray import tune
-from ray.air import CheckpointConfig, RunConfig
+from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
@@ -158,6 +158,7 @@ def main(test=False):
             search_alg=hyperopt_search,
         ),
         run_config=RunConfig(
+            name="tcn",
             callbacks=[
                 WandbLoggerCallback(
                     api_key_file="~/.wandb_api_key", project="gnn_tracking"
@@ -166,6 +167,11 @@ def main(test=False):
             sync_config=SyncConfig(syncer=None),
             stop={"training_iteration": 10 if not test else 1},
             checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
+            log_to_file=True,
+            verbose=1,  # Only status reports, no results
+            failure_config=FailureConfig(
+                fail_fast=True,
+            ),
         ),
     )
     tuner.fit()
