@@ -83,12 +83,13 @@ class TCNTrainable(tune.Trainable):
         loss_functions = {
             "edge": EdgeWeightBCELoss().to(device),
             "potential": PotentialLoss(q_min=config["q_min"], device=device),
-            "background": BackgroundLoss(device=device, sb=config["sb"]),
+            "background": BackgroundLoss(sb=config["sb"], device=device),
         }
 
         model = get_model(
             graph_builder, config=subdict_with_prefix_stripped(config, "m_")
         )
+        model.to(device)
 
         scheduler = partial(StepLR, gamma=0.95, step_size=4)
         self.trainer = TCNTrainer(
@@ -101,11 +102,6 @@ class TCNTrainable(tune.Trainable):
             cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
         )
 
-        def callback(model, foms):
-            return tune.report(**foms)
-
-        self.trainer.add_hook(callback, "test")
-
     def step(self):
         return self.trainer.step(max_batches=self.config.get("max_batches", None))
 
@@ -117,6 +113,8 @@ class TCNTrainable(tune.Trainable):
 
 
 def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
+    # Everything with prefix "m_" is passed to the model
+    # Everything with prefix "lw_" is treated as loss weight
     trial.suggest_loguniform("q_min", 1e-3, 1),
     trial.suggest_float("sb", 0, 1),
     trial.suggest_loguniform("lr", 2e-6, 1e-3),
@@ -125,8 +123,6 @@ def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
     trial.suggest_categorical("m_L_hc", [1, 2, 3, 4]),
     trial.suggest_categorical("lw_potential_attractive", [100, 500]),
     fixed_config = {
-        # Everything with prefix "m_" is passed to the model
-        # Everything with prefix "lw_" is treated as loss weight
         "lw_edge": 500,
         "lw_potential_repulsive": 5,
         "lw_background": 0.05,
