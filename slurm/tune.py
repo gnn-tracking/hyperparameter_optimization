@@ -122,8 +122,6 @@ def main(test=False):
         "lr": hp.loguniform("lr", -11, -7),  # 2e-6 to 1e-3
         # Everything with prefix "m_" is passed to the model
         "m_hidden_dim": hp.choice("model_hidden_dim", [64, 128, 256]),
-        "m_h_dim": 10,
-        "m_e_dim": 10,
         "m_L_ec": hp.choice("model_L_ec", [3, 5, 7]),
         "m_L_hc": hp.choice("model_L_hc", [1, 2, 3, 4]),
         # Everything with prefix "lw_" is treated as loss weight
