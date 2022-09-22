@@ -19,8 +19,9 @@ from gnn_tracking.utils.seeds import fix_seeds
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
 from hyperopt import hp
 from ray import tune
-from ray.air import RunConfig
+from ray.air import CheckpointConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
+from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
 from torch.optim.lr_scheduler import StepLR
@@ -68,41 +69,51 @@ def get_model(graph_builder, config: dict[str, Any]) -> GraphTCN:
     return model
 
 
-def train(config: dict[str, Any], test=False):
-    fix_seeds()
-    graph_builder, loaders = get_loaders(test=test)
+class TCNTrainable(tune.Trainable):
+    def setup(self, config: dict[str, Any]):
+        test = config.get("test", False)
+        self.config = config
+        fix_seeds()
+        graph_builder, loaders = get_loaders(test=test)
 
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-    print(f"Utilizing {device}")
+        use_cuda = torch.cuda.is_available()
+        device = torch.device("cuda" if use_cuda else "cpu")
+        print(f"Utilizing {device}")
 
-    loss_functions = {
-        "edge": EdgeWeightBCELoss().to(device),
-        "potential": PotentialLoss(q_min=config["q_min"], device=device),
-        "background": BackgroundLoss(device=device, sb=config["sb"]),
-    }
+        loss_functions = {
+            "edge": EdgeWeightBCELoss().to(device),
+            "potential": PotentialLoss(q_min=config["q_min"], device=device),
+            "background": BackgroundLoss(device=device, sb=config["sb"]),
+        }
 
-    model = get_model(graph_builder, config=subdict_with_prefix_stripped(config, "m_"))
+        model = get_model(
+            graph_builder, config=subdict_with_prefix_stripped(config, "m_")
+        )
 
-    scheduler = partial(StepLR, gamma=0.95, step_size=4)
-    trainer = TCNTrainer(
-        model=model,
-        loaders=loaders,
-        loss_functions=loss_functions,
-        loss_weights=subdict_with_prefix_stripped(config, "lw_"),
-        lr=config["lr"],
-        lr_scheduler=scheduler,
-        cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
-    )
+        scheduler = partial(StepLR, gamma=0.95, step_size=4)
+        self.trainer = TCNTrainer(
+            model=model,
+            loaders=loaders,
+            loss_functions=loss_functions,
+            loss_weights=subdict_with_prefix_stripped(config, "lw_"),
+            lr=config["lr"],
+            lr_scheduler=scheduler,
+            cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
+        )
 
-    def callback(model, foms):
-        return tune.report(**foms)
+        def callback(model, foms):
+            return tune.report(**foms)
 
-    trainer.add_hook(callback, "test")
+        self.trainer.add_hook(callback, "test")
 
-    epochs = 2 if test else 10
-    max_batches = 1 if test else None
-    trainer.train(epochs=epochs, max_batches=max_batches)
+    def step(self):
+        return self.trainer.step(self.config.get("max_batches", None))
+
+    def save_checkpoint(self, checkpoint_dir):
+        return self.trainer.save_checkpoint(Path(checkpoint_dir) / "checkpoint.pt")
+
+    def load_checkpoint(self, checkpoint_path):
+        self.trainer.load_checkpoint(checkpoint_path)
 
 
 @click.command()
@@ -129,6 +140,7 @@ def main(test=False):
         "lw_potential_attractive": hp.choice("lw_potential_attractive", [100, 500]),
         "lw_potential_repulsive": 5,
         "lw_background": 0.05,
+        "test": test,
     }
 
     hyperopt_search = HyperOptSearch(
@@ -139,7 +151,7 @@ def main(test=False):
     )
 
     tuner = tune.Tuner(
-        partial(train, test=test),
+        TCNTrainable,
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(metric="trk.double_majority", mode="max"),
             num_samples=10 if not test else 1,
@@ -150,7 +162,10 @@ def main(test=False):
                 WandbLoggerCallback(
                     api_key_file="~/.wandb_api_key", project="gnn_tracking"
                 ),
-            ]
+            ],
+            sync_config=SyncConfig(syncer=None),
+            stop={"training_iteration": 10 if not test else 1},
+            checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
         ),
     )
     tuner.fit()
