@@ -11,6 +11,7 @@ from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
 from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.losses import (BackgroundLoss, EdgeWeightBCELoss,
                                        PotentialLoss)
 from gnn_tracking.utils.seeds import fix_seeds
@@ -26,6 +27,7 @@ from torch.optim.lr_scheduler import StepLR
 
 
 def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
+    logger.info("Loading data")
     graph_builder = GraphBuilder(
         str(Path("~/data/gnn_tracking/point_clouds").expanduser()),
         str(Path("~/data/gnn_tracking/graphs").expanduser()),
@@ -80,7 +82,7 @@ def train(config: dict[str, Any], test=False):
     }
 
     model = get_model(
-        graph_builder, config=subdict_with_prefix_stripped(config, "model_")
+        graph_builder, config=subdict_with_prefix_stripped(config, "m_")
     )
 
     scheduler = partial(StepLR, gamma=0.95, step_size=4)
@@ -88,7 +90,7 @@ def train(config: dict[str, Any], test=False):
         model=model,
         loaders=loaders,
         loss_functions=loss_functions,
-        loss_weights=subdict_with_prefix_stripped(config, "loss_weight_"),
+        loss_weights=subdict_with_prefix_stripped(config, "lw_"),
         lr=config["lr"],
         lr_scheduler=scheduler,
         cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
@@ -116,17 +118,17 @@ def main(test=False):
         "q_min": hp.loguniform("q_min", -3, 0),
         "sb": hp.uniform("sb", 0, 1),
         "lr": hp.loguniform("lr", -11, -7),  # 2e-6 to 1e-3
-        # Everything with prefix "model_" is passed to the model
-        "model_hidden_dim": hp.choice("model_hidden_dim", [64, 128, 256]),
-        "model_h_dim": 10,
-        "model_e_dim": 10,
-        "model_L_ec": hp.choice("model_L_ec", [3, 5, 7]),
-        "model_L_hc": hp.choice("model_L_hc", [1, 2, 3, 4]),
-        # Everything with prefix "loss_weight_" is treated as loss weight
-        "loss_weight_edge": 500,
-        "loss_weight_potential_attractive": hp.choice("loss_weight_potential_attractive", [100, 500]),
-        "loss_weight_potential_repulsive": 5,
-        "loss_weight_background": 0.05,
+        # Everything with prefix "m_" is passed to the model
+        "m_hidden_dim": hp.choice("model_hidden_dim", [64, 128, 256]),
+        "m_h_dim": 10,
+        "m_e_dim": 10,
+        "m_L_ec": hp.choice("model_L_ec", [3, 5, 7]),
+        "m_L_hc": hp.choice("model_L_hc", [1, 2, 3, 4]),
+        # Everything with prefix "lw_" is treated as loss weight
+        "lw_edge": 500,
+        "lw_potential_attractive": hp.choice("lw_potential_attractive", [100, 500]),
+        "lw_potential_repulsive": 5,
+        "lw_background": 0.05,
     }
 
     hyperopt_search = HyperOptSearch(
