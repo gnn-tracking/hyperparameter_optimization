@@ -94,7 +94,10 @@ def train(config: dict[str, Any], test=False):
         lr_scheduler=scheduler,
         cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
     )
-    callback = lambda model, foms: tune.report(**foms)
+
+    def callback(model, foms):
+        return tune.report(**foms)
+
     trainer.add_hook(callback, "test")
 
     epochs = 2 if test else 10
