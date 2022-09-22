@@ -107,7 +107,7 @@ class TCNTrainable(tune.Trainable):
         self.trainer.add_hook(callback, "test")
 
     def step(self):
-        return self.trainer.step(self.config.get("max_batches", None))
+        return self.trainer.step(max_batches=self.config.get("max_batches", None))
 
     def save_checkpoint(self, checkpoint_dir):
         return self.trainer.save_checkpoint(Path(checkpoint_dir) / "checkpoint.pt")
