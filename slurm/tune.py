@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -12,8 +14,7 @@ from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.log import logger
-from gnn_tracking.utils.losses import (BackgroundLoss, EdgeWeightBCELoss,
-                                       PotentialLoss)
+from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightBCELoss, PotentialLoss
 from gnn_tracking.utils.seeds import fix_seeds
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
 from hyperopt import hp
@@ -22,8 +23,8 @@ from ray.air import RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
-from torch_geometric.loader import DataLoader
 from torch.optim.lr_scheduler import StepLR
+from torch_geometric.loader import DataLoader
 
 
 def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
@@ -81,9 +82,7 @@ def train(config: dict[str, Any], test=False):
         "background": BackgroundLoss(device=device, sb=config["sb"]),
     }
 
-    model = get_model(
-        graph_builder, config=subdict_with_prefix_stripped(config, "m_")
-    )
+    model = get_model(graph_builder, config=subdict_with_prefix_stripped(config, "m_"))
 
     scheduler = partial(StepLR, gamma=0.95, step_size=4)
     trainer = TCNTrainer(

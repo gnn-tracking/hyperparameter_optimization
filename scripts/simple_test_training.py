@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+import random
 from pathlib import Path
 
 import numpy as np
 import torch
-from torch_geometric.data import DataLoader
-
-import random
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 
 # set up a model and trainer
-from gnn_tracking.utils.losses import PotentialLoss, BackgroundLoss, \
-    EdgeWeightBCELoss
+from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightBCELoss, PotentialLoss
+from torch_geometric.data import DataLoader
 
 torch.manual_seed(0)
 np.random.seed(0)

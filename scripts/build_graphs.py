@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 from pathlib import Path
 
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder

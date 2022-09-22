@@ -1,10 +1,11 @@
 #%%
+from __future__ import annotations
+
 import time
+from dataclasses import dataclass
 from functools import wraps
 
 import torch
-from dataclasses import dataclass
-
 from torch.nn.functional import mse_loss
 
 T = torch.tensor
@@ -20,21 +21,21 @@ class TestData:
 
 
 def generate_test_data(
-        n_nodes=1000, n_particles=250, n_x_features=3, rng=None
-    ) -> TestData:
-        if rng is None:
-            rng = np.random.default_rng()
-        return TestData(
-            beta=torch.from_numpy(rng.random(n_nodes)),
-            x=torch.from_numpy(rng.random((n_nodes, n_x_features))),
-            particle_id=torch.from_numpy(rng.choice(np.arange(n_particles), size=n_nodes)),
-            pred=torch.from_numpy(rng.choice([0., 1.], size=(n_nodes, 1))),
-            truth=torch.from_numpy(rng.choice([0., 1.], size=(n_nodes, 1))),
-        )
-
+    n_nodes=1000, n_particles=250, n_x_features=3, rng=None
+) -> TestData:
+    if rng is None:
+        rng = np.random.default_rng()
+    return TestData(
+        beta=torch.from_numpy(rng.random(n_nodes)),
+        x=torch.from_numpy(rng.random((n_nodes, n_x_features))),
+        particle_id=torch.from_numpy(rng.choice(np.arange(n_particles), size=n_nodes)),
+        pred=torch.from_numpy(rng.choice([0.0, 1.0], size=(n_nodes, 1))),
+        truth=torch.from_numpy(rng.choice([0.0, 1.0], size=(n_nodes, 1))),
+    )
 
 
 import numpy as np
+
 
 # original:  0.40115785598754883  s
 # vectorized:  0.13051199913024902 s
@@ -83,22 +84,27 @@ class ObjectLoss(torch.nn.Module):
             particle_id=particle_id[mask],
         )
 
+
 def timeit(func):
     @wraps(func)
     def measure_time(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
-        print("@timefn: {} took {} seconds.".format(func.__name__, end_time - start_time))
+        print(f"@timefn: {func.__name__} took {end_time - start_time} seconds.")
         return result
+
     return measure_time
+
 
 @timeit
 def benchmark():
     pl = ObjectLoss()
     for i in range(100):
         td = generate_test_data()
-        pl.object_loss(beta=td.beta, particle_id=td.particle_id, pred=td.pred, truth=td.truth)
+        pl.object_loss(
+            beta=td.beta, particle_id=td.particle_id, pred=td.pred, truth=td.truth
+        )
 
 
 benchmark()

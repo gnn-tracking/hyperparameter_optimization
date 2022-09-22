@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+import random
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -8,20 +11,18 @@ import click
 import numpy as np
 import sklearn.model_selection
 import torch
+from gnn_tracking.graph_construction.graph_builder import GraphBuilder
+from gnn_tracking.models.track_condensation_networks import GraphTCN
+from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightBCELoss, PotentialLoss
+from gnn_tracking.utils.training import subdict_with_prefix_stripped
+from hyperopt import hp
 from ray import tune
 from ray.air import RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
 from torch_geometric.loader import DataLoader
-import random
-from gnn_tracking.graph_construction.graph_builder import GraphBuilder
-from gnn_tracking.models.track_condensation_networks import GraphTCN
-from gnn_tracking.training.tcn_trainer import TCNTrainer
-from gnn_tracking.utils.losses import PotentialLoss, BackgroundLoss, \
-    EdgeWeightBCELoss
-from gnn_tracking.utils.training import subdict_with_prefix_stripped
-from hyperopt import hp
 
 
 def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
@@ -81,8 +82,9 @@ def train(config: dict[str, Any], test=False):
         "background": BackgroundLoss(device=device, sb=config["sb"]),
     }
 
-    model = get_model(graph_builder, config=subdict_with_prefix_stripped(config, "model_"))
-
+    model = get_model(
+        graph_builder, config=subdict_with_prefix_stripped(config, "model_")
+    )
 
     trainer = TCNTrainer(
         model=model,
@@ -100,7 +102,12 @@ def train(config: dict[str, Any], test=False):
 
 
 @click.command()
-@click.option("--test", is_flag=True, default=False, help="Test the script with a test run (only 1 epoch, batch, etc.)")
+@click.option(
+    "--test",
+    is_flag=True,
+    default=False,
+    help="Test the script with a test run (only 1 epoch, batch, etc.)",
+)
 def main(test=False):
     """
 
@@ -117,7 +124,9 @@ def main(test=False):
         # Everything with prefix "model_" is passed to the model
         "model_hidden_dim": hp.choice("hidden_dim", [32, 64, 128, 256]),
         # Everything with prefix "loss_weight_" is treated as loss weight
-        "loss_weight_potential_repulsive": hp.loguniform("loss_weight_potential_repulsive", -3, 5),
+        "loss_weight_potential_repulsive": hp.loguniform(
+            "loss_weight_potential_repulsive", -3, 5
+        ),
     }
 
     hyperopt_search = HyperOptSearch(

@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 
 
-import torch
-from numpy.random import uniform
-from torch_geometric.loader import DataLoader
-from gnn_tracking.models.track_condensation_networks import GraphTCN
+from __future__ import annotations
+
 from pathlib import Path
 
-from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
-
+import torch
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
-
-
+from gnn_tracking.models.track_condensation_networks import GraphTCN
+from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
+from numpy.random import uniform
+from torch_geometric.loader import DataLoader
 
 torch.manual_seed(0)
 import numpy as np
@@ -75,11 +74,9 @@ print("Loader sizes:", [(k, len(v)) for k, v in loaders.items()])
 # set up a model and trainer
 
 
-
-
-from gnn_tracking.training.tcn_trainer import TCNTrainer
-from gnn_tracking.utils.losses import EdgeWeightBCELoss, PotentialLoss, BackgroundLoss
 import optuna
+from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightBCELoss, PotentialLoss
 
 # optuna.logging.set_verbosity(optuna.logging.WARNING)
 
@@ -103,7 +100,7 @@ loss_weights = {
 # set up a model and trainer
 model = GraphTCN(node_indim, edge_indim, hc_outdim, hidden_dim=64)
 model_parameters = filter(lambda p: p.requires_grad, model.parameters())
-n_params = sum([np.prod(p.size()) for p in model_parameters])
+n_params = sum(np.prod(p.size()) for p in model_parameters)
 print("number trainable params:", n_params)
 
 
@@ -118,7 +115,7 @@ trainer = TCNTrainer(
     lr=0.0001,
     loss_weights=loss_weights,
     device=device,
-    cluster_functions= {"dbscan": dbscan_scan},
+    cluster_functions={"dbscan": dbscan_scan},
 )
 print(trainer.loss_functions)
 
