@@ -81,9 +81,9 @@ class TCNTrainable(tune.Trainable):
         model = get_model(
             graph_builder, config=subdict_with_prefix_stripped(config, "m_")
         )
-        cluster_functions = (
-            {"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},
-        )
+        cluster_functions = {
+            "dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)
+        }
         scheduler = partial(StepLR, gamma=0.95, step_size=4)
         self.trainer = TCNTrainer(
             model=model,
