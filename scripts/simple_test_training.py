@@ -73,8 +73,10 @@ sb = 1
 
 loss_functions = {
     "edge": EdgeWeightBCELoss().to(device),
-    "potential": PotentialLoss(q_min=q_min, device=device),
-    "background": BackgroundLoss(device=device, sb=sb),
+    "potential": PotentialLoss(
+        q_min=q_min,
+    ),
+    "background": BackgroundLoss(sb=sb),
 }
 trainer = GraphTCNTrainer(model=model, loaders=loaders, loss_functions=loss_functions)
 

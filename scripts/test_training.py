@@ -78,8 +78,8 @@ def train(config: dict[str, Any], test=False):
 
     loss_functions = {
         "edge": EdgeWeightBCELoss().to(device),
-        "potential": PotentialLoss(q_min=config["q_min"], device=device),
-        "background": BackgroundLoss(device=device, sb=config["sb"]),
+        "potential": PotentialLoss(q_min=config["q_min"]),
+        "background": BackgroundLoss(sb=config["sb"]),
     }
 
     model = get_model(

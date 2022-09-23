@@ -79,8 +79,8 @@ class TCNTrainable(tune.Trainable):
 
         loss_functions = {
             "edge": EdgeWeightBCELoss().to(device),
-            "potential": PotentialLoss(q_min=config["q_min"], device=device).to(device),
-            "background": BackgroundLoss(sb=config["sb"], device=device).to(device),
+            "potential": PotentialLoss(q_min=config["q_min"]).to(device),
+            "background": BackgroundLoss(sb=config["sb"]).to(device),
         }
 
         model = get_model(

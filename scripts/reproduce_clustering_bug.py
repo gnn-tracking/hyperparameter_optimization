@@ -83,8 +83,10 @@ from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightBCELoss, Potenti
 q_min, sb = 0.01, 0.1
 loss_functions = {
     "edge": EdgeWeightBCELoss().to(device),
-    "potential": PotentialLoss(q_min=q_min, device=device),
-    "background": BackgroundLoss(device=device, sb=sb),
+    "potential": PotentialLoss(
+        q_min=q_min,
+    ),
+    "background": BackgroundLoss(sb=sb),
     # "object": ObjectLoss(device=device, mode='efficiency')
 }
 
