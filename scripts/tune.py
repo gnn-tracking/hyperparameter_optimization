@@ -9,7 +9,6 @@ from typing import Any
 import click
 import optuna
 import sklearn.model_selection
-import torch
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
@@ -71,23 +70,20 @@ class TCNTrainable(tune.Trainable):
         test = config.get("test", False)
         self.config = config
         fix_seeds()
-        use_cuda = torch.cuda.is_available()
-        device = torch.device("cuda" if use_cuda else "cpu")
         graph_builder, loaders = get_loaders(test=test)
 
-        print(f"Utilizing {device}")
-
         loss_functions = {
-            "edge": EdgeWeightBCELoss().to(device),
-            "potential": PotentialLoss(q_min=config["q_min"]).to(device),
-            "background": BackgroundLoss(sb=config["sb"]).to(device),
+            "edge": EdgeWeightBCELoss(),
+            "potential": PotentialLoss(q_min=config["q_min"]),
+            "background": BackgroundLoss(sb=config["sb"]),
         }
 
         model = get_model(
             graph_builder, config=subdict_with_prefix_stripped(config, "m_")
         )
-        model.to(device)
-
+        cluster_functions = (
+            {"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},
+        )
         scheduler = partial(StepLR, gamma=0.95, step_size=4)
         self.trainer = TCNTrainer(
             model=model,
@@ -96,8 +92,7 @@ class TCNTrainable(tune.Trainable):
             loss_weights=subdict_with_prefix_stripped(config, "lw_"),
             lr=config["lr"],
             lr_scheduler=scheduler,
-            cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
-            device=device,
+            cluster_functions=cluster_functions,  # type: ignore
         )
 
     def step(self):
