@@ -50,12 +50,9 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
     # build graph loaders
     params = {"batch_size": 1, "shuffle": True, "num_workers": 1}
     train_loader = DataLoader(list(train_graphs), **params)
-
-    params = {"batch_size": 1, "shuffle": False, "num_workers": 2}
     test_loader = DataLoader(list(test_graphs), **params)
     val_loader = DataLoader(list(val_graphs), **params)
     loaders = {"train": train_loader, "test": test_loader, "val": val_loader}
-    print("Loader sizes:", [(k, len(v)) for k, v in loaders.items()])
     return graph_builder, loaders
 
 
@@ -74,16 +71,16 @@ class TCNTrainable(tune.Trainable):
         test = config.get("test", False)
         self.config = config
         fix_seeds()
-        graph_builder, loaders = get_loaders(test=test)
-
         use_cuda = torch.cuda.is_available()
         device = torch.device("cuda" if use_cuda else "cpu")
+        graph_builder, loaders = get_loaders(test=test)
+
         print(f"Utilizing {device}")
 
         loss_functions = {
             "edge": EdgeWeightBCELoss().to(device),
-            "potential": PotentialLoss(q_min=config["q_min"], device=device),
-            "background": BackgroundLoss(sb=config["sb"], device=device),
+            "potential": PotentialLoss(q_min=config["q_min"], device=device).to(device),
+            "background": BackgroundLoss(sb=config["sb"], device=device).to(device),
         }
 
         model = get_model(
@@ -100,6 +97,7 @@ class TCNTrainable(tune.Trainable):
             lr=config["lr"],
             lr_scheduler=scheduler,
             cluster_functions={"dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)},  # type: ignore
+            device=device,
         )
 
     def step(self):
