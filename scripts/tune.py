@@ -133,11 +133,13 @@ def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
 
 @click.command()
 @click.option("--test", is_flag=True, default=False)
-def main(test=False):
+@click.option("--gpu", is_flag=True, default=False)
+def main(test=False, gpu=False):
     """
 
     Args:
         test: Speed up for testing (will only use limited data/epochs)
+        gpu: Run on GPUs
 
     Returns:
 
@@ -150,7 +152,9 @@ def main(test=False):
     )
 
     tuner = tune.Tuner(
-        TCNTrainable,
+        tune.with_resources(
+            TCNTrainable, {"gpu": 4 if gpu else 0, "cpu": 4 if gpu else 1}
+        ),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(metric="trk.double_majority", mode="max"),
             num_samples=10 if not test else 1,
