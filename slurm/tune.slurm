@@ -5,7 +5,7 @@
 # However, some flags that weren't understood by tigergpu were removed again.
 
 #SBATCH --job-name=tune.sh
-#SBATCH --output=tune.log
+#SBATCH --output=tune_%j.log
 
 ### This script works for any number of nodes, Ray will find and manage all resources
 #SBATCH --nodes=2
@@ -63,4 +63,4 @@ done
 # ===== Call your code below =====
 export WANDB_MODE=offline
 base_dir="${HOME}/Documents/22/git_sync/gnn_tracking_experiments/"
-python3 ${base_dir}/scripts/tune.py
+python3 ${base_dir}/scripts/tune.py --gpu --test
