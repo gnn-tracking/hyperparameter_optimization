@@ -48,8 +48,8 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
     )
 
     # build graph loaders
-    params = {"batch_size": 1, "shuffle": True, "num_workers": 1}
-    train_loader = DataLoader(list(train_graphs), **params)
+    params = {"batch_size": 1, "num_workers": 1}
+    train_loader = DataLoader(list(train_graphs), **params, shuffle=True)
     test_loader = DataLoader(list(test_graphs), **params)
     val_loader = DataLoader(list(val_graphs), **params)
     loaders = {"train": train_loader, "test": test_loader, "val": val_loader}
