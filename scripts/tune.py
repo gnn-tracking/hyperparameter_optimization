@@ -108,9 +108,9 @@ class TCNTrainable(tune.Trainable):
 def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight
-    trial.suggest_loguniform("q_min", 1e-3, 1),
+    trial.suggest_float("q_min", 1e-3, 1, log=True),
     trial.suggest_float("sb", 0, 1),
-    trial.suggest_loguniform("lr", 2e-6, 1e-3),
+    trial.suggest_float("lr", 2e-6, 1e-3, log=True),
     trial.suggest_categorical("m_hidden_dim", [64, 128, 256]),
     trial.suggest_categorical("m_L_ec", [3, 5, 7]),
     trial.suggest_categorical("m_L_hc", [1, 2, 3, 4]),
