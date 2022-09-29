@@ -127,7 +127,12 @@ def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
 @click.command()
 @click.option("--test", is_flag=True, default=False)
 @click.option("--gpu", is_flag=True, default=False)
-def main(test=False, gpu=False):
+@click.option(
+    "--restore",
+    help="Restore previous training state from this directory",
+    default=None,
+)
+def main(test=False, gpu=False, restore=None):
     """
 
     Args:
@@ -143,13 +148,18 @@ def main(test=False, gpu=False):
         metric="trk.double_majority",
         mode="max",
     )
+    if restore:
+        print(f"Restoring previous state from {restore}")
+        optuna_search.restore_from_dir(restore)
 
     tuner = tune.Tuner(
         tune.with_resources(
             TCNTrainable, {"gpu": 4 if gpu else 0, "cpu": 4 if gpu else 1}
         ),
         tune_config=tune.TuneConfig(
-            scheduler=ASHAScheduler(metric="trk.double_majority", mode="max"),
+            scheduler=ASHAScheduler(
+                metric="trk.double_majority", mode="max", grace_period=3
+            ),
             num_samples=10 if not test else 1,
             search_alg=optuna_search,
         ),
@@ -161,7 +171,7 @@ def main(test=False, gpu=False):
                 ),
             ],
             sync_config=SyncConfig(syncer=None),
-            stop={"training_iteration": 10 if not test else 1},
+            stop={"training_iteration": 20 if not test else 1},
             checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
             log_to_file=True,
             verbose=1,  # Only status reports, no results

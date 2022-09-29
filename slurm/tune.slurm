@@ -8,12 +8,12 @@
 #SBATCH --output=tune_%j.log
 
 ### This script works for any number of nodes, Ray will find and manage all resources
-#SBATCH --nodes=2
+#SBATCH --nodes=5
 #SBATCH --exclusive
 ### Give all resources to a single Ray task, ray can manage the resources internally
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1             # number of gpus per node
-#SBATCH --time=01:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --time=03:00:00          # total run time limit (HH:MM:SS)
 # Load modules or your own conda environment here
 # module load pytorch/v1.4.0-gpu
 # conda activate ${CONDA_ENV}
@@ -63,4 +63,4 @@ done
 # ===== Call your code below =====
 export WANDB_MODE=offline
 base_dir="${HOME}/Documents/22/git_sync/gnn_tracking_experiments/"
-python3 ${base_dir}/scripts/tune.py --gpu --test
+python3 ${base_dir}/scripts/tune.py --gpu --restore "${HOME}/ray_results/tcn"
