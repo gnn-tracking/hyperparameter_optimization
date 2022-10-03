@@ -111,13 +111,13 @@ def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
     trial.suggest_float("q_min", 1e-3, 1, log=True),
     trial.suggest_float("sb", 0, 1),
     trial.suggest_float("lr", 2e-6, 1e-3, log=True),
-    trial.suggest_categorical("m_hidden_dim", [64, 128, 256]),
-    trial.suggest_categorical("m_L_ec", [3, 5, 7]),
-    trial.suggest_categorical("m_L_hc", [1, 2, 3, 4]),
-    trial.suggest_categorical("lw_potential_attractive", [100, 500]),
+    trial.suggest_int("m_hidden_dim", 64, 256),
+    trial.suggest_int("m_L_ec", 1, 7),
+    trial.suggest_int("m_L_hc", 1, 7),
+    trial.suggest_float("lw_potential_attractive", 1, 500),
+    trial.suggest_float("lw_potential_repulsive", 1e-2, 1e2),
     fixed_config = {
         "lw_edge": 500,
-        "lw_potential_repulsive": 5,
         "lw_background": 0.05,
         "test": test,
     }
@@ -154,13 +154,15 @@ def main(test=False, gpu=False, restore=None):
 
     tuner = tune.Tuner(
         tune.with_resources(
-            TCNTrainable, {"gpu": 4 if gpu else 0, "cpu": 4 if gpu else 1}
+            # fixme: shouldn't hardcode number of jobs
+            TCNTrainable,
+            {"gpu": 1 if gpu else 0, "cpu": 1 if gpu else 0},
         ),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(
                 metric="trk.double_majority", mode="max", grace_period=3
             ),
-            num_samples=10 if not test else 1,
+            num_samples=50 if not test else 1,
             search_alg=optuna_search,
         ),
         run_config=RunConfig(
