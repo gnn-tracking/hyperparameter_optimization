@@ -5,7 +5,7 @@ from pathlib import Path
 
 from gnn_tracking.preprocessing.point_cloud_builder import PointCloudBuilder
 
-n_evts, n_sectors = 20, 32
+n_evts, n_sectors = 100, 32
 
 pc_builder = PointCloudBuilder(
     indir="/tigress/jdezoort/codalab/train_1",

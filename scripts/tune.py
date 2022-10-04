@@ -34,7 +34,7 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
         str(Path("~/data/gnn_tracking/graphs").expanduser()),
         redo=False,
     )
-    n_graphs = 3 if test else None
+    n_graphs = 100 if test else None
     graph_builder.process(n=n_graphs)
 
     # partition graphs into train, test, val splits
