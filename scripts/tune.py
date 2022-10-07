@@ -94,6 +94,7 @@ class TCNTrainable(tune.Trainable):
             lr_scheduler=scheduler,
             cluster_functions=cluster_functions,  # type: ignore
         )
+        self.trainer.max_batches_for_clustering = 100 if not test else 10
 
     def step(self):
         return self.trainer.step(max_batches=self.config.get("max_batches", None))
