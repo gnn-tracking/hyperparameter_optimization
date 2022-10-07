@@ -5,10 +5,10 @@
 # However, some flags that weren't understood by tigergpu were removed again.
 
 #SBATCH --job-name=tune.sh
-#SBATCH --output=tune_%j.log
+#SBATCH --output=logs/tune_%j.log
 
 ### This script works for any number of nodes, Ray will find and manage all resources
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --exclusive
 ### Give all resources to a single Ray task, ray can manage the resources internally
 #SBATCH --ntasks-per-node=1
@@ -63,4 +63,4 @@ done
 # ===== Call your code below =====
 export WANDB_MODE=offline
 base_dir="${HOME}/Documents/22/git_sync/gnn_tracking_experiments/"
-python3 ${base_dir}/scripts/tune.py --gpu --restore "${HOME}/ray_results/tcn"
+python3 "${base_dir}/scripts/tune.py" --gpu --enqueue-trials "${base_dir}/config/cb57b007_focal.json"
