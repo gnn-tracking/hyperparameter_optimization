@@ -23,7 +23,7 @@ graph_builder = GraphBuilder(
     str(Path("~/data/gnn_tracking/graphs").expanduser()),
     redo=False,
 )
-graph_builder.process(n=2)
+graph_builder.process(stop=2)
 
 
 from gnn_tracking.training.graph_tcn_trainer import GraphTCNTrainer

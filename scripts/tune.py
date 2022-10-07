@@ -40,7 +40,7 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
         redo=False,
     )
     n_graphs = 100 if test else None
-    graph_builder.process(n=n_graphs)
+    graph_builder.process(stop=n_graphs)
 
     # partition graphs into train, test, val splits
     graphs = graph_builder.data_list
@@ -152,7 +152,9 @@ def read_config_from_file(path: Path) -> dict[str, Any]:
     default=None,
 )
 @click.option(
-    "--enqueue-trials", help="Read trials from this file and enqueue them", nargs="+"
+    "--enqueue-trials",
+    help="Read trials from this file and enqueue them",
+    multiple=True,
 )
 def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] = None):
     """

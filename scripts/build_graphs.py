@@ -11,4 +11,4 @@ graph_builder = GraphBuilder(
     str(Path("~/data/gnn_tracking/graphs").expanduser()),
     redo=False,
 )
-graph_builder.process(n=None)
+graph_builder.process(stop=None)
