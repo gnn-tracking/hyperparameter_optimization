@@ -98,11 +98,16 @@ class TCNTrainable(tune.Trainable):
     def step(self):
         return self.trainer.step(max_batches=self.config.get("max_batches", None))
 
-    def save_checkpoint(self, checkpoint_dir):
-        return self.trainer.save_checkpoint(Path(checkpoint_dir) / "checkpoint.pt")
+    def save_checkpoint(
+        self,
+        checkpoint_dir,
+    ):
+        return self.trainer.save_checkpoint(
+            Path(checkpoint_dir) / "checkpoint.pt",
+        )
 
-    def load_checkpoint(self, checkpoint_path):
-        self.trainer.load_checkpoint(checkpoint_path)
+    def load_checkpoint(self, checkpoint_path, **kwargs):
+        self.trainer.load_checkpoint(checkpoint_path, **kwargs)
 
 
 def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
