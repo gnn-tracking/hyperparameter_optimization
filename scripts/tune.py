@@ -152,7 +152,9 @@ def read_config_from_file(path: Path) -> dict[str, Any]:
     default=None,
 )
 @click.option(
-    "--enqueue-trials", help="Read trials from this file and enqueue them", nargs="+"
+    "--enqueue-trials",
+    help="Read trials from this file and enqueue them",
+    multiple=True,
 )
 def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] = None):
     """
