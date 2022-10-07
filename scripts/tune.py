@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import os
+import pprint
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -135,6 +137,12 @@ def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
     return fixed_config
 
 
+def read_config_from_file(path: Path) -> dict[str, Any]:
+    with path.open() as f:
+        config = json.load(f)
+    return config
+
+
 @click.command()
 @click.option("--test", is_flag=True, default=False)
 @click.option("--gpu", is_flag=True, default=False)
@@ -143,7 +151,10 @@ def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
     help="Restore previous training state from this directory",
     default=None,
 )
-def main(test=False, gpu=False, restore=None):
+@click.option(
+    "--enqueue-trials", help="Read trials from this file and enqueue them", nargs="+"
+)
+def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] = None):
     """
 
     Args:
@@ -153,13 +164,21 @@ def main(test=False, gpu=False, restore=None):
     Returns:
 
     """
+    if enqueue_trials is None:
+        enqueue_trials = []
+
     ray.init(address="auto", _redis_password=os.environ["redis_password"])
     register_ray()
+
+    points_to_evaluate = [read_config_from_file(Path(path)) for path in enqueue_trials]
+    if points_to_evaluate:
+        logger.info("Enqueued trials: %s", pprint.pformat(points_to_evaluate))
 
     optuna_search = OptunaSearch(
         partial(suggest_config, test=test),
         metric="trk.double_majority",
         mode="max",
+        points_to_evaluate=points_to_evaluate,
     )
     if restore:
         print(f"Restoring previous state from {restore}")
