@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from functools import partial
 from pathlib import Path
 from typing import Any
 
 import click
 import optuna
+import ray
 import sklearn.model_selection
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
@@ -23,6 +25,7 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
+from ray.util.joblib import register_ray
 from torch.optim.lr_scheduler import StepLR
 from torch_geometric.loader import DataLoader
 
@@ -148,6 +151,8 @@ def main(test=False, gpu=False, restore=None):
     Returns:
 
     """
+    ray.init(address="auto", _redis_password=os.environ["redis_password"])
+    register_ray()
 
     optuna_search = OptunaSearch(
         partial(suggest_config, test=test),
