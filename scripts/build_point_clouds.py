@@ -19,4 +19,4 @@ pc_builder = PointCloudBuilder(
     thld=0.9,
     log_level=0,
 )
-pc_builder.process(n=n_evts)
+pc_builder.process(stop=n_evts)

@@ -40,7 +40,7 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
         redo=False,
     )
     n_graphs = 100 if test else None
-    graph_builder.process(n=n_graphs)
+    graph_builder.process(stop=n_graphs)
 
     # partition graphs into train, test, val splits
     graphs = graph_builder.data_list
