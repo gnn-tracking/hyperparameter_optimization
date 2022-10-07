@@ -159,9 +159,8 @@ def main(test=False, gpu=False, restore=None):
 
     tuner = tune.Tuner(
         tune.with_resources(
-            # fixme: shouldn't hardcode number of jobs
             TCNTrainable,
-            {"gpu": 1 if gpu else 0, "cpu": 1 if gpu else 0},
+            {"gpu": 1 if gpu else 0, "cpu": 1},
         ),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(
@@ -181,7 +180,7 @@ def main(test=False, gpu=False, restore=None):
             stop={"training_iteration": 20 if not test else 1},
             checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
             log_to_file=True,
-            verbose=1,  # Only status reports, no results
+            # verbose=1,  # Only status reports, no results
             failure_config=FailureConfig(
                 fail_fast=True,
             ),
