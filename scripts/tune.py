@@ -16,7 +16,7 @@ from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.log import logger
-from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightBCELoss, PotentialLoss
+from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightFocalLoss, PotentialLoss
 from gnn_tracking.utils.seeds import fix_seeds
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
 from ray import tune
@@ -76,7 +76,7 @@ class TCNTrainable(tune.Trainable):
         graph_builder, loaders = get_loaders(test=test)
 
         loss_functions = {
-            "edge": EdgeWeightBCELoss(),
+            "edge": EdgeWeightFocalLoss(),
             "potential": PotentialLoss(q_min=config["q_min"]),
             "background": BackgroundLoss(sb=config["sb"]),
         }
@@ -117,14 +117,16 @@ class TCNTrainable(tune.Trainable):
 def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight
-    trial.suggest_float("q_min", 1e-3, 1, log=True),
-    trial.suggest_float("sb", 0, 1),
-    trial.suggest_float("lr", 2e-6, 1e-3, log=True),
-    trial.suggest_int("m_hidden_dim", 64, 256),
-    trial.suggest_int("m_L_ec", 1, 7),
-    trial.suggest_int("m_L_hc", 1, 7),
-    trial.suggest_float("lw_potential_attractive", 1, 500),
-    trial.suggest_float("lw_potential_repulsive", 1e-2, 1e2),
+    trial.suggest_float("q_min", 1e-3, 1, log=True)
+    trial.suggest_float("sb", 0, 1)
+    trial.suggest_float("lr", 2e-6, 1e-3, log=True)
+    trial.suggest_int("m_hidden_dim", 64, 256)
+    trial.suggest_int("m_L_ec", 1, 7)
+    trial.suggest_int("m_L_hc", 1, 7)
+    trial.suggest_float("lw_potential_attractive", 1, 500)
+    trial.suggest_float("lw_potential_repulsive", 1e-2, 1e2)
+    trial.suggest_float("focal_gamma", 0, 20)  # 5 might be a good default
+    trial.suggest_float("focal_alpha", 0, 1)  # 0.95 might be a good default
     fixed_config = {
         "lw_edge": 500,
         "lw_background": 0.05,
