@@ -16,6 +16,7 @@ import sklearn.model_selection
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
+from gnn_tracking.training.dynamiclossweights import NormalizeEvery
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightFocalLoss, PotentialLoss
@@ -94,7 +95,10 @@ class TCNTrainable(tune.Trainable):
             model=model,
             loaders=loaders,
             loss_functions=loss_functions,
-            loss_weights=subdict_with_prefix_stripped(config, "lw_"),
+            loss_weights=NormalizeEvery(
+                **subdict_with_prefix_stripped(config, "lw_"),
+                initial_weights=subdict_with_prefix_stripped(config, "lwi_"),
+            ),
             lr=config["lr"],
             lr_scheduler=scheduler,
             cluster_functions=cluster_functions,  # type: ignore
@@ -118,21 +122,24 @@ class TCNTrainable(tune.Trainable):
 
 def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
-    # Everything with prefix "lw_" is treated as loss weight
+    # Everything with prefix "lw_" is treated as loss weight kwarg
     trial.suggest_float("q_min", 1e-3, 1, log=True)
     trial.suggest_float("sb", 0, 1)
     trial.suggest_float("lr", 2e-6, 1e-3, log=True)
     trial.suggest_int("m_hidden_dim", 64, 256)
     trial.suggest_int("m_L_ec", 1, 7)
     trial.suggest_int("m_L_hc", 1, 7)
-    trial.suggest_float("lw_potential_attractive", 1, 500)
-    trial.suggest_float("lw_potential_repulsive", 1e-2, 1e2)
     trial.suggest_float("focal_gamma", 0, 20)  # 5 might be a good default
     trial.suggest_float("focal_alpha", 0, 1)  # 0.95 might be a good default
     fixed_config = {
-        "lw_edge": 500,
-        "lw_background": 0.05,
         "test": test,
+        "lwi_edge": 100,
+        "lwi_background": 0.05,
+        "lwi_potential_attractive": 290,
+        "lwi_potential_repulsive": 58,
+        "lw_warmup": 3,
+        "lw_rolling": 5,
+        "lw_every": 5,
     }
     return fixed_config
 
@@ -169,8 +176,10 @@ def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] =
     if enqueue_trials is None:
         enqueue_trials = []
 
-    ray.init(address="auto", _redis_password=os.environ["redis_password"])
-    register_ray()
+    if "redis_password" in os.environ:
+        # We're running distributed
+        ray.init(address="auto", _redis_password=os.environ["redis_password"])
+        register_ray()
 
     points_to_evaluate = [read_config_from_file(Path(path)) for path in enqueue_trials]
     if points_to_evaluate:
@@ -178,7 +187,7 @@ def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] =
 
     optuna_search = OptunaSearch(
         partial(suggest_config, test=test),
-        metric="trk.double_majority",
+        metric="trk.double_majority_pt1.5",
         mode="max",
         points_to_evaluate=points_to_evaluate,
     )
@@ -193,7 +202,9 @@ def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] =
         ),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(
-                metric="trk.double_majority", mode="max", grace_period=3
+                metric="trk.double_majority_pt1.5",
+                mode="max",
+                grace_period=5,
             ),
             num_samples=50 if not test else 1,
             search_alg=optuna_search,
@@ -206,7 +217,7 @@ def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] =
                 ),
             ],
             sync_config=SyncConfig(syncer=None),
-            stop={"training_iteration": 20 if not test else 1},
+            stop={"training_iteration": 40 if not test else 1},
             checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
             log_to_file=True,
             # verbose=1,  # Only status reports, no results

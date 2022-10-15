@@ -8,12 +8,12 @@
 #SBATCH --output=logs/tune_%j.log
 
 ### This script works for any number of nodes, Ray will find and manage all resources
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #SBATCH --exclusive
 ### Give all resources to a single Ray task, ray can manage the resources internally
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:4             # number of gpus per node
-#SBATCH --time=01:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --time=02:00:00          # total run time limit (HH:MM:SS)
 # Load modules or your own conda environment here
 # module load pytorch/v1.4.0-gpu
 # conda activate ${CONDA_ENV}
