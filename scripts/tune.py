@@ -53,7 +53,7 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
     )
 
     # build graph loaders
-    params = {"batch_size": 1, "num_workers": 1}
+    params = {"batch_size": 1, "num_workers": 6}
     train_loader = DataLoader(list(train_graphs), **params, shuffle=True)
     test_loader = DataLoader(list(test_graphs), **params)
     val_loader = DataLoader(list(val_graphs), **params)
@@ -198,7 +198,7 @@ def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] =
     tuner = tune.Tuner(
         tune.with_resources(
             TCNTrainable,
-            {"gpu": 1 if gpu else 0, "cpu": 1},
+            {"gpu": 1 if gpu else 0, "cpu": 6 if not test else 1},
         ),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(
