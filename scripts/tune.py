@@ -16,7 +16,6 @@ import sklearn.model_selection
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
-from gnn_tracking.training.dynamiclossweights import NormalizeEvery
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightFocalLoss, PotentialLoss
@@ -53,7 +52,7 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
     )
 
     # build graph loaders
-    params = {"batch_size": 1, "num_workers": 6}
+    params = {"batch_size": 32, "num_workers": 6}
     train_loader = DataLoader(list(train_graphs), **params, shuffle=True)
     test_loader = DataLoader(list(test_graphs), **params)
     val_loader = DataLoader(list(val_graphs), **params)
@@ -95,10 +94,7 @@ class TCNTrainable(tune.Trainable):
             model=model,
             loaders=loaders,
             loss_functions=loss_functions,
-            loss_weights=NormalizeEvery(
-                **subdict_with_prefix_stripped(config, "lw_"),
-                initial_weights=subdict_with_prefix_stripped(config, "lwi_"),
-            ),
+            loss_weights=subdict_with_prefix_stripped(config, "lw_"),
             lr=config["lr"],
             lr_scheduler=scheduler,
             cluster_functions=cluster_functions,  # type: ignore
@@ -120,27 +116,43 @@ class TCNTrainable(tune.Trainable):
         self.trainer.load_checkpoint(checkpoint_path, **kwargs)
 
 
-def suggest_config(trial: optuna.Trial, *, test=False) -> dict[str, Any]:
+def _sinf(f, key, config, *args, **kwargs):
+    """Suggest if not fixed"""
+    if key not in config:
+        f(key, *args, **kwargs)
+
+
+def suggest_config(
+    trial: optuna.Trial, *, test=False, fixed: dict[str, Any] | None = None
+) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight kwarg
-    trial.suggest_float("q_min", 1e-3, 1, log=True)
-    trial.suggest_float("sb", 0, 1)
-    trial.suggest_float("lr", 2e-6, 1e-3, log=True)
-    trial.suggest_int("m_hidden_dim", 64, 256)
-    trial.suggest_int("m_L_ec", 1, 7)
-    trial.suggest_int("m_L_hc", 1, 7)
-    trial.suggest_float("focal_gamma", 0, 20)  # 5 might be a good default
-    trial.suggest_float("focal_alpha", 0, 1)  # 0.95 might be a good default
     fixed_config = {
         "test": test,
-        "lwi_edge": 100,
-        "lwi_background": 0.05,
-        "lwi_potential_attractive": 290,
-        "lwi_potential_repulsive": 58,
-        "lw_warmup": 3,
-        "lw_rolling": 5,
-        "lw_every": 5,
+        "lw_edge": 500,
     }
+    if fixed is not None:
+        fixed_config.update(fixed)
+
+    def sinf(f, key, *args, **kwargs):
+        _sinf(f, key, fixed_config, *args, **kwargs)
+
+    def sinf_float(key, *args, **kwargs):
+        sinf(trial.suggest_float, key, *args, **kwargs)
+
+    def sinf_int(key, *args, **kwargs):
+        sinf(trial.suggest_int, key, *args, **kwargs)
+
+    sinf_float("q_min", 1e-3, 1, log=True)
+    sinf_float("sb", 0, 1)
+    sinf_float("lr", 2e-6, 1e-3, log=True)
+    sinf_int("m_hidden_dim", 64, 256)
+    sinf_int("m_L_ec", 1, 7)
+    sinf_int("m_L_hc", 1, 7)
+    sinf_float("focal_gamma", 0, 20)  # 5 might be a good default
+    sinf_float("focal_alpha", 0, 1)  # 0.95 might be a good default
+    sinf_float("lw_potential_attractive", 1, 500)
+    sinf_float("lw_potential_repulsive", 1e-2, 1e2)
     return fixed_config
 
 
@@ -163,7 +175,17 @@ def read_config_from_file(path: Path) -> dict[str, Any]:
     help="Read trials from this file and enqueue them",
     multiple=True,
 )
-def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] = None):
+@click.option(
+    "--fixed",
+    help="Fix config values to these values",
+)
+def main(
+    test=False,
+    gpu=False,
+    restore=None,
+    enqueue_trials: None | list[str] = None,
+    fixed: None | str = None,
+):
     """
 
     Args:
@@ -185,8 +207,12 @@ def main(test=False, gpu=False, restore=None, enqueue_trials: None | list[str] =
     if points_to_evaluate:
         logger.info("Enqueued trials: %s", pprint.pformat(points_to_evaluate))
 
+    fixed_config = None
+    if fixed:
+        fixed_config = read_config_from_file(Path(fixed))
+
     optuna_search = OptunaSearch(
-        partial(suggest_config, test=test),
+        partial(suggest_config, test=test, fixed=fixed_config),
         metric="trk.double_majority_pt1.5",
         mode="max",
         points_to_evaluate=points_to_evaluate,

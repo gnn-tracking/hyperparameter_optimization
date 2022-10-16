@@ -63,4 +63,4 @@ done
 # ===== Call your code below =====
 export WANDB_MODE=offline
 base_dir="${HOME}/Documents/22/git_sync/gnn_tracking_experiments/"
-python3 "${base_dir}/scripts/tune.py" --gpu --enqueue-trials "${base_dir}/config/cb57b007_focal.json"
+python3 "${base_dir}/scripts/tune.py" --gpu --fixed "${base_dir}/config/fixed.json"
