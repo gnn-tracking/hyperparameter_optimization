@@ -52,7 +52,7 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
     )
 
     # build graph loaders
-    params = {"batch_size": 32, "num_workers": 6}
+    params = {"batch_size": 32 if not test else 1, "num_workers": 6 if not test else 1}
     train_loader = DataLoader(list(train_graphs), **params, shuffle=True)
     test_loader = DataLoader(list(test_graphs), **params)
     val_loader = DataLoader(list(val_graphs), **params)
