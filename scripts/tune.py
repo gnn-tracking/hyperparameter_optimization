@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import os
 import pprint
-from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -14,8 +12,6 @@ import click
 import gnn_tracking
 import optuna
 import ray
-import sklearn.model_selection
-from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
 from gnn_tracking.training.tcn_trainer import TCNTrainer
@@ -32,58 +28,10 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.util.joblib import register_ray
 from torch.optim.lr_scheduler import StepLR
-from torch_geometric.loader import DataLoader
 
+from scripts.util import della, get_loaders, read_json, suggest_if_not_fixed
 
-@dataclass
-class ServerConfig:
-    """Config values for server that we run on"""
-
-    #: Total number of GPUs available per node
-    gpus: int = 0
-    #: Total number of cpus available per node
-    cpus: int = 1
-    #: Max batches that we can load into the GPU RAM
-    max_batches: int = 1
-
-    @property
-    def cpus_per_gpu(self) -> int:
-        return self.cpus // self.gpus
-
-
-della = ServerConfig(gpus=4, cpus=48, max_batches=21)
 server = della
-
-
-def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
-    logger.info("Loading data")
-    graph_builder = GraphBuilder(
-        str(Path("~/data/gnn_tracking/point_clouds").expanduser()),
-        str(Path("~/data/gnn_tracking/graphs").expanduser()),
-        redo=False,
-    )
-    n_graphs = 100 if test else None
-    graph_builder.process(stop=n_graphs)
-
-    # partition graphs into train, test, val splits
-    graphs = graph_builder.data_list
-    _train_graphs, test_graphs = sklearn.model_selection.train_test_split(
-        graphs, test_size=0.2
-    )
-    train_graphs, val_graphs = sklearn.model_selection.train_test_split(
-        _train_graphs, test_size=0.15
-    )
-
-    # build graph loaders
-    params = {
-        "batch_size": server.max_batches if not test else 1,
-        "num_workers": server.cpus_per_gpu if not test else 1,
-    }
-    train_loader = DataLoader(list(train_graphs), **params, shuffle=True)
-    test_loader = DataLoader(list(test_graphs), **params)
-    val_loader = DataLoader(list(val_graphs), **params)
-    loaders = {"train": train_loader, "test": test_loader, "val": val_loader}
-    return graph_builder, loaders
 
 
 def get_model(graph_builder, config: dict[str, Any]) -> GraphTCN:
@@ -146,12 +94,6 @@ class TCNTrainable(tune.Trainable):
         self.trainer.load_checkpoint(checkpoint_path, **kwargs)
 
 
-def _sinf(f, key, config, *args, **kwargs):
-    """Suggest if not fixed"""
-    if key not in config:
-        f(key, *args, **kwargs)
-
-
 def suggest_config(
     trial: optuna.Trial, *, test=False, fixed: dict[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -165,14 +107,11 @@ def suggest_config(
     if fixed is not None:
         fixed_config.update(fixed)
 
-    def sinf(f, key, *args, **kwargs):
-        _sinf(f, key, fixed_config, *args, **kwargs)
-
     def sinf_float(key, *args, **kwargs):
-        sinf(trial.suggest_float, key, *args, **kwargs)
+        suggest_if_not_fixed(trial.suggest_float, key, fixed_config, *args, **kwargs)
 
     def sinf_int(key, *args, **kwargs):
-        sinf(trial.suggest_int, key, *args, **kwargs)
+        suggest_if_not_fixed(trial.suggest_int, key, fixed_config, *args, **kwargs)
 
     sinf_float("q_min", 1e-3, 1, log=True)
     sinf_float("sb", 0, 1)
@@ -186,12 +125,6 @@ def suggest_config(
     sinf_float("lw_potential_attractive", 1, 500)
     sinf_float("lw_potential_repulsive", 1e-2, 1e2)
     return fixed_config
-
-
-def read_config_from_file(path: Path) -> dict[str, Any]:
-    with path.open() as f:
-        config = json.load(f)
-    return config
 
 
 @click.command()
@@ -245,13 +178,13 @@ def main(
         ray.init(address="auto", _redis_password=os.environ["redis_password"])
         register_ray()
 
-    points_to_evaluate = [read_config_from_file(Path(path)) for path in enqueue_trials]
+    points_to_evaluate = [read_json(Path(path)) for path in enqueue_trials]
     if points_to_evaluate:
         logger.info("Enqueued trials: %s", pprint.pformat(points_to_evaluate))
 
     fixed_config = None
     if fixed:
-        fixed_config = read_config_from_file(Path(fixed))
+        fixed_config = read_json(Path(fixed))
 
     optuna_search = OptunaSearch(
         partial(suggest_config, test=test, fixed=fixed_config),
