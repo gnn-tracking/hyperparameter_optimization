@@ -103,9 +103,12 @@ class TCNTrainable(tune.Trainable):
         graph_builder, loaders = get_loaders(test=test)
 
         loss_functions = {
-            "edge": EdgeWeightFocalLoss(),
-            "potential": PotentialLoss(q_min=config["q_min"]),
-            "background": BackgroundLoss(sb=config["sb"]),
+            "edge": EdgeWeightFocalLoss(
+                alpha=config.get("focal_alpha", 0.25),
+                gamma=config.get("focal_gamma", 2),
+            ),
+            "potential": PotentialLoss(q_min=config.get("q_min", 0.01)),
+            "background": BackgroundLoss(sb=config.get("sb", 0.1)),
         }
 
         model = get_model(
