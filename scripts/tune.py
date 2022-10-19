@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import click
+import gnn_tracking
 import optuna
 import ray
 import sklearn.model_selection
@@ -22,6 +23,7 @@ from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightFocalLoss, PotentialLoss
 from gnn_tracking.utils.seeds import fix_seeds
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
+from gnn_tracking.utils.versioning import get_commit_hash
 from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
@@ -155,7 +157,11 @@ def suggest_config(
 ) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight kwarg
-    fixed_config = {"test": test}
+    fixed_config = {
+        "test": test,
+        "gnn_tracking_hash": get_commit_hash(gnn_tracking),
+        "gnn_tracking_experiments_hash": get_commit_hash(Path(__file__).parent),
+    }
     if fixed is not None:
         fixed_config.update(fixed)
 
