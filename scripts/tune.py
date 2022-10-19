@@ -97,6 +97,7 @@ def get_model(graph_builder, config: dict[str, Any]) -> GraphTCN:
 class TCNTrainable(tune.Trainable):
     def setup(self, config: dict[str, Any]):
         test = config.get("test", False)
+        logger.debug("Got config %s", pprint.pformat(config))
         self.config = config
         fix_seeds()
         graph_builder, loaders = get_loaders(test=test)
@@ -151,10 +152,7 @@ def suggest_config(
 ) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight kwarg
-    fixed_config = {
-        "test": test,
-        "lw_edge": 500,
-    }
+    fixed_config = {"test": test}
     if fixed is not None:
         fixed_config.update(fixed)
 
@@ -175,6 +173,7 @@ def suggest_config(
     sinf_int("m_L_hc", 1, 7)
     sinf_float("focal_gamma", 0, 20)  # 5 might be a good default
     sinf_float("focal_alpha", 0, 1)  # 0.95 might be a good default
+    sinf_float("lw_edge", 0.001, 500)
     sinf_float("lw_potential_attractive", 1, 500)
     sinf_float("lw_potential_repulsive", 1e-2, 1e2)
     return fixed_config
