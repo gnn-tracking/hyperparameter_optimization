@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import pprint
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,26 @@ from torch.optim.lr_scheduler import StepLR
 from torch_geometric.loader import DataLoader
 
 
+@dataclass
+class ServerConfig:
+    """Config values for server that we run on"""
+
+    #: Total number of GPUs available per node
+    gpus: int = 0
+    #: Total number of cpus available per node
+    cpus: int = 1
+    #: Max batches that we can load into the GPU RAM
+    max_batches: int = 1
+
+    @property
+    def cpus_per_gpu(self) -> int:
+        return self.cpus // self.gpus
+
+
+della = ServerConfig(gpus=4, cpus=48, max_batches=21)
+server = della
+
+
 def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
     logger.info("Loading data")
     graph_builder = GraphBuilder(
@@ -52,7 +73,10 @@ def get_loaders(test=False) -> tuple[GraphBuilder, dict[str, DataLoader]]:
     )
 
     # build graph loaders
-    params = {"batch_size": 21 if not test else 1, "num_workers": 6 if not test else 1}
+    params = {
+        "batch_size": server.max_batches if not test else 1,
+        "num_workers": server.cpus_per_gpu if not test else 1,
+    }
     train_loader = DataLoader(list(train_graphs), **params, shuffle=True)
     test_loader = DataLoader(list(test_graphs), **params)
     val_loader = DataLoader(list(val_graphs), **params)
@@ -224,7 +248,7 @@ def main(
     tuner = tune.Tuner(
         tune.with_resources(
             TCNTrainable,
-            {"gpu": 1 if gpu else 0, "cpu": 12 if not test else 1},
+            {"gpu": 1 if gpu else 0, "cpu": server.cpus_per_gpu if not test else 1},
         ),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(
