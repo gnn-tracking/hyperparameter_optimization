@@ -187,8 +187,19 @@ def read_config_from_file(path: Path) -> dict[str, Any]:
 
 
 @click.command()
-@click.option("--test", is_flag=True, default=False)
-@click.option("--gpu", is_flag=True, default=False)
+@click.option(
+    "--test",
+    help="As-fast-as-possible run to test the setup",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--gpu",
+    help="Run on a GPU. This will also assume that you are on a batch node without "
+    "internet access and will set wandb mode to offline.",
+    is_flag=True,
+    default=False,
+)
 @click.option(
     "--restore",
     help="Restore previous training state from this directory",
@@ -210,15 +221,14 @@ def main(
     enqueue_trials: None | list[str] = None,
     fixed: None | str = None,
 ):
-    """
+    """ """
+    if gpu:
+        logger.warning(
+            "Setting wandb mode to offline because we assume you don't have internet"
+            " on a GPU node."
+        )
+        os.environ["WANDB_MODE"] = "offline"
 
-    Args:
-        test: Speed up for testing (will only use limited data/epochs)
-        gpu: Run on GPUs
-
-    Returns:
-
-    """
     if enqueue_trials is None:
         enqueue_trials = []
 
