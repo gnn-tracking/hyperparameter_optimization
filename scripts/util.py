@@ -29,7 +29,7 @@ class ServerConfig:
         return self.cpus // self.gpus
 
 
-della = ServerConfig(gpus=4, cpus=48, max_batches=21)
+della = ServerConfig(gpus=4, cpus=48, max_batches=20)
 server = della
 
 
