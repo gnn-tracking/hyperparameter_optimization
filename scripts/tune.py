@@ -60,14 +60,23 @@ class TCNTrainable(tune.Trainable):
             node_indim=6, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
 
+    def get_edge_loss_function(self):
+        return EdgeWeightFocalLoss(
+            alpha=self.tc.get("focal_alpha", 0.25),
+            gamma=self.tc.get("focal_gamma", 2),
+        )
+
+    def get_potential_loss_function(self):
+        return (PotentialLoss(q_min=self.tc.get("q_min", 0.01)),)
+
+    def get_background_loss_function(self):
+        return (BackgroundLoss(sb=self.tc.get("sb", 0.1)),)
+
     def get_loss_functions(self) -> dict[str, Any]:
         return {
-            "edge": EdgeWeightFocalLoss(
-                alpha=self.tc.get("focal_alpha", 0.25),
-                gamma=self.tc.get("focal_gamma", 2),
-            ),
-            "potential": PotentialLoss(q_min=self.tc.get("q_min", 0.01)),
-            "background": BackgroundLoss(sb=self.tc.get("sb", 0.1)),
+            "edge": self.get_edge_loss_function(),
+            "potential": self.get_potential_loss_function(),
+            "background": self.get_background_loss_function(),
         }
 
     def get_cluster_functions(self) -> dict[str, Any]:
