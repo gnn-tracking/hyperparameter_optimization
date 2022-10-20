@@ -14,6 +14,7 @@ from ray import air
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import PopulationBasedTraining
+from ray.tune.search.optuna import OptunaSearch
 from torch.optim import SGD
 from tune import TCNTrainable
 from util import della, get_fixed_config, read_json
@@ -89,6 +90,13 @@ def main(
     if points_to_evaluate:
         logger.info("Enqueued trials:\n%s", pprint.pformat(points_to_evaluate))
 
+    optuna_search = OptunaSearch(
+        get_param_space(),
+        metric="trk.double_majority_pt1.5",
+        mode="max",
+        points_to_evaluate=points_to_evaluate,
+    )
+
     scheduler = PopulationBasedTraining(
         time_attr="training_iteration",
         perturbation_interval=5,
@@ -122,8 +130,8 @@ def main(
             metric="trk.double_majority_pt1.5",
             mode="max",
             num_samples=4,
+            search_alg=optuna_search,
         ),
-        param_space=get_param_space(),
     )
     tuner.fit()
 
