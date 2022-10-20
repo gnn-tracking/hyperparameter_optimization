@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import os
-import pprint
 
 import click
 import ray
@@ -37,15 +36,8 @@ def get_param_space(test=False):
 def get_trainable(test=False):
     class FixedConfigTCNTrainable(TCNTrainable):
         def setup(self, config):
-            logger.debug(
-                "In fixed config wrapper. Got config\n%s", pprint.pformat(config)
-            )
             fixed_config = get_fixed_config(test=test)
-            logger.debug(
-                "Now updating with fixed config\n%s", pprint.pformat(fixed_config)
-            )
             config.update(fixed_config)
-            logger.debug("Config is now\n%s", pprint.pformat(config))
             super().setup(config)
 
     return FixedConfigTCNTrainable
