@@ -11,13 +11,17 @@ from typing import Any
 import click
 import optuna
 import ray
+from gnn_tracking.metrics.losses import (
+    BackgroundLoss,
+    EdgeWeightFocalLoss,
+    PotentialLoss,
+)
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.dbscanscanner import dbscan_scan
 from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
-from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightFocalLoss, PotentialLoss
 from gnn_tracking.utils.seeds import fix_seeds
-from gnn_tracking.utils.training import subdict_with_prefix_stripped
 from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback

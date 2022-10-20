@@ -14,6 +14,7 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import PopulationBasedTraining
 from ray.util.joblib import register_ray
+from torch.optim import SGD
 from tune import TCNTrainable
 from util import della, get_fixed_config
 
@@ -33,8 +34,16 @@ def get_param_space():
     }
 
 
+class PBTTrainable(TCNTrainable):
+    def get_optimizer(self):
+        return SGD
+
+    def get_lr_scheduler(self):
+        return None
+
+
 def get_trainable(test=False):
-    class FixedConfigTCNTrainable(TCNTrainable):
+    class FixedConfigTCNTrainable(PBTTrainable):
         def setup(self, config):
             fixed_config = get_fixed_config(test=test)
             config.update(fixed_config)
