@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import pprint
 from functools import partial
 from pathlib import Path
@@ -10,7 +9,6 @@ from typing import Any
 
 import click
 import optuna
-import ray
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
     EdgeWeightFocalLoss,
@@ -28,14 +26,15 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
-from ray.util.joblib import register_ray
 from torch.optim import Adam
 from util import (
     della,
     get_fixed_config,
     get_graphs,
     get_loaders,
+    maybe_run_distributed,
     read_json,
+    run_wandb_offline,
     suggest_if_not_fixed,
 )
 
@@ -174,6 +173,7 @@ def suggest_config(
     help="Fix config values to these values",
 )
 def main(
+    *,
     test=False,
     gpu=False,
     restore=None,
@@ -182,21 +182,11 @@ def main(
 ):
     """ """
     if gpu:
-        logger.warning(
-            "Setting wandb mode to offline because we assume you don't have internet"
-            " on a GPU node."
-        )
-        os.environ["WANDB_MODE"] = "offline"
+        run_wandb_offline()
 
-    if enqueue_trials is None:
-        enqueue_trials = []
+    maybe_run_distributed()
 
-    if "redis_password" in os.environ:
-        # We're running distributed
-        ray.init(address="auto", _redis_password=os.environ["redis_password"])
-        register_ray()
-
-    points_to_evaluate = [read_json(Path(path)) for path in enqueue_trials]
+    points_to_evaluate = [read_json(Path(path)) for path in enqueue_trials or []]
     if points_to_evaluate:
         logger.info("Enqueued trials: %s", pprint.pformat(points_to_evaluate))
 

@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import gnn_tracking
+import ray
 import sklearn.model_selection
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.versioning import get_commit_hash
+from ray.util.joblib import register_ray
 from torch_geometric.loader import DataLoader
 
 
@@ -92,3 +95,18 @@ def get_fixed_config(*, test=False):
         "gnn_tracking_hash": get_commit_hash(gnn_tracking),
         "gnn_tracking_experiments_hash": get_commit_hash(Path(__file__).parent),
     }
+
+
+def run_wandb_offline():
+    logger.warning(
+        "Setting wandb mode to offline because we assume you don't have internet"
+        " on a GPU node."
+    )
+    os.environ["WANDB_MODE"] = "offline"
+
+
+def maybe_run_distributed():
+    if "redis_password" in os.environ:
+        # We're running distributed
+        ray.init(address="auto", _redis_password=os.environ["redis_password"])
+        register_ray()

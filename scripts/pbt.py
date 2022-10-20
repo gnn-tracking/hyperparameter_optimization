@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-import os
+import pprint
+from pathlib import Path
 
 import click
 import ray
@@ -13,10 +14,11 @@ from ray import air
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import PopulationBasedTraining
-from ray.util.joblib import register_ray
 from torch.optim import SGD
 from tune import TCNTrainable
-from util import della, get_fixed_config
+from util import della, get_fixed_config, read_json
+
+from scripts.util import maybe_run_distributed, run_wandb_offline
 
 server = della
 
@@ -66,22 +68,26 @@ def get_trainable(test=False):
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--enqueue-trials",
+    help="Read trials from this file and enqueue them",
+    multiple=True,
+)
 def main(
+    *,
     test=False,
     gpu=False,
+    enqueue_trials: None | list[str] = None,
 ):
     """ """
     if gpu:
-        logger.warning(
-            "Setting wandb mode to offline because we assume you don't have internet"
-            " on a GPU node."
-        )
-        os.environ["WANDB_MODE"] = "offline"
+        run_wandb_offline()
 
-    if "redis_password" in os.environ:
-        # We're running distributed
-        ray.init(address="auto", _redis_password=os.environ["redis_password"])
-        register_ray()
+    maybe_run_distributed()
+
+    points_to_evaluate = [read_json(Path(path)) for path in enqueue_trials or []]
+    if points_to_evaluate:
+        logger.info("Enqueued trials:\n%s", pprint.pformat(points_to_evaluate))
 
     scheduler = PopulationBasedTraining(
         time_attr="training_iteration",
