@@ -6,10 +6,12 @@ from __future__ import annotations
 
 import pprint
 from pathlib import Path
+from typing import Any
 
 import click
 import ray
 from gnn_tracking.metrics.losses import EdgeWeightBCELoss
+from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 from ray import air
 from ray.air.callbacks.wandb import WandbLoggerCallback
@@ -50,6 +52,12 @@ class PBTTrainable(TCNTrainable):
 
     def get_edge_loss_function(self):
         return EdgeWeightBCELoss()
+
+    def reset_config(self, new_config: dict[str, Any]):
+        self.tc = new_config
+        self.trainer.loss_functions = self.get_loss_functions()
+        self.trainer.optimizer.lr = self.tc["lr"]
+        self.trainer.loss_weights = subdict_with_prefix_stripped(self.tc, "lw_")
 
 
 def get_trainable(test=False):
@@ -130,6 +138,7 @@ def main(
             metric="trk.double_majority_pt1.5",
             mode="max",
             num_samples=4,
+            reuse_actors=True,
         ),
         param_space=get_param_space(),
     )
