@@ -35,8 +35,6 @@ def get_param_space(test=False):
 
 
 def get_trainable(test=False):
-    return TCNTrainable
-
     class FixedConfigTCNTrainable(TCNTrainable):
         def setup(self, config):
             logger.debug(
@@ -108,13 +106,13 @@ def main(
             stop={"training_iteration": 40 if not test else 1},
             verbose=1,
             checkpoint_config=air.CheckpointConfig(
-                checkpoint_score_attribute="mean_accuracy",
+                checkpoint_score_attribute="trk.double_majority_pt1.5",
                 num_to_keep=4,
             ),
         ),
         tune_config=ray.tune.TuneConfig(
             scheduler=scheduler,
-            metric="mean_accuracy",
+            metric="trk.double_majority_pt1.5",
             mode="max",
             num_samples=4,
         ),
