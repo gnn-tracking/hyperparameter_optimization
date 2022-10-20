@@ -20,7 +20,7 @@ from util import della, get_fixed_config
 server = della
 
 
-def get_param_space(test=False):
+def get_param_space():
     return {
         "q_min": ray.tune.loguniform(1e-3, 1),
         "sb": ray.tune.uniform(0, 1),

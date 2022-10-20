@@ -25,7 +25,7 @@ from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.util.joblib import register_ray
-from torch.optim.lr_scheduler import StepLR
+from torch.optim import Adam
 from util import (
     della,
     get_fixed_config,
@@ -38,54 +38,67 @@ from util import (
 server = della
 
 
-def get_model(config: dict[str, Any]) -> GraphTCN:
-    # use reference graph to get relevant dimensions
-    node_indim = 6
-    edge_indim = 4
-    hc_outdim = 2  # output dim of latent space
-    model = GraphTCN(node_indim, edge_indim, hc_outdim, **config)
-    return model
-
-
 class TCNTrainable(tune.Trainable):
-    def setup(self, config: dict[str, Any]):
-        test = config.get("test", False)
-        logger.debug("Got config\n%s", pprint.pformat(config))
-        self.config = config
-        fix_seeds()
-        loaders = get_loaders(get_graphs(test=test), test=test)
+    def __init__(self):
+        super().__init__()
+        self.trainer = None
+        # Don't call it config because that already exists
+        #: Training config.
+        self.tc = None
 
-        loss_functions = {
+    def setup(self, config: dict[str, Any]):
+        logger.debug("Got config\n%s", pprint.pformat(config))
+        self.tc = config
+        fix_seeds()
+        self.trainer = self.get_trainer()
+
+    def get_model(self) -> GraphTCN:
+        return GraphTCN(
+            node_indim=6, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
+        )
+
+    def get_loss_functions(self) -> dict[str, Any]:
+        return {
             "edge": EdgeWeightFocalLoss(
-                alpha=config.get("focal_alpha", 0.25),
-                gamma=config.get("focal_gamma", 2),
+                alpha=self.tc.get("focal_alpha", 0.25),
+                gamma=self.tc.get("focal_gamma", 2),
             ),
-            "potential": PotentialLoss(q_min=config.get("q_min", 0.01)),
-            "background": BackgroundLoss(sb=config.get("sb", 0.1)),
+            "potential": PotentialLoss(q_min=self.tc.get("q_min", 0.01)),
+            "background": BackgroundLoss(sb=self.tc.get("sb", 0.1)),
         }
 
-        model = get_model(config=subdict_with_prefix_stripped(config, "m_"))
-        cluster_functions = {
+    def get_cluster_functions(self) -> dict[str, Any]:
+        return {
             "dbscan": partial(
                 dbscan_scan,
-                n_trials=100 if not test else 1,
-                n_jobs=server.cpus_per_gpu if not test else 1,
+                n_trials=100 if not self.tc.get("test", False) else 1,
+                n_jobs=server.cpus_per_gpu if not self.tc.get("test", False) else 1,
             )
         }
-        scheduler = partial(StepLR, gamma=0.95, step_size=4)
-        self.trainer = TCNTrainer(
-            model=model,
-            loaders=loaders,
-            loss_functions=loss_functions,
-            loss_weights=subdict_with_prefix_stripped(config, "lw_"),
-            lr=config.get("lr", 5e-4),
-            lr_scheduler=scheduler,
-            cluster_functions=cluster_functions,  # type: ignore
+
+    def get_lr_scheduler(self):
+        return None
+
+    def get_optimizer(self):
+        return Adam
+
+    def get_trainer(self) -> TCNTrainer:
+        test = self.tc.get("test", False)
+        trainer = TCNTrainer(
+            model=self.get_model(),
+            loaders=get_loaders(get_graphs(test=test), test=test),
+            loss_functions=self.get_loss_functions(),
+            loss_weights=subdict_with_prefix_stripped(self.tc, "lw_"),
+            lr=self.tc.get("lr", 5e-4),
+            lr_scheduler=self.get_lr_scheduler(),
+            cluster_functions=self.get_cluster_functions(),  # type: ignore
+            optimizer=self.get_optimizer(),
         )
-        self.trainer.max_batches_for_clustering = 100 if not test else 10
+        trainer.max_batches_for_clustering = 100 if not test else 10
+        return trainer
 
     def step(self):
-        return self.trainer.step(max_batches=self.config.get("max_batches", None))
+        return self.trainer.step(max_batches=self.tc.get("max_batches", None))
 
     def save_checkpoint(
         self,
