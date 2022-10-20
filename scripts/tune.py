@@ -28,17 +28,15 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.util.joblib import register_ray
 from torch.optim.lr_scheduler import StepLR
-
-from scripts.util import della, get_loaders, read_json, suggest_if_not_fixed
+from util import della, get_graphs, get_loaders, read_json, suggest_if_not_fixed
 
 server = della
 
 
-def get_model(graph_builder, config: dict[str, Any]) -> GraphTCN:
+def get_model(config: dict[str, Any]) -> GraphTCN:
     # use reference graph to get relevant dimensions
-    g = graph_builder.data_list[0]
-    node_indim = g.x.shape[1]
-    edge_indim = g.edge_attr.shape[1]
+    node_indim = 6
+    edge_indim = 4
     hc_outdim = 2  # output dim of latent space
     model = GraphTCN(node_indim, edge_indim, hc_outdim, **config)
     return model
@@ -50,7 +48,7 @@ class TCNTrainable(tune.Trainable):
         logger.debug("Got config %s", pprint.pformat(config))
         self.config = config
         fix_seeds()
-        graph_builder, loaders = get_loaders(test=test)
+        loaders = get_loaders(get_graphs(test=test), test=test)
 
         loss_functions = {
             "edge": EdgeWeightFocalLoss(
@@ -61,9 +59,7 @@ class TCNTrainable(tune.Trainable):
             "background": BackgroundLoss(sb=config.get("sb", 0.1)),
         }
 
-        model = get_model(
-            graph_builder, config=subdict_with_prefix_stripped(config, "m_")
-        )
+        model = get_model(config=subdict_with_prefix_stripped(config, "m_"))
         cluster_functions = {
             "dbscan": partial(dbscan_scan, n_trials=100 if not test else 1)
         }
@@ -73,7 +69,7 @@ class TCNTrainable(tune.Trainable):
             loaders=loaders,
             loss_functions=loss_functions,
             loss_weights=subdict_with_prefix_stripped(config, "lw_"),
-            lr=config["lr"],
+            lr=config.get("lr", 5e-4),
             lr_scheduler=scheduler,
             cluster_functions=cluster_functions,  # type: ignore
         )
@@ -101,6 +97,7 @@ def suggest_config(
     # Everything with prefix "lw_" is treated as loss weight kwarg
     fixed_config = {
         "test": test,
+        "max_batches": 1 if test else None,
         "gnn_tracking_hash": get_commit_hash(gnn_tracking),
         "gnn_tracking_experiments_hash": get_commit_hash(Path(__file__).parent),
     }
