@@ -42,18 +42,15 @@ server = della
 
 
 class TCNTrainable(tune.Trainable):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.trainer = None
-        # Don't call it config because that already exists
-        #: Training config.
-        self.tc = None
-
+    # Do not add blank self.tc or self.trainer to __init__, because it will be called
+    # after setup when setting ``reuse_actor == True`` and overwriting your values
+    # from set
     def setup(self, config: dict[str, Any]):
         logger.debug("Got config\n%s", pprint.pformat(config))
         self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
+        logger.debug(f"Trainer: {self.trainer}")
 
     def get_model(self) -> GraphTCN:
         return GraphTCN(

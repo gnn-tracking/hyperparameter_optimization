@@ -54,6 +54,7 @@ class PBTTrainable(TCNTrainable):
         return EdgeWeightBCELoss()
 
     def reset_config(self, new_config: dict[str, Any]):
+        logger.debug("Reset config called with\n%s", pprint.pformat(new_config))
         self.tc = new_config
         self.trainer.loss_functions = self.get_loss_functions()
         self.trainer.optimizer.lr = self.tc["lr"]
