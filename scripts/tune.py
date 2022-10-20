@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 import click
-import gnn_tracking
 import optuna
 import ray
 from gnn_tracking.models.track_condensation_networks import GraphTCN
@@ -19,7 +18,6 @@ from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.losses import BackgroundLoss, EdgeWeightFocalLoss, PotentialLoss
 from gnn_tracking.utils.seeds import fix_seeds
 from gnn_tracking.utils.training import subdict_with_prefix_stripped
-from gnn_tracking.utils.versioning import get_commit_hash
 from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
@@ -28,7 +26,14 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.util.joblib import register_ray
 from torch.optim.lr_scheduler import StepLR
-from util import della, get_graphs, get_loaders, read_json, suggest_if_not_fixed
+from util import (
+    della,
+    get_fixed_config,
+    get_graphs,
+    get_loaders,
+    read_json,
+    suggest_if_not_fixed,
+)
 
 server = della
 
@@ -45,7 +50,7 @@ def get_model(config: dict[str, Any]) -> GraphTCN:
 class TCNTrainable(tune.Trainable):
     def setup(self, config: dict[str, Any]):
         test = config.get("test", False)
-        logger.debug("Got config %s", pprint.pformat(config))
+        logger.debug("Got config\n%s", pprint.pformat(config))
         self.config = config
         fix_seeds()
         loaders = get_loaders(get_graphs(test=test), test=test)
@@ -95,12 +100,7 @@ def suggest_config(
 ) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight kwarg
-    fixed_config = {
-        "test": test,
-        "max_batches": 1 if test else None,
-        "gnn_tracking_hash": get_commit_hash(gnn_tracking),
-        "gnn_tracking_experiments_hash": get_commit_hash(Path(__file__).parent),
-    }
+    fixed_config = get_fixed_config(test=test)
     if fixed is not None:
         fixed_config.update(fixed)
 

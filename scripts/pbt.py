@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+import pprint
 
 import click
 import ray
@@ -15,9 +16,12 @@ from ray.tune import SyncConfig
 from ray.tune.schedulers import PopulationBasedTraining
 from ray.util.joblib import register_ray
 from tune import TCNTrainable
+from util import della, get_fixed_config
+
+server = della
 
 
-def get_param_space():
+def get_param_space(test=False):
     return {
         "q_min": ray.tune.loguniform(1e-3, 1),
         "sb": ray.tune.uniform(0, 1),
@@ -28,6 +32,25 @@ def get_param_space():
         "lw_potential_attractive": ray.tune.uniform(1, 500),
         "lw_potential_repulsive": ray.tune.uniform(1e-2, 1e2),
     }
+
+
+def get_trainable(test=False):
+    return TCNTrainable
+
+    class FixedConfigTCNTrainable(TCNTrainable):
+        def setup(self, config):
+            logger.debug(
+                "In fixed config wrapper. Got config\n%s", pprint.pformat(config)
+            )
+            fixed_config = get_fixed_config(test=test)
+            logger.debug(
+                "Now updating with fixed config\n%s", pprint.pformat(fixed_config)
+            )
+            config.update(fixed_config)
+            logger.debug("Config is now\n%s", pprint.pformat(config))
+            super().setup(config)
+
+    return FixedConfigTCNTrainable
 
 
 @click.command()
@@ -66,9 +89,14 @@ def main(
         perturbation_interval=5,
         hyperparam_mutations=get_param_space(),
     )
+    if test:
+        logger.warning("Running in test mode")
 
     tuner = ray.tune.Tuner(
-        TCNTrainable,
+        ray.tune.with_resources(
+            get_trainable(test),
+            {"gpu": 1 if gpu else 0, "cpu": server.cpus_per_gpu if not test else 1},
+        ),
         run_config=air.RunConfig(
             name="pbt_test",
             callbacks=[

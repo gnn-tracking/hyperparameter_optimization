@@ -5,9 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import gnn_tracking
 import sklearn.model_selection
 from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.utils.log import logger
+from gnn_tracking.utils.versioning import get_commit_hash
 from torch_geometric.loader import DataLoader
 
 
@@ -81,3 +83,12 @@ def read_json(path: Path) -> dict[str, Any]:
     with path.open() as f:
         config = json.load(f)
     return config
+
+
+def get_fixed_config(*, test=False):
+    return {
+        "test": test,
+        "max_batches": 1 if test else None,
+        "gnn_tracking_hash": get_commit_hash(gnn_tracking),
+        "gnn_tracking_experiments_hash": get_commit_hash(Path(__file__).parent),
+    }
