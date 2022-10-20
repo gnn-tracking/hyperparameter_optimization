@@ -17,9 +17,13 @@ from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.search.optuna import OptunaSearch
 from torch.optim import SGD
 from tune import TCNTrainable
-from util import della, get_fixed_config, read_json
-
-from scripts.util import maybe_run_distributed, run_wandb_offline
+from util import (
+    della,
+    get_fixed_config,
+    maybe_run_distributed,
+    read_json,
+    run_wandb_offline,
+)
 
 server = della
 
