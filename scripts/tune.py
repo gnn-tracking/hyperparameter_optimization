@@ -42,8 +42,8 @@ server = della
 
 
 class TCNTrainable(tune.Trainable):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.trainer = None
         # Don't call it config because that already exists
         #: Training config.
