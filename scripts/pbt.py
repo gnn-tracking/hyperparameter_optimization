@@ -9,6 +9,7 @@ from pathlib import Path
 
 import click
 import ray
+from gnn_tracking.metrics.losses import EdgeWeightBCELoss
 from gnn_tracking.utils.log import logger
 from ray import air
 from ray.air.callbacks.wandb import WandbLoggerCallback
@@ -32,8 +33,8 @@ def get_param_space():
         "q_min": ray.tune.loguniform(1e-3, 1),
         "sb": ray.tune.uniform(0, 1),
         "lr": ray.tune.loguniform(2e-6, 1e-3),
-        "focal_gamma": ray.tune.uniform(0, 20),
-        "focal_alpha": ray.tune.uniform(0, 1),
+        # "focal_gamma": ray.tune.uniform(0, 20),
+        # "focal_alpha": ray.tune.uniform(0, 1),
         "lw_edge": ray.tune.uniform(0.001, 500),
         "lw_potential_attractive": ray.tune.uniform(1, 500),
         "lw_potential_repulsive": ray.tune.uniform(1e-2, 1e2),
@@ -46,6 +47,9 @@ class PBTTrainable(TCNTrainable):
 
     def get_lr_scheduler(self):
         return None
+
+    def get_edge_loss_function(self):
+        return EdgeWeightBCELoss()
 
 
 def get_trainable(test=False):
