@@ -37,7 +37,7 @@ def get_param_space():
         "lr": ray.tune.loguniform(2e-6, 1e-3),
         # "focal_gamma": ray.tune.uniform(0, 20),
         # "focal_alpha": ray.tune.uniform(0, 1),
-        "lw_edge": ray.tune.uniform(0.001, 500),
+        "lw_edge": ray.tune.uniform(1, 500),
         "lw_potential_attractive": ray.tune.uniform(1, 500),
         "lw_potential_repulsive": ray.tune.uniform(1e-2, 1e2),
     }
@@ -52,6 +52,9 @@ class PBTTrainable(TCNTrainable):
 
     def get_edge_loss_function(self):
         return EdgeWeightBCELoss()
+
+    def post_setup_hook(self):
+        self.trainer.pt_thlds = [1.5]
 
     def reset_config(self, new_config: dict[str, Any]):
         logger.debug("Reset config called with\n%s", pprint.pformat(new_config))

@@ -41,6 +41,13 @@ from util import (
 server = della
 
 
+def faster_dbscan_scan(*args, n_epoch=0, n_trials=100, **kwargs):
+    """Skip scanning every second trial."""
+    if n_epoch % 2 == 1 and n_epoch >= 4:
+        n_trials = 1
+    return dbscan_scan(*args, n_trials=n_trials, **kwargs)
+
+
 class TCNTrainable(tune.Trainable):
     # Do not add blank self.tc or self.trainer to __init__, because it will be called
     # after setup when setting ``reuse_actor == True`` and overwriting your values
@@ -83,7 +90,7 @@ class TCNTrainable(tune.Trainable):
     def get_cluster_functions(self) -> dict[str, Any]:
         return {
             "dbscan": partial(
-                dbscan_scan,
+                faster_dbscan_scan,
                 n_trials=100 if not self.tc.get("test", False) else 1,
                 n_jobs=server.cpus_per_gpu if not self.tc.get("test", False) else 1,
             )
