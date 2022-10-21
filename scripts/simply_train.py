@@ -3,10 +3,26 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import click
+from gnn_tracking.metrics.losses import EdgeWeightBCELoss
 from tune import TCNTrainable
 from util import read_json
+
+
+class ThisTrainable(TCNTrainable):
+    def get_cluster_functions(self) -> dict[str, Any]:
+        return {}
+
+    def post_setup_hook(self):
+        self.trainer.pt_thlds = [0.0]
+
+    def get_lr_scheduler(self):
+        return None
+
+    def get_edge_loss_function(self):
+        return EdgeWeightBCELoss()
 
 
 @click.command()
@@ -32,7 +48,11 @@ def main(
     if config_file:
         config = read_json(Path(config_file))
 
-    trainable = TCNTrainable()
+    trainable = ThisTrainable()
     trainable.setup(config)
     while True:
         trainable.step()
+
+
+if __name__ == "__main__":
+    main()

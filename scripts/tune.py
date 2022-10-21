@@ -51,6 +51,10 @@ class TCNTrainable(tune.Trainable):
         fix_seeds()
         self.trainer = self.get_trainer()
         logger.debug(f"Trainer: {self.trainer}")
+        self.post_setup_hook()
+
+    def post_setup_hook(self):
+        pass
 
     def get_model(self) -> GraphTCN:
         return GraphTCN(

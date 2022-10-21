@@ -68,6 +68,7 @@ def get_loaders(graph_dct: dict[str, list], test=False) -> dict[str, DataLoader]
         "batch_size": server.max_batches if not test else 1,
         "num_workers": server.cpus_per_gpu if not test else 1,
     }
+    logger.debug("Parameters for data loaders: %s", params)
     loaders = {
         "train": DataLoader(list(graph_dct["train"]), **params, shuffle=True),
         "test": DataLoader(list(graph_dct["test"]), **params),
