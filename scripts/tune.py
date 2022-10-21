@@ -32,6 +32,7 @@ from util import (
     get_fixed_config,
     get_graphs,
     get_loaders,
+    get_points_to_evaluate,
     maybe_run_distributed,
     read_json,
     run_wandb_offline,
@@ -203,9 +204,7 @@ def main(
 
     maybe_run_distributed()
 
-    points_to_evaluate = [read_json(Path(path)) for path in enqueue_trials or []]
-    if points_to_evaluate:
-        logger.info("Enqueued trials: %s", pprint.pformat(points_to_evaluate))
+    points_to_evaluate = get_points_to_evaluate(enqueue_trials)
 
     fixed_config = None
     if fixed:

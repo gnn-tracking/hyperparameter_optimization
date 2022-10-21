@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import pprint
-from pathlib import Path
 from typing import Any
 
 import click
@@ -17,13 +16,14 @@ from ray import air
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import PopulationBasedTraining
+from ray.tune.search import BasicVariantGenerator
 from torch.optim import SGD
 from tune import TCNTrainable
 from util import (
     della,
     get_fixed_config,
+    get_points_to_evaluate,
     maybe_run_distributed,
-    read_json,
     run_wandb_offline,
 )
 
@@ -105,9 +105,7 @@ def main(
 
     maybe_run_distributed()
 
-    points_to_evaluate = [read_json(Path(path)) for path in enqueue_trials or []]
-    if points_to_evaluate:
-        logger.info("Enqueued trials:\n%s", pprint.pformat(points_to_evaluate))
+    points_to_evaluate = get_points_to_evaluate(enqueue_trials)
 
     scheduler = PopulationBasedTraining(
         time_attr="training_iteration",
@@ -143,6 +141,9 @@ def main(
             mode="max",
             num_samples=4,
             reuse_actors=True,
+            search_alg=BasicVariantGenerator(points_to_evaluate=points_to_evaluate)
+            if points_to_evaluate
+            else None,
         ),
         param_space=get_param_space(),
     )

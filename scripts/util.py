@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import pprint
 from dataclasses import dataclass
+from os import PathLike
 from pathlib import Path
 from typing import Any
 
@@ -83,8 +85,8 @@ def suggest_if_not_fixed(f, key, config, *args, **kwargs):
         f(key, *args, **kwargs)
 
 
-def read_json(path: Path) -> dict[str, Any]:
-    with path.open() as f:
+def read_json(path: PathLike | str) -> dict[str, Any]:
+    with Path(path).open() as f:
         config = json.load(f)
     return config
 
@@ -111,3 +113,22 @@ def maybe_run_distributed():
         # We're running distributed
         ray.init(address="auto", _redis_password=os.environ["redis_password"])
         register_ray()
+
+
+def get_points_to_evaluate(
+    paths: None | list[str | PathLike] = None,
+) -> list[dict[str, Any]]:
+    """Read json files and return a list of dicts"""
+    points_to_evaluate: list[dict[str, Any]] = []
+    paths = paths or []
+    for path in paths:
+        obj = read_json(path)
+        if isinstance(obj, list):
+            points_to_evaluate.extend(obj)
+        elif isinstance(obj, dict):
+            points_to_evaluate.append(obj)
+        else:
+            raise ValueError("Decoding of json file failed")
+    if points_to_evaluate:
+        logger.info("Enqueued trials:\n%s", pprint.pformat(points_to_evaluate))
+    return points_to_evaluate
