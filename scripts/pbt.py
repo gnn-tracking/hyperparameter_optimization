@@ -37,7 +37,7 @@ def get_param_space():
         "lr": ray.tune.loguniform(2e-6, 1e-3),
         # "focal_gamma": ray.tune.uniform(0, 20),
         # "focal_alpha": ray.tune.uniform(0, 1),
-        "lw_edge": ray.tune.uniform(1, 500),
+        "lw_edge": 100,
         "lw_potential_attractive": ray.tune.uniform(1, 500),
         "lw_potential_repulsive": ray.tune.uniform(1e-2, 1e2),
     }
