@@ -70,6 +70,7 @@ def get_trainable(test=False):
             fixed_config = get_fixed_config(test=test)
             config.update(fixed_config)
             super().setup(config)
+            self.post_setup_hook()
 
     return FixedConfigTCNTrainable
 

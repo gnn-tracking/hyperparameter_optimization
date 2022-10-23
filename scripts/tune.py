@@ -45,6 +45,7 @@ server = della
 def faster_dbscan_scan(*args, n_epoch=0, n_trials=100, **kwargs):
     """Skip scanning every second trial."""
     if n_epoch % 2 == 1 and n_epoch >= 4:
+        logger.debug("Not reevaluating scanning of DBSCAN in epoch %d", n_epoch)
         n_trials = 1
     return dbscan_scan(*args, n_trials=n_trials, **kwargs)
 
