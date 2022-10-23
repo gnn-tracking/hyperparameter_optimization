@@ -37,7 +37,7 @@ def get_param_space():
         "lr": ray.tune.loguniform(2e-6, 1e-3),
         # "focal_gamma": ray.tune.uniform(0, 20),
         # "focal_alpha": ray.tune.uniform(0, 1),
-        "lw_edge": [100],
+        "lw_edge": ray.tune.choice([100]),
         "lw_potential_attractive": ray.tune.uniform(1, 500),
         "lw_potential_repulsive": ray.tune.uniform(1e-2, 1e2),
     }
@@ -140,7 +140,7 @@ def main(
             metric="trk.double_majority_pt1.5",
             mode="max",
             num_samples=4,
-            reuse_actors=True,
+            reuse_actors=False,
             search_alg=BasicVariantGenerator(points_to_evaluate=points_to_evaluate)
             if points_to_evaluate
             else None,
