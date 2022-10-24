@@ -1,34 +1,9 @@
 [
   {
-    "lr": 0.005,
     "lw_edge": 100,
     "lw_potential_attractive": 100,
     "lw_potential_repulsive": 0.01,
-    "q_min": 0.01,
+    "q_min": 0.001,
     "sb": 0.1
-  },
-  {
-    "lr": 0.0003640386078772556,
-    "lw_edge": 100,
-    "lw_potential_attractive": 290,
-    "lw_potential_repulsive": 58,
-    "q_min": 0.4220881041839594,
-    "sb": 0.14219587966015457
-  },
-  {
-    "lr": 0.0009,
-    "lw_edge": 100,
-    "lw_potential_attractive": 50,
-    "lw_potential_repulsive": 10,
-    "q_min": 0.4220881041839594,
-    "sb": 0.14219587966015457
-  },
-  {
-    "lr": 0.0003,
-    "lw_edge": 100,
-    "lw_potential_attractive": 20,
-    "lw_potential_repulsive": 10,
-    "q_min": 0.2220881041839594,
-    "sb": 0.15
   }
 ]

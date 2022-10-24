@@ -18,8 +18,8 @@ from ray.tune import SyncConfig
 from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.search import BasicVariantGenerator
 from torch.optim import SGD
-from tune import TCNTrainable
 from util import (
+    TCNTrainable,
     della,
     get_fixed_config,
     get_points_to_evaluate,
@@ -32,8 +32,10 @@ server = della
 
 def get_param_space():
     return {
-        "q_min": ray.tune.loguniform(1e-3, 1),
+        "q_min": ray.tune.uniform(1e-3, 0.01),
         "sb": ray.tune.uniform(0, 1),
+        # "lr": ray.tune.choice([1e-5]),
+        # "unnec_param": ray.tune.choice([1, 2, 3, 4, 5, 6]),
         "lr": ray.tune.loguniform(2e-6, 1e-3),
         # "focal_gamma": ray.tune.uniform(0, 20),
         # "focal_alpha": ray.tune.uniform(0, 1),
@@ -54,19 +56,23 @@ class PBTTrainable(TCNTrainable):
         return EdgeWeightBCELoss()
 
     def post_setup_hook(self):
+        logger.debug("Post setup hook called")
         self.trainer.pt_thlds = [1.5]
 
     def reset_config(self, new_config: dict[str, Any]):
         logger.debug("Reset config called with\n%s", pprint.pformat(new_config))
         self.tc = new_config
         self.trainer.loss_functions = self.get_loss_functions()
-        self.trainer.optimizer.lr = self.tc["lr"]
+        # self.trainer.optimizer.lr = self.tc.get("lr", 5e-4)
         self.trainer.loss_weights = subdict_with_prefix_stripped(self.tc, "lw_")
 
 
 def get_trainable(test=False):
+    logger.debug("Returning FCTCNT")
+
     class FixedConfigTCNTrainable(PBTTrainable):
         def setup(self, config):
+            logger.debug("Original config:\n%s", pprint.pformat(config))
             fixed_config = get_fixed_config(test=test)
             config.update(fixed_config)
             super().setup(config)

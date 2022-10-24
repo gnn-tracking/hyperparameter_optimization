@@ -7,8 +7,7 @@ from typing import Any
 
 import click
 from gnn_tracking.metrics.losses import EdgeWeightBCELoss
-from tune import TCNTrainable
-from util import read_json
+from util import TCNTrainable, read_json
 
 
 class ThisTrainable(TCNTrainable):
