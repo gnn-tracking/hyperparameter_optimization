@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from functools import partial
 from pathlib import Path
 
@@ -23,34 +24,41 @@ from util import (
 server = della
 
 
-@click.command()
-@click.option(
-    "--test",
-    help="As-fast-as-possible run to test the setup",
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    "--gpu",
-    help="Run on a GPU. This will also assume that you are on a batch node without "
-    "internet access and will set wandb mode to offline.",
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    "--restore",
-    help="Restore previous training state from this directory",
-    default=None,
-)
-@click.option(
-    "--enqueue-trials",
-    help="Read trials from this file and enqueue them",
-    multiple=True,
-)
-@click.option(
-    "--fixed",
-    help="Fix config values to these values",
-)
+def common_options(f):
+    @click.option(
+        "--test",
+        help="As-fast-as-possible run to test the setup",
+        is_flag=True,
+        default=False,
+    )
+    @click.option(
+        "--gpu",
+        help="Run on a GPU. This will also assume that you are on a batch node without "
+        "internet access and will set wandb mode to offline.",
+        is_flag=True,
+        default=False,
+    )
+    @click.option(
+        "--restore",
+        help="Restore previous training state from this directory",
+        default=None,
+    )
+    @click.option(
+        "--enqueue-trials",
+        help="Read trials from this file and enqueue them",
+        multiple=True,
+    )
+    @click.option(
+        "--fixed",
+        help="Fix config values to these values",
+    )
+    @functools.wraps(f)
+    def wrapper_common_options(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    return wrapper_common_options
+
+
 def main(
     trainable,
     suggest_config,

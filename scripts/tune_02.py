@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+import click
 import optuna
 from gnn_tracking.metrics.losses import EdgeWeightBCELoss
 from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
-from tune import main
+from tune import common_options, main
 from util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
 
 
@@ -71,5 +72,11 @@ def suggest_config(
     return fixed_config
 
 
+@click.command()
+@common_options
+def real_main(**kwargs):
+    main(DynamicTCNTrainable, suggest_config, **kwargs)
+
+
 if __name__ == "__main__":
-    main(DynamicTCNTrainable, suggest_config)
+    real_main()

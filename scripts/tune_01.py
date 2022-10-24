@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+import click
 import optuna
-from tune import main
+from tune import common_options, main
 from util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
 
 
@@ -36,5 +37,11 @@ def suggest_config(
     return fixed_config
 
 
+@click.command()
+@common_options
+def real_main(**kwargs):
+    main(TCNTrainable, suggest_config, **kwargs)
+
+
 if __name__ == "__main__":
-    main(TCNTrainable, suggest_config)
+    real_main()
