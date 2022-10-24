@@ -68,6 +68,7 @@ def main(
     restore=None,
     enqueue_trials: None | list[str] = None,
     fixed: None | str = None,
+    grace_period=3,
 ):
     """ """
     if gpu:
@@ -100,7 +101,7 @@ def main(
             scheduler=ASHAScheduler(
                 metric="trk.double_majority_pt1.5",
                 mode="max",
-                grace_period=3,
+                grace_period=grace_period,
             ),
             num_samples=50 if not test else 1,
             search_alg=optuna_search,

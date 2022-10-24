@@ -21,7 +21,7 @@ class DynamicTCNTrainable(TCNTrainable):
             subdict_with_prefix_stripped(self.tc, "rlw_"),
         ]
         return NormalizeAt(
-            at=[0, 5],
+            at=[0, 4],
             relative_weights=relative_weights,
         )
 
@@ -75,7 +75,7 @@ def suggest_config(
 @click.command()
 @common_options
 def real_main(**kwargs):
-    main(DynamicTCNTrainable, suggest_config, **kwargs)
+    main(DynamicTCNTrainable, suggest_config, grace_period=5, **kwargs)
 
 
 if __name__ == "__main__":
