@@ -209,13 +209,16 @@ class TCNTrainable(tune.Trainable):
     def get_optimizer(self):
         return Adam
 
+    def get_loss_weights(self):
+        return subdict_with_prefix_stripped(self.tc, "lw_")
+
     def get_trainer(self) -> TCNTrainer:
         test = self.tc.get("test", False)
         trainer = TCNTrainer(
             model=self.get_model(),
             loaders=get_loaders(get_graphs(test=test), test=test),
             loss_functions=self.get_loss_functions(),
-            loss_weights=subdict_with_prefix_stripped(self.tc, "lw_"),
+            loss_weights=self.get_loss_weights(),
             lr=self.tc.get("lr", 5e-4),
             lr_scheduler=self.get_lr_scheduler(),
             cluster_functions=self.get_cluster_functions(),  # type: ignore
