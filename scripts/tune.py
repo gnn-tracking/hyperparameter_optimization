@@ -92,7 +92,7 @@ def main(
             scheduler=ASHAScheduler(
                 metric="trk.double_majority_pt1.5",
                 mode="max",
-                grace_period=5,
+                grace_period=3,
             ),
             num_samples=50 if not test else 1,
             search_alg=optuna_search,
