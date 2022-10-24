@@ -52,12 +52,12 @@ def suggest_config(
     # def sinf_int(key, *args, **kwargs):
     #     suggest_if_not_fixed(trial.suggest_int, key, fixed_config, *args, **kwargs)
 
-    # sinf_float("q_min", 1e-3, 1, log=True)
-    dinf("q_min", 0.4220881041839594)
-    # sinf_float("sb", 0, 1)
-    dinf("sb", 0.14219587966015457)
-    # sinf_float("lr", 2e-6, 1e-3, log=True)
-    dinf("lr", 0.0003640386078772556)
+    sinf_float("q_min", 0.3, 0.5)
+    # dinf("q_min", 0.4220881041839594)
+    sinf_float("sb", 0.12, 0.16)
+    # dinf("sb", 0.14219587966015457)
+    sinf_float("lr", 0.0003, 0.0004)
+    # dinf("lr", 0.0003640386078772556)
     # sinf_int("m_hidden_dim", 64, 256)
     dinf("m_hidden_dim", 116)
     # sinf_int("m_L_ec", 1, 7)
@@ -75,7 +75,7 @@ def suggest_config(
 @click.command()
 @common_options
 def real_main(**kwargs):
-    main(DynamicTCNTrainable, suggest_config, grace_period=5, **kwargs)
+    main(DynamicTCNTrainable, suggest_config, **kwargs)
 
 
 if __name__ == "__main__":
