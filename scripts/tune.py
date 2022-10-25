@@ -37,6 +37,11 @@ def common_options(f):
     )
     @enqueue_option
     @click.option(
+        "--only-enqueued",
+        help="Only run enqueued points, do not tune any parameters",
+        is_flag=True,
+    )
+    @click.option(
         "--fixed",
         help="Fix config values to these values",
     )
@@ -55,6 +60,7 @@ def main(
     gpu=False,
     restore=None,
     enqueue: None | list[str] = None,
+    only_enqueued=False,
     fixed: None | str = None,
     grace_period=3,
 ):
@@ -80,6 +86,12 @@ def main(
         print(f"Restoring previous state from {restore}")
         optuna_search.restore_from_dir(restore)
 
+    num_samples = 50
+    if test:
+        num_samples = 1
+    if only_enqueued:
+        num_samples = len(points_to_evaluate)
+
     tuner = tune.Tuner(
         tune.with_resources(
             trainable,
@@ -91,7 +103,7 @@ def main(
                 mode="max",
                 grace_period=grace_period,
             ),
-            num_samples=50 if not test else 1,
+            num_samples=num_samples,
             search_alg=optuna_search,
         ),
         run_config=RunConfig(
