@@ -7,12 +7,14 @@ from functools import partial
 from pathlib import Path
 
 import click
+import pytimeparse
 from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
+from ray.tune.stopper import CombinedStopper, TimeoutStopper, TrialPlateauStopper
 from util import (
     della,
     enqueue_option,
@@ -43,7 +45,12 @@ def common_options(f):
     )
     @click.option(
         "--fixed",
-        help="Fix config values to these values",
+        help="Read config values from file and fix these values in all trials.",
+    )
+    @click.option(
+        "--timeout",
+        help="Stop all trials after certain time. Natural time specifications "
+        "supported.",
     )
     @functools.wraps(f)
     def wrapper_common_options(*args, **kwargs):
@@ -63,12 +70,23 @@ def main(
     only_enqueued=False,
     fixed: None | str = None,
     grace_period=3,
+    timeout=None,
 ):
-    """ """
+    """
+    For most argument, see corresponding command line interface.
+
+    Args:
+        trainable: The trainable to run.
+        suggest_config: A function that returns a config dictionary.
+        grace_period: Grace period for ASHA scheduler.
+    """
     if gpu:
         run_wandb_offline()
 
     maybe_run_distributed()
+
+    timeout_seconds = pytimeparse.parse(timeout) if timeout else None
+    del timeout
 
     points_to_evaluate = get_points_to_evaluate(enqueue)
 
@@ -92,6 +110,15 @@ def main(
     if only_enqueued:
         num_samples = len(points_to_evaluate)
 
+    stoppers = [
+        TrialPlateauStopper(
+            metric="total",
+        )
+    ]
+    if timeout_seconds is not None:
+        stoppers.append(TimeoutStopper(timeout_seconds))
+    stopper = CombinedStopper(*stoppers)
+
     tuner = tune.Tuner(
         tune.with_resources(
             trainable,
@@ -114,7 +141,7 @@ def main(
                 ),
             ],
             sync_config=SyncConfig(syncer=None),
-            stop={"training_iteration": 40 if not test else 1},
+            stop=stopper,
             checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
             log_to_file=True,
             # verbose=1,  # Only status reports, no results
