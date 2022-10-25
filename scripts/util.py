@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import json
 import os
 import pprint
@@ -262,3 +263,17 @@ enqueue_option = click.option(
     help="Read trials from this file and enqueue them",
     multiple=True,
 )
+
+
+def wandb_options(f):
+    @click.option("--tags", multiple=True, help="Tags for wandb")
+    @click.option(
+        "--group",
+        help="Wandb group name",
+    )
+    @click.option("--note", help="Wandb note")
+    @functools.wraps(f)
+    def wrapper_common_options(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    return wrapper_common_options

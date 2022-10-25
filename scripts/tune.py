@@ -24,6 +24,7 @@ from util import (
     read_json,
     run_wandb_offline,
     test_option,
+    wandb_options,
 )
 
 server = della
@@ -52,6 +53,7 @@ def common_options(f):
         help="Stop all trials after certain time. Natural time specifications "
         "supported.",
     )
+    @wandb_options
     @functools.wraps(f)
     def wrapper_common_options(*args, **kwargs):
         return f(*args, **kwargs)
@@ -71,6 +73,9 @@ def main(
     fixed: None | str = None,
     grace_period=3,
     timeout=None,
+    tags=None,
+    group=None,
+    note=None,
 ):
     """
     For most argument, see corresponding command line interface.
@@ -137,7 +142,11 @@ def main(
             name="tcn",
             callbacks=[
                 WandbLoggerCallback(
-                    api_key_file="~/.wandb_api_key", project="gnn_tracking"
+                    api_key_file="~/.wandb_api_key",
+                    project="gnn_tracking",
+                    tags=tags,
+                    group=group,
+                    notes=note,
                 ),
             ],
             sync_config=SyncConfig(syncer=None),
