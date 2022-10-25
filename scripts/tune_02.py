@@ -3,11 +3,44 @@ from __future__ import annotations
 from typing import Any
 
 import click
+import numpy as np
 import optuna
+from gnn_tracking.postprocessing.cluster_metrics import common_metrics
+from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
+from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
 from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
+from gnn_tracking.utils.log import logger
 from tune import common_options, main
 from util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
+
+
+def dbscan_scan(
+    graphs: np.ndarray,
+    truth: np.ndarray,
+    sectors: np.ndarray,
+    *,
+    n_jobs=1,
+    n_trials=30,
+    guide="v_measure",
+    epoch=None,
+    start_params: dict[str, Any] | None = None,
+) -> ClusterScanResult:
+    if n_jobs == 1:
+        logger.warning("Only using 1 thread for DBSCAN scan")
+    dbss = DBSCANHyperParamScanner(
+        graphs=graphs,
+        truth=truth,
+        sectors=sectors,
+        guide=guide,
+        metrics=common_metrics,
+        min_samples_range=(1, 1),
+    )
+    return dbss.scan(
+        n_jobs=n_jobs,
+        n_trials=n_trials,
+        start_params=start_params,
+    )
 
 
 class DynamicTCNTrainable(TCNTrainable):
