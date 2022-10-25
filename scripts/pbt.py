@@ -9,7 +9,6 @@ from typing import Any
 
 import click
 import ray
-from gnn_tracking.metrics.losses import EdgeWeightBCELoss
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 from ray import air
@@ -53,13 +52,6 @@ class PBTTrainable(TCNTrainable):
 
     def get_lr_scheduler(self):
         return None
-
-    def get_edge_loss_function(self):
-        return EdgeWeightBCELoss()
-
-    def post_setup_hook(self):
-        logger.debug("Post setup hook called")
-        self.trainer.pt_thlds = [1.5]
 
     def reset_config(self, new_config: dict[str, Any]):
         logger.debug("Reset config called with\n%s", pprint.pformat(new_config))

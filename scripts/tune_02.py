@@ -4,10 +4,8 @@ from typing import Any
 
 import click
 import optuna
-from gnn_tracking.metrics.losses import EdgeWeightBCELoss
 from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from gnn_tracking.utils.log import logger
 from tune import common_options, main
 from util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
 
@@ -24,13 +22,6 @@ class DynamicTCNTrainable(TCNTrainable):
             at=[0, 4],
             relative_weights=relative_weights,
         )
-
-    def get_edge_loss_function(self):
-        return EdgeWeightBCELoss()
-
-    def post_setup_hook(self):
-        logger.debug("Post setup hook called")
-        self.trainer.pt_thlds = [1.5]
 
 
 def suggest_config(

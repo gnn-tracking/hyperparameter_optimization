@@ -167,6 +167,7 @@ class TCNTrainable(tune.Trainable):
         self.trainer = self.get_trainer()
         logger.debug(f"Trainer: {self.trainer}")
         self.post_setup_hook()
+        self.trainer.pt_thlds = [1.5]
 
     def post_setup_hook(self):
         pass
