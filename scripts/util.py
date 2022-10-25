@@ -185,7 +185,10 @@ class TCNTrainable(tune.Trainable):
         )
 
     def get_potential_loss_function(self):
-        return PotentialLoss(q_min=self.tc.get("q_min", 0.01))
+        return PotentialLoss(
+            q_min=self.tc.get("q_min", 0.01),
+            attr_pt_thld=self.tc.get("attr_pt_thld", 0.9),
+        )
 
     def get_background_loss_function(self):
         return BackgroundLoss(sb=self.tc.get("sb", 0.1))
