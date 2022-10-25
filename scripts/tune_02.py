@@ -19,7 +19,7 @@ class DynamicTCNTrainable(TCNTrainable):
             subdict_with_prefix_stripped(self.tc, "rlw_"),
         ]
         return NormalizeAt(
-            at=[0, 4],
+            at=[0, 2],
             relative_weights=relative_weights,
         )
 
@@ -49,7 +49,10 @@ def suggest_config(
     #     suggest_if_not_fixed(trial.suggest_int, key, fixed_config, *args, **kwargs)
 
     dinf("batch_size", 1)
-    sinf_choice("attr_pt_thld", [0.0, 0.9])
+    # sinf_choice("attr_pt_thld", [0.0, 0.9])
+    dinf("attr_pt_thld", 0.0)
+    sinf_choice("m_feed_in_edge_weights", [True, False])
+    sinf_choice("m_h_outdim", [2, 3, 4])
     sinf_float("q_min", 0.3, 0.5)
     # dinf("q_min", 0.4220881041839594)
     sinf_float("sb", 0.12, 0.16)
@@ -73,7 +76,7 @@ def suggest_config(
 @click.command()
 @common_options
 def real_main(**kwargs):
-    main(DynamicTCNTrainable, suggest_config, **kwargs)
+    main(DynamicTCNTrainable, suggest_config, grace_period=4, **kwargs)
 
 
 if __name__ == "__main__":

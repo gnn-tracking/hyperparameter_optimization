@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from functools import partial
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import click
 import gnn_tracking
@@ -83,6 +83,16 @@ def get_graphs(test=False) -> dict[str, list]:
 def get_loaders(
     graph_dct: dict[str, list], batch_size=1, test=False
 ) -> dict[str, DataLoader]:
+    """Get data loaders
+
+    Args:
+        graph_dct:
+        batch_size:
+        test:
+
+    Returns:
+        Dictionary of data loaders
+    """
     # build graph loaders
     params = {
         "batch_size": batch_size,
@@ -97,13 +107,16 @@ def get_loaders(
     return loaders
 
 
-def suggest_if_not_fixed(f, key, config, *args, **kwargs):
-    """Suggest if not fixed"""
+def suggest_if_not_fixed(
+    f: Callable, key: str, config: dict[str, Any], *args, **kwargs
+):
+    """Call function with arguments if ``key`` is not in ``config``"""
     if key not in config:
         f(key, *args, **kwargs)
 
 
 def read_json(path: PathLike | str) -> dict[str, Any]:
+    """Open and read a json file"""
     with Path(path).open() as f:
         config = json.load(f)
     return config
@@ -118,7 +131,8 @@ def get_fixed_config(*, test=False):
     }
 
 
-def have_internet():
+def have_internet() -> bool:
+    """Return True if we have internet connection"""
     conn = httplib.HTTPSConnection("8.8.8.8", timeout=5)
     try:
         conn.request("HEAD", "/")
@@ -129,14 +143,18 @@ def have_internet():
         conn.close()
 
 
-def maybe_run_wandb_offline():
+def maybe_run_wandb_offline() -> None:
+    """If we do not have internet connection, run wandb in offline mode"""
     if not have_internet():
         logger.warning("Setting wandb mode to offline because you do not have internet")
         os.environ["WANDB_MODE"] = "offline"
     logger.debug("You seem to have internet, so directly syncing with wandb")
 
 
-def maybe_run_distributed():
+def maybe_run_distributed() -> None:
+    """If it looks like we're running across multiple nodes, enable distributed
+    mode of ray
+    """
     if "redis_password" in os.environ:
         # We're running distributed
         ray.init(address="auto", _redis_password=os.environ["redis_password"])
@@ -146,7 +164,9 @@ def maybe_run_distributed():
 def get_points_to_evaluate(
     paths: None | list[str | PathLike] = None,
 ) -> list[dict[str, Any]]:
-    """Read json files and return a list of dicts"""
+    """Read json files and return a list of dicts.
+    Json files can either contain dictionary (single config) or a list thereof.
+    """
     points_to_evaluate: list[dict[str, Any]] = []
     paths = paths or []
     for path in paths:
@@ -282,6 +302,8 @@ enqueue_option = click.option(
 
 
 def wandb_options(f):
+    """To be used as a decorator. Add command line options for wandb metadata."""
+
     @click.option("--tags", multiple=True, help="Tags for wandb")
     @click.option(
         "--group",
