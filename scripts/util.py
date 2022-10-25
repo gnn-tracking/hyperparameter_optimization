@@ -79,10 +79,12 @@ def get_graphs(test=False) -> dict[str, list]:
     }
 
 
-def get_loaders(graph_dct: dict[str, list], test=False) -> dict[str, DataLoader]:
+def get_loaders(
+    graph_dct: dict[str, list], batch_size=1, test=False
+) -> dict[str, DataLoader]:
     # build graph loaders
     params = {
-        "batch_size": server.max_batches if not test else 1,
+        "batch_size": batch_size,
         "num_workers": server.cpus_per_gpu if not test else 1,
     }
     logger.debug("Parameters for data loaders: %s", params)

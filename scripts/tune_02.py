@@ -48,6 +48,7 @@ def suggest_config(
     # def sinf_int(key, *args, **kwargs):
     #     suggest_if_not_fixed(trial.suggest_int, key, fixed_config, *args, **kwargs)
 
+    dinf("batch_size", 1)
     sinf_choice("attr_pt_thld", [0.0, 0.9])
     sinf_float("q_min", 0.3, 0.5)
     # dinf("q_min", 0.4220881041839594)
