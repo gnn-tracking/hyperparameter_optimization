@@ -84,7 +84,7 @@ def suggest_config(
     dinf("batch_size", 1)
     # sinf_choice("attr_pt_thld", [0.0, 0.9])
     dinf("attr_pt_thld", 0.0)
-    sinf_choice("m_feed_in_edge_weights", [True, False])
+    sinf_choice("m_feed_edge_weights", [True, False])
     sinf_choice("m_h_outdim", [2, 3, 4])
     sinf_float("q_min", 0.3, 0.5)
     # dinf("q_min", 0.4220881041839594)
