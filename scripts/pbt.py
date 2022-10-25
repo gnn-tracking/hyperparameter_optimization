@@ -23,7 +23,7 @@ from util import (
     get_fixed_config,
     get_points_to_evaluate,
     maybe_run_distributed,
-    run_wandb_offline,
+    maybe_run_wandb_offline,
 )
 
 from scripts.util import enqueue_option, gpu_option, test_option
@@ -86,8 +86,7 @@ def main(
     enqueue: None | list[str] = None,
 ):
     """ """
-    if gpu:
-        run_wandb_offline()
+    maybe_run_wandb_offline()
 
     maybe_run_distributed()
 

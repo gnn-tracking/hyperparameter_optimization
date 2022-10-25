@@ -21,8 +21,8 @@ from util import (
     get_points_to_evaluate,
     gpu_option,
     maybe_run_distributed,
+    maybe_run_wandb_offline,
     read_json,
-    run_wandb_offline,
     test_option,
     wandb_options,
 )
@@ -85,8 +85,7 @@ def main(
         suggest_config: A function that returns a config dictionary.
         grace_period: Grace period for ASHA scheduler.
     """
-    if gpu:
-        run_wandb_offline()
+    maybe_run_wandb_offline()
 
     maybe_run_distributed()
 

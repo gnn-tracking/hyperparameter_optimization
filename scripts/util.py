@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import http.client as httplib
 import json
 import os
 import pprint
@@ -117,12 +118,22 @@ def get_fixed_config(*, test=False):
     }
 
 
-def run_wandb_offline():
-    logger.warning(
-        "Setting wandb mode to offline because we assume you don't have internet"
-        " on a GPU node."
-    )
-    os.environ["WANDB_MODE"] = "offline"
+def have_internet():
+    conn = httplib.HTTPSConnection("8.8.8.8", timeout=5)
+    try:
+        conn.request("HEAD", "/")
+        return True
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+def maybe_run_wandb_offline():
+    if not have_internet():
+        logger.warning("Setting wandb mode to offline because you do not have internet")
+        os.environ["WANDB_MODE"] = "offline"
+    logger.debug("You seem to have internet, so directly syncing with wandb")
 
 
 def maybe_run_distributed():
