@@ -3,25 +3,21 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import click
-from gnn_tracking.metrics.losses import EdgeWeightBCELoss
+from gnn_tracking.metrics.losses import PotentialLoss
 from util import TCNTrainable, read_json
 
 
 class ThisTrainable(TCNTrainable):
-    def get_cluster_functions(self) -> dict[str, Any]:
-        return {}
-
     def post_setup_hook(self):
-        self.trainer.pt_thlds = [0.0]
+        self.trainer.pt_thlds = [1.5]
+
+    def get_potential_loss_function(self):
+        return PotentialLoss(q_min=self.tc.get("q_min", 0.01), attr_pt_thld=0.0)
 
     def get_lr_scheduler(self):
         return None
-
-    def get_edge_loss_function(self):
-        return EdgeWeightBCELoss()
 
 
 @click.command()
