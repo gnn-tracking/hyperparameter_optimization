@@ -84,11 +84,12 @@ def suggest_config(
     dinf("batch_size", 1)
     # sinf_choice("attr_pt_thld", [0.0, 0.9])
     dinf("attr_pt_thld", 0.0)
-    sinf_choice("m_feed_edge_weights", [True, False])
+    # sinf_choice("m_feed_edge_weights", [True, False])
+    dinf("m_feed_edge_weights", True)
     sinf_choice("m_h_outdim", [2, 3, 4])
     sinf_float("q_min", 0.3, 0.5)
     # dinf("q_min", 0.4220881041839594)
-    sinf_float("sb", 0.12, 0.16)
+    sinf_float("sb", 0.12, 0.135)
     # dinf("sb", 0.14219587966015457)
     sinf_float("lr", 0.0003, 0.0004)
     # dinf("lr", 0.0003640386078772556)
@@ -102,7 +103,7 @@ def suggest_config(
     # sinf_float("focal_alpha", 0, 1)  # 0.95 might be a good default
     sinf_float("rlw_edge", 1, 10)
     sinf_float("rlw_potential_attractive", 1, 10)
-    sinf_float("rlw_potential_repulsive", 1, 10)
+    sinf_float("rlw_potential_repulsive", 2, 3)
     return fixed_config
 
 
