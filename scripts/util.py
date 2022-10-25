@@ -9,6 +9,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any
 
+import click
 import gnn_tracking
 import ray
 import sklearn.model_selection
@@ -240,3 +241,23 @@ class TCNTrainable(tune.Trainable):
 
     def load_checkpoint(self, checkpoint_path, **kwargs):
         self.trainer.load_checkpoint(checkpoint_path, **kwargs)
+
+
+test_option = click.option(
+    "--test",
+    help="As-fast-as-possible run to test the setup",
+    is_flag=True,
+    default=False,
+)
+gpu_option = click.option(
+    "--gpu",
+    help="Run on a GPU. This will also assume that you are on a batch node without "
+    "internet access and will set wandb mode to offline.",
+    is_flag=True,
+    default=False,
+)
+enqueue_option = click.option(
+    "--enqueue",
+    help="Read trials from this file and enqueue them",
+    multiple=True,
+)

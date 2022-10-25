@@ -15,39 +15,27 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from util import (
     della,
+    enqueue_option,
     get_points_to_evaluate,
+    gpu_option,
     maybe_run_distributed,
     read_json,
     run_wandb_offline,
+    test_option,
 )
 
 server = della
 
 
 def common_options(f):
-    @click.option(
-        "--test",
-        help="As-fast-as-possible run to test the setup",
-        is_flag=True,
-        default=False,
-    )
-    @click.option(
-        "--gpu",
-        help="Run on a GPU. This will also assume that you are on a batch node without "
-        "internet access and will set wandb mode to offline.",
-        is_flag=True,
-        default=False,
-    )
+    @test_option
+    @gpu_option
     @click.option(
         "--restore",
         help="Restore previous training state from this directory",
         default=None,
     )
-    @click.option(
-        "--enqueue-trials",
-        help="Read trials from this file and enqueue them",
-        multiple=True,
-    )
+    @enqueue_option
     @click.option(
         "--fixed",
         help="Fix config values to these values",
@@ -66,7 +54,7 @@ def main(
     test=False,
     gpu=False,
     restore=None,
-    enqueue_trials: None | list[str] = None,
+    enqueue: None | list[str] = None,
     fixed: None | str = None,
     grace_period=3,
 ):
@@ -76,7 +64,7 @@ def main(
 
     maybe_run_distributed()
 
-    points_to_evaluate = get_points_to_evaluate(enqueue_trials)
+    points_to_evaluate = get_points_to_evaluate(enqueue)
 
     fixed_config = None
     if fixed:

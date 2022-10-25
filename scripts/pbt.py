@@ -27,6 +27,8 @@ from util import (
     run_wandb_offline,
 )
 
+from scripts.util import enqueue_option, gpu_option, test_option
+
 server = della
 
 
@@ -82,29 +84,14 @@ def get_trainable(test=False):
 
 
 @click.command()
-@click.option(
-    "--test",
-    help="As-fast-as-possible run to test the setup",
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    "--gpu",
-    help="Run on a GPU. This will also assume that you are on a batch node without "
-    "internet access and will set wandb mode to offline.",
-    is_flag=True,
-    default=False,
-)
-@click.option(
-    "--enqueue-trials",
-    help="Read trials from this file and enqueue them",
-    multiple=True,
-)
+@test_option
+@gpu_option
+@enqueue_option
 def main(
     *,
     test=False,
     gpu=False,
-    enqueue_trials: None | list[str] = None,
+    enqueue: None | list[str] = None,
 ):
     """ """
     if gpu:
@@ -112,7 +99,7 @@ def main(
 
     maybe_run_distributed()
 
-    points_to_evaluate = get_points_to_evaluate(enqueue_trials)
+    points_to_evaluate = get_points_to_evaluate(enqueue)
 
     scheduler = PopulationBasedTraining(
         time_attr="training_iteration",

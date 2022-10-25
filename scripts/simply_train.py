@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 from gnn_tracking.metrics.losses import PotentialLoss
-from util import TCNTrainable, read_json
+from util import TCNTrainable, read_json, test_option
 
 
 class ThisTrainable(TCNTrainable):
@@ -21,12 +21,7 @@ class ThisTrainable(TCNTrainable):
 
 
 @click.command()
-@click.option(
-    "--test",
-    help="As-fast-as-possible run to test the setup",
-    is_flag=True,
-    default=False,
-)
+@test_option
 @click.option(
     "--config",
     "config_file",
