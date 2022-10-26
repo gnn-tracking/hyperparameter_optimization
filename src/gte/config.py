@@ -5,7 +5,7 @@ import pprint
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import gnn_tracking
 from gnn_tracking.utils.log import logger
@@ -28,7 +28,7 @@ def auto_suggest_if_not_fixed(
         else:
             return trial.suggest_float(key, *args, **kwargs)
     elif len(args) == 1:
-        if isinstance(args[0], Iterable):
+        if isinstance(args[0], list):
             return trial.suggest_categorical(key, *args, **kwargs)
         else:
             config[key] = args[0]
