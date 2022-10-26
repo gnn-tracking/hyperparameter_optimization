@@ -16,15 +16,18 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.search import BasicVariantGenerator
-from scripts.util import enqueue_option, gpu_option, test_option
 from torch.optim import SGD
-from util import (
+
+from gte.util import (
     TCNTrainable,
     della,
+    enqueue_option,
     get_fixed_config,
     get_points_to_evaluate,
+    gpu_option,
     maybe_run_distributed,
     maybe_run_wandb_offline,
+    test_option,
 )
 
 server = della

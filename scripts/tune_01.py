@@ -4,8 +4,9 @@ from typing import Any
 
 import click
 import optuna
-from tune import common_options, main
-from util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
+
+from gte.tune import common_options, main
+from gte.util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
 
 
 def suggest_config(

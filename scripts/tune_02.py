@@ -11,8 +11,9 @@ from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
 from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
-from tune import common_options, main
-from util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
+
+from gte.tune import common_options, main
+from gte.util import TCNTrainable, get_fixed_config, suggest_if_not_fixed
 
 
 def dbscan_scan(

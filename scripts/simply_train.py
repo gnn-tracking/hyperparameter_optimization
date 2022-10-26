@@ -6,7 +6,8 @@ from pathlib import Path
 
 import click
 from gnn_tracking.metrics.losses import PotentialLoss
-from util import TCNTrainable, read_json, test_option
+
+from gte.util import TCNTrainable, read_json, test_option
 
 
 class ThisTrainable(TCNTrainable):
