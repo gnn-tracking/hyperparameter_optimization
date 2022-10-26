@@ -22,14 +22,10 @@ def reduced_dbscan_scan(
     truth: np.ndarray,
     sectors: np.ndarray,
     *,
-    n_jobs=1,
-    n_trials=30,
     guide="v_measure",
     epoch=None,
     start_params: dict[str, Any] | None = None,
 ) -> ClusterScanResult:
-    if n_jobs == 1:
-        logger.warning("Only using 1 thread for DBSCAN scan")
     dbss = DBSCANHyperParamScanner(
         graphs=graphs,
         truth=truth,
@@ -38,8 +34,12 @@ def reduced_dbscan_scan(
         metrics=common_metrics,
         min_samples_range=(1, 1),
     )
+    n_trials = 20
+    if epoch > 3 and epoch % 2 != 0 or epoch > 7 and epoch % 4 != 0:
+        logger.debug("Skipping scanning over DBSCAN parameters")
+        n_trials = 1
     return dbss.scan(
-        n_jobs=n_jobs,
+        n_jobs=12,  # todo: make flexible
         n_trials=n_trials,
         start_params=start_params,
     )
