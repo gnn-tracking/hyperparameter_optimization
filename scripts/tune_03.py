@@ -74,10 +74,10 @@ def suggest_config(
     d("optim_momentum", 0.8, 0.99)
     scheduler = d("scheduler", ["steplr", "exponentiallr"])
     if scheduler == "steplr":
-        d("sched_step_size", 3, 20)
-        d("sched_gamma", 0.02, 0.5)
+        d("steplr_step_size", 3, 20)
+        d("steplr_gamma", 0.02, 0.5)
     elif scheduler == "exponentiallr":
-        d("sched_gamma", 0.8, 0.999)
+        d("exponentiallr_gamma", 0.8, 0.999)
     d("batch_size", 1)
     d("attr_pt_thld", 0.0)
     d("m_feed_edge_weights", True)

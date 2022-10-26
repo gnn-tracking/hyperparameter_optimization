@@ -62,10 +62,10 @@ def suggest_default_values(
     d("lr", 5e-4)
     d("optimizer", "adam")
     if c["optimizer"] == "sgd":
-        d("optim_momentum", 0.0)
-        d("optim_weight_decay", 0.0)
-        d("optim_nesterov", False)
-        d("optim_dampening", 0.0)
+        d("sgd_momentum", 0.0)
+        d("sgd_weight_decay", 0.0)
+        d("sgd_nesterov", False)
+        d("sgd_dampening", 0.0)
     d("scheduler", None)
     if c["scheduler"] is not None:
         if c["optimizer"] == "adam":
@@ -75,10 +75,10 @@ def suggest_default_values(
     if c["scheduler"] is None:
         pass
     if c["scheduler"] == "steplr":
-        d("sched_step_size", 10)
-        d("sched_gamma", 0.1)
+        d("steplr_step_size", 10)
+        d("steplr_gamma", 0.1)
     elif c["scheduler"] == "exponentiallr":
-        d("sched_gamma", 0.9)
+        d("exponentiallr_gamma", 0.9)
     else:
         raise ValueError(f"Unknown scheduler: {c['scheduler']}")
 
@@ -147,12 +147,12 @@ class TCNTrainable(tune.Trainable):
             return None
         elif self.tc["scheduler"] == "steplr":
             return partial(
-                lr_scheduler.StepLR, **subdict_with_prefix_stripped(self.tc, "sched_")
+                lr_scheduler.StepLR, **subdict_with_prefix_stripped(self.tc, "steplr_")
             )
         elif self.tc["scheduler"] == "exponentiallr":
             return partial(
                 lr_scheduler.ExponentialLR,
-                **subdict_with_prefix_stripped(self.tc, "sched_"),
+                **subdict_with_prefix_stripped(self.tc, "exponentiallr_"),
             )
         else:
             raise ValueError(f"Unknown scheduler {self.tc['scheduler']}")
