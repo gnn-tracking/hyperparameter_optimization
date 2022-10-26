@@ -5,7 +5,7 @@ import pprint
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 import gnn_tracking
 from gnn_tracking.utils.log import logger
@@ -18,6 +18,26 @@ def suggest_if_not_fixed(
     """Call function with arguments if ``key`` is not in ``config``"""
     if key not in config:
         f(key, *args, **kwargs)
+
+
+def auto_suggest_if_not_fixed(key: str, config: dict[str, Any], trial, *args, **kwargs):
+    """Similar to ``suggest_if_not_fixed``, but automatically chooses the correct
+    function
+    """
+    if key in config:
+        pass
+    if len(args) == 2:
+        if all(isinstance(x, int) for x in args):
+            trial.suggest_int(key, *args, **kwargs)
+        else:
+            trial.suggest_float(key, *args, **kwargs)
+    elif len(args) == 1:
+        if isinstance(args[0], Iterable):
+            trial.suggest_categorical(key, *args, **kwargs)
+        else:
+            config[key] = args[0]
+    else:
+        raise ValueError("Do not understand specification")
 
 
 def read_json(path: PathLike | str) -> dict[str, Any]:

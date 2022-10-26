@@ -13,7 +13,7 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 
 from gte.config import get_metadata, suggest_if_not_fixed
-from gte.trainable import TCNTrainable, set_config_default_values
+from gte.trainable import TCNTrainable, suggest_default_values
 from gte.tune import common_options, main
 
 
@@ -65,8 +65,7 @@ def suggest_config(
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight kwarg
     config = get_metadata(test=test)
-    if fixed is not None:
-        config.update(fixed)
+    config.update(fixed or {})
 
     def sinf_int(key, *args, **kwargs):
         suggest_if_not_fixed(trial.suggest_int, key, config, *args, **kwargs)
@@ -78,19 +77,18 @@ def suggest_config(
         suggest_if_not_fixed(trial.suggest_categorical, key, config, *args, **kwargs)
 
     def dinf(key, value):
-        if key not in config:
-            config[key] = value
+        sinf_choice(key, [value])
 
     # def sinf_int(key, *args, **kwargs):
     #     suggest_if_not_fixed(trial.suggest_int, key, fixed_config, *args, **kwargs)
 
     dinf("optimizer", "sgd")
     sinf_float("optim_momentum", 0.8, 0.99)
-    sinf_choice("scheduler", ["steplr", "exponentiallr"])
-    if config["scheduler"] == "steplr":
+    scheduler = sinf_choice("scheduler", ["steplr", "exponentiallr"])
+    if scheduler == "steplr":
         sinf_int("sched_step_size", 3, 20)
         sinf_float("sched_gamma", 0.02, 0.5)
-    elif config["scheduler"] == "exponentiallr":
+    elif scheduler == "exponentiallr":
         sinf_float("sched_gamma", 0.8, 0.999)
     dinf("batch_size", 1)
     # sinf_choice("attr_pt_thld", [0.0, 0.9])
@@ -100,7 +98,7 @@ def suggest_config(
     dinf("m_h_outdim", 2)
     dinf("q_min", 0.402200635027302)
     dinf("sb", 0.1237745028815143)
-    sinf_float("lr", 0.0009, 0.0001)
+    sinf_float("lr", 1e-4, 9e-4)
     # dinf("lr", 0.0003640386078772556)
     # sinf_int("m_hidden_dim", 64, 256)
     dinf("m_hidden_dim", 116)
@@ -113,7 +111,7 @@ def suggest_config(
     dinf("rlw_edge", 9.724314205420344)
     dinf("rlw_potential_attractive", 9.889861321497472)
     dinf("rlw_potential_repulsive", 2.1784381633400933)
-    config = set_config_default_values(config)
+    suggest_default_values(config, trial)
     return config
 
 

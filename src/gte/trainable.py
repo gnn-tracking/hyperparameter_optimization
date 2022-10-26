@@ -5,6 +5,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
+import optuna
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
     EdgeWeightFocalLoss,
@@ -31,13 +32,24 @@ def faster_dbscan_scan(*args, n_epoch=0, n_trials=100, **kwargs):
     return dbscan_scan(*args, n_trials=n_trials, **kwargs)
 
 
-def set_config_default_values(config: dict[str, Any]) -> dict[str, Any]:
+def suggest_default_values(
+    config: dict[str, Any], trial: None | optuna.Trial = None
+) -> None:
     """Set all config values, so that everything gets recorded in the database, even
     if we do not change anything.
     """
 
     def d(k, v):
-        config.setdefault(k, v)
+        if k in trial.params:
+            return
+        if k in config:
+            return
+        if trial is not None:
+            trial.suggest_categorical(k, [v])
+        else:
+            config[k] = v
+
+    c = {**config, **(trial.params if trial is not None else {})}
 
     # Loss function parameters
     d("q_min", 0.01)
@@ -49,22 +61,26 @@ def set_config_default_values(config: dict[str, Any]) -> dict[str, Any]:
     # Optimizers
     d("lr", 5e-4)
     d("optimizer", "adam")
-    if config["optimizer"] == "sgd":
+    if c["optimizer"] == "sgd":
         d("optim_momentum", 0.0)
         d("optim_weight_decay", 0.0)
         d("optim_nesterov", False)
         d("optim_dampening", 0.0)
     d("scheduler", None)
-    if config["scheduler"] is not None:
-        if config["optimizer"] == "adam":
+    if c["scheduler"] is not None:
+        if c["optimizer"] == "adam":
             raise ValueError("Don't use lr scheduler with Adam.")
-    elif config["scheduler"] == "steplr":
+
+    # Schedulers
+    if c["scheduler"] is None:
+        pass
+    if c["scheduler"] == "steplr":
         d("sched_step_size", 10)
         d("sched_gamma", 0.1)
-    elif config["scheduler"] == "exponentiallr":
+    elif c["scheduler"] == "exponentiallr":
         d("sched_gamma", 0.9)
     else:
-        raise ValueError(f"Unknown scheduler: {config['scheduler']}")
+        raise ValueError(f"Unknown scheduler: {c['scheduler']}")
 
     # Model parameters
     d("m_h_dim", 5)
@@ -76,8 +92,6 @@ def set_config_default_values(config: dict[str, Any]) -> dict[str, Any]:
     d("m_alpha_ec", 0.5)
     d("m_alpha_hc", 0.5)
     d("m_feed_edge_weights", False)
-
-    return config
 
 
 class TCNTrainable(tune.Trainable):
