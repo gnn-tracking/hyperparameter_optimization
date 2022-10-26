@@ -51,6 +51,11 @@ def common_options(f):
         help="Stop all trials after certain time. Natural time specifications "
         "supported.",
     )
+    @click.option(
+        "--fail-slow",
+        help="Do not abort tuning after trial fails.",
+        is_flag=True,
+    )
     @wandb_options
     @functools.wraps(f)
     def wrapper_common_options(*args, **kwargs):
@@ -74,6 +79,7 @@ def main(
     tags=None,
     group=None,
     note=None,
+    fail_slow=False,
 ):
     """
     For most argument, see corresponding command line interface.
@@ -154,7 +160,7 @@ def main(
             log_to_file=True,
             # verbose=1,  # Only status reports, no results
             failure_config=FailureConfig(
-                fail_fast=False,
+                fail_fast=not fail_slow,
             ),
         ),
     )
