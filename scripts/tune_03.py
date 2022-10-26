@@ -17,7 +17,7 @@ from gte.trainable import TCNTrainable, suggest_default_values
 from gte.tune import common_options, main
 
 
-def dbscan_scan(
+def reduced_dbscan_scan(
     graphs: np.ndarray,
     truth: np.ndarray,
     sectors: np.ndarray,
