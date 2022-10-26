@@ -91,6 +91,7 @@ def suggest_config(
     d("rlw_edge", 9.724314205420344)
     d("rlw_potential_attractive", 9.889861321497472)
     d("rlw_potential_repulsive", 2.1784381633400933)
+
     suggest_default_values(config, trial)
     return config
 

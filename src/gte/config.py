@@ -5,19 +5,11 @@ import pprint
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Iterable
 
 import gnn_tracking
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.versioning import get_commit_hash
-
-
-def suggest_if_not_fixed(
-    f: Callable, key: str, config: dict[str, Any], *args, **kwargs
-):
-    """Call function with arguments if ``key`` is not in ``config``"""
-    if key not in config:
-        f(key, *args, **kwargs)
 
 
 def auto_suggest_if_not_fixed(
