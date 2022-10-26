@@ -154,7 +154,7 @@ def main(
             log_to_file=True,
             # verbose=1,  # Only status reports, no results
             failure_config=FailureConfig(
-                fail_fast=True,
+                fail_fast=False,
             ),
         ),
     )

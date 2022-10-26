@@ -68,16 +68,18 @@ def suggest_config(
     config.update(fixed or {})
 
     def d(key, *args, **kwargs):
-        auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
+        return auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
     d("optimizer", "sgd")
-    d("optim_momentum", 0.8, 0.99)
+    d("sgd_momentum", 0.8, 0.99)
     scheduler = d("scheduler", ["steplr", "exponentiallr"])
     if scheduler == "steplr":
-        d("steplr_step_size", 3, 20)
+        d("steplr_step_size", 2, 5)
         d("steplr_gamma", 0.02, 0.5)
     elif scheduler == "exponentiallr":
         d("exponentiallr_gamma", 0.8, 0.999)
+    else:
+        raise ValueError("Invalid scheduler")
     d("batch_size", 1)
     d("attr_pt_thld", 0.0)
     d("m_feed_edge_weights", True)

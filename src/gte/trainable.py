@@ -41,12 +41,16 @@ def suggest_default_values(
 
     def d(k, v):
         if k in trial.params:
+            logger.debug(f"Found {k} in trial.params, not setting default value")
             return
         if k in config:
+            logger.debug("Found %s in config, not setting default value", k)
             return
         if trial is not None:
+            logger.debug("Suggesting %s to %s", k, v)
             trial.suggest_categorical(k, [v])
         else:
+            logger.debug("Suggesting %s to %s for fixed config because no trial", k, v)
             config[k] = v
 
     c = {**config, **(trial.params if trial is not None else {})}
@@ -161,7 +165,7 @@ class TCNTrainable(tune.Trainable):
         if self.tc["optimizer"] == "adam":
             return Adam
         elif self.tc["optimizer"] == "sgd":
-            return partial(SGD, **subdict_with_prefix_stripped(self.tc, "optim_"))
+            return partial(SGD, **subdict_with_prefix_stripped(self.tc, "sgd_"))
         else:
             raise ValueError(f"Unknown optimizer {self.tc['optimizer']}")
 
