@@ -6,20 +6,18 @@ import click
 
 test_option = click.option(
     "--test",
-    help="As-fast-as-possible run to test the setup",
+    help="As-fast-as-possible run to test the setup.",
     is_flag=True,
-    default=False,
 )
 gpu_option = click.option(
     "--gpu",
-    help="Run on a GPU. This will also assume that you are on a batch node without "
-    "internet access and will set wandb mode to offline.",
+    help="Run on a GPU",
     is_flag=True,
-    default=False,
 )
 enqueue_option = click.option(
     "--enqueue",
-    help="Read trials from this file and enqueue them",
+    help="Read trials from these json files and enqueue them. Json files can either "
+    "contain dictionary (single config) or a list thereof.",
     multiple=True,
 )
 
