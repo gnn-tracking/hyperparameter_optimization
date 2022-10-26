@@ -38,6 +38,7 @@ def suggest_default_values(
     """Set all config values, so that everything gets recorded in the database, even
     if we do not change anything.
     """
+    c = {**config, **(trial.params if trial is not None else {})}
 
     def d(k, v):
         if k in trial.params:
@@ -48,8 +49,7 @@ def suggest_default_values(
             trial.suggest_categorical(k, [v])
         else:
             config[k] = v
-
-    c = {**config, **(trial.params if trial is not None else {})}
+        c[k] = v
 
     # Loss function parameters
     d("q_min", 0.01)
