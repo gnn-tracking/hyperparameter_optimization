@@ -103,7 +103,6 @@ class TCNTrainable(tune.Trainable):
         self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
-        logger.debug(f"Trainer: {self.trainer}")
         self.trainer.pt_thlds = [1.5]
 
     def get_model(self) -> GraphTCN:

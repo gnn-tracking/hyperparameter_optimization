@@ -54,7 +54,7 @@ class DynamicTCNTrainable(TCNTrainable):
             subdict_with_prefix_stripped(self.tc, "rlw_"),
         ]
         return NormalizeAt(
-            at=[0, 2],
+            at=[0, 1],
             relative_weights=relative_weights,
         )
 
@@ -62,8 +62,6 @@ class DynamicTCNTrainable(TCNTrainable):
 def suggest_config(
     trial: optuna.Trial, *, test=False, fixed: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    # Everything with prefix "m_" is passed to the model
-    # Everything with prefix "lw_" is treated as loss weight kwarg
     config = get_metadata(test=test)
     config.update(fixed or {})
 
@@ -71,25 +69,15 @@ def suggest_config(
         auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
     d("batch_size", 1)
-    # sinf_choice("attr_pt_thld", [0.0, 0.9])
-    d("attr_pt_thld", 0.0)
-    # sinf_choice("m_feed_edge_weights", [True, False])
+    d("attr_pt_thld", [0.0, 0.4, 0.9])
     d("m_feed_edge_weights", True)
-    d("m_h_outdim", [2, 3, 4])
-    d("q_min", 0.3, 0.5)
-    # dinf("q_min", 0.4220881041839594)
+    d("m_h_outdim", [4])
+    d("q_min", 0.3, 1)
     d("sb", 0.12, 0.135)
-    # dinf("sb", 0.14219587966015457)
-    d("lr", 0.0003, 0.0004)
-    # dinf("lr", 0.0003640386078772556)
-    # sinf_int("m_hidden_dim", 64, 256)
+    d("lr", 0.0001, 0.0005)
     d("m_hidden_dim", 116)
-    # sinf_int("m_L_ec", 1, 7)
     d("m_L_ec", 3)
-    # sinf_int("m_L_hc", 1, 7)
     d("m_L_hc", 3)
-    # sinf_float("focal_gamma", 0, 20)  # 5 might be a good default
-    # sinf_float("focal_alpha", 0, 1)  # 0.95 might be a good default
     d("rlw_edge", 1, 10)
     d("rlw_potential_attractive", 1, 10)
     d("rlw_potential_repulsive", 2, 3)
