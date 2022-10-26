@@ -19,7 +19,7 @@ from ray.tune.search import BasicVariantGenerator
 from torch.optim import SGD
 
 from gte.cli import enqueue_option, gpu_option, test_option
-from gte.config import della, get_fixed_config, get_points_to_evaluate
+from gte.config import della, get_metadata, get_points_to_evaluate
 from gte.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
 from gte.trainable import TCNTrainable
 
@@ -62,10 +62,9 @@ def get_trainable(test=False):
     class FixedConfigTCNTrainable(PBTTrainable):
         def setup(self, config):
             logger.debug("Original config:\n%s", pprint.pformat(config))
-            fixed_config = get_fixed_config(test=test)
+            fixed_config = get_metadata(test=test)
             config.update(fixed_config)
             super().setup(config)
-            self.post_setup_hook()
 
     return FixedConfigTCNTrainable
 

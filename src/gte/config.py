@@ -27,7 +27,7 @@ def read_json(path: PathLike | str) -> dict[str, Any]:
     return config
 
 
-def get_fixed_config(*, test=False):
+def get_metadata(*, test=False):
     return {
         "test": test,
         "max_batches": 1 if test else None,

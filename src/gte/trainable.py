@@ -17,7 +17,7 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
-from torch.optim import Adam
+from torch.optim import SGD, Adam
 
 from gte.config import server
 from gte.load import get_graphs, get_loaders
@@ -31,21 +31,52 @@ def faster_dbscan_scan(*args, n_epoch=0, n_trials=100, **kwargs):
     return dbscan_scan(*args, n_trials=n_trials, **kwargs)
 
 
+def set_config_default_values(config: dict[str, Any]) -> dict[str, Any]:
+    """Set all config values, so that everything gets recorded in the database, even
+    if we do not change anything.
+    """
+
+    def d(k, v):
+        config.setdefault(k, v)
+
+    # Loss function parameters
+    d("q_min", 0.01)
+    d("attr_pt_thld", 0.9)
+    d("focal_alpha", 0.25)
+    d("focal_gamma", 2.0)
+    d("sb", 0.1)
+
+    # Optimizers
+    d("lr", 5e-4)
+    d("optimizer", "adam")
+    d("scheduler", None)
+
+    # Model parameters
+    d("m_h_dim", 5)
+    d("m_e_dim", 4)
+    d("m_h_outdim", 2)
+    d("m_hidden_dim", 40)
+    d("m_L_ec", 3)
+    d("m_L_hc", 3)
+    d("m_alpha_ec", 0.5)
+    d("m_alpha_hc", 0.5)
+    d("m_feed_edge_weights", False)
+
+    return config
+
+
 class TCNTrainable(tune.Trainable):
     # Do not add blank self.tc or self.trainer to __init__, because it will be called
     # after setup when setting ``reuse_actor == True`` and overwriting your values
     # from set
     def setup(self, config: dict[str, Any]):
         logger.debug("Got config\n%s", pprint.pformat(config))
-        self.tc = config
+        self.tc = set_config_default_values(config)
         fix_seeds()
         self.trainer = self.get_trainer()
         logger.debug(f"Trainer: {self.trainer}")
         self.post_setup_hook()
         self.trainer.pt_thlds = [1.5]
-
-    def post_setup_hook(self):
-        pass
 
     def get_model(self) -> GraphTCN:
         return GraphTCN(
@@ -54,18 +85,18 @@ class TCNTrainable(tune.Trainable):
 
     def get_edge_loss_function(self):
         return EdgeWeightFocalLoss(
-            alpha=self.tc.get("focal_alpha", 0.25),
-            gamma=self.tc.get("focal_gamma", 2),
+            alpha=self.tc["focal_alpha"],
+            gamma=self.tc["focal_gamma"],
         )
 
     def get_potential_loss_function(self):
         return PotentialLoss(
-            q_min=self.tc.get("q_min", 0.01),
-            attr_pt_thld=self.tc.get("attr_pt_thld", 0.9),
+            q_min=self.tc["q_min"],
+            attr_pt_thld=self.tc["attr_pt_thld"],
         )
 
     def get_background_loss_function(self):
-        return BackgroundLoss(sb=self.tc.get("sb", 0.1))
+        return BackgroundLoss(sb=self.tc["sb"])
 
     def get_loss_functions(self) -> dict[str, Any]:
         return {
@@ -87,19 +118,31 @@ class TCNTrainable(tune.Trainable):
         return None
 
     def get_optimizer(self):
-        return Adam
+        if self.tc["optimizer"] == "adam":
+            return Adam
+        elif self.tc["optimizer"] == "sgd":
+            return SGD
+        else:
+            raise ValueError(f"Unknown optimizer {self.tc['optimizer']}")
 
     def get_loss_weights(self):
         return subdict_with_prefix_stripped(self.tc, "lw_")
+
+    def get_loaders(self):
+        return get_loaders(
+            get_graphs(test=self.tc["test"]),
+            test=self.tc["test"],
+            batch_size=self.tc["batch_size"],
+        )
 
     def get_trainer(self) -> TCNTrainer:
         test = self.tc.get("test", False)
         trainer = TCNTrainer(
             model=self.get_model(),
-            loaders=get_loaders(get_graphs(test=test), test=test),
+            loaders=self.get_loaders(),
             loss_functions=self.get_loss_functions(),
             loss_weights=self.get_loss_weights(),
-            lr=self.tc.get("lr", 5e-4),
+            lr=self.tc["lr"],
             lr_scheduler=self.get_lr_scheduler(),
             cluster_functions=self.get_cluster_functions(),  # type: ignore
             optimizer=self.get_optimizer(),

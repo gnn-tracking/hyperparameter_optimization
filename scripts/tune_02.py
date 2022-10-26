@@ -12,7 +12,7 @@ from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 
-from gte.config import get_fixed_config, suggest_if_not_fixed
+from gte.config import get_metadata, suggest_if_not_fixed
 from gte.trainable import TCNTrainable
 from gte.tune import common_options, main
 
@@ -64,7 +64,7 @@ def suggest_config(
 ) -> dict[str, Any]:
     # Everything with prefix "m_" is passed to the model
     # Everything with prefix "lw_" is treated as loss weight kwarg
-    fixed_config = get_fixed_config(test=test)
+    fixed_config = get_metadata(test=test)
     if fixed is not None:
         fixed_config.update(fixed)
 
