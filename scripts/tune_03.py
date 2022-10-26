@@ -58,12 +58,15 @@ class DynamicTCNTrainable(TCNTrainable):
             relative_weights=relative_weights,
         )
 
+    def get_cluster_functions(self) -> dict[str, Any]:
+        return {
+            "dbscan": reduced_dbscan_scan,
+        }
+
 
 def suggest_config(
     trial: optuna.Trial, *, test=False, fixed: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    # Everything with prefix "m_" is passed to the model
-    # Everything with prefix "lw_" is treated as loss weight kwarg
     config = get_metadata(test=test)
     config.update(fixed or {})
 
