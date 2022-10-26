@@ -17,7 +17,7 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
-from torch.optim import SGD, Adam
+from torch.optim import SGD, Adam, lr_scheduler
 
 from gte.config import server
 from gte.load import get_graphs, get_loaders
@@ -49,7 +49,22 @@ def set_config_default_values(config: dict[str, Any]) -> dict[str, Any]:
     # Optimizers
     d("lr", 5e-4)
     d("optimizer", "adam")
+    if config["optimizer"] == "sgd":
+        d("optim_momentum", 0.9)
+        d("optim_weight_decay", 0.0)
+        d("optim_nesterov", False)
+        d("optim_dampening", 0.0)
     d("scheduler", None)
+    if config["scheduler"] is not None:
+        if config["optimizer"] == "adadm":
+            raise ValueError("Don't use lr scheduler with Adam.")
+    elif config["scheduler"] == "steplr":
+        d("sched_step_size", 10)
+        d("sched_gamma", 0.1)
+    elif config["scheduler"] == "exponentiallr":
+        d("sched_gamma", 0.9)
+    else:
+        raise ValueError(f"Unknown scheduler: {config['scheduler']}")
 
     # Model parameters
     d("m_h_dim", 5)
@@ -71,7 +86,7 @@ class TCNTrainable(tune.Trainable):
     # from set
     def setup(self, config: dict[str, Any]):
         logger.debug("Got config\n%s", pprint.pformat(config))
-        self.tc = set_config_default_values(config)
+        self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
         logger.debug(f"Trainer: {self.trainer}")
@@ -115,13 +130,25 @@ class TCNTrainable(tune.Trainable):
         }
 
     def get_lr_scheduler(self):
-        return None
+        if not self.tc["scheduler"]:
+            return None
+        elif self.tc["scheduler"] == "steplr":
+            return partial(
+                lr_scheduler.StepLR, **subdict_with_prefix_stripped(self.tc, "sched_")
+            )
+        elif self.tc["scheduler"] == "exponentiallr":
+            return partial(
+                lr_scheduler.ExponentialLR,
+                **subdict_with_prefix_stripped(self.tc, "sched_"),
+            )
+        else:
+            raise ValueError(f"Unknown scheduler {self.tc['scheduler']}")
 
     def get_optimizer(self):
         if self.tc["optimizer"] == "adam":
             return Adam
         elif self.tc["optimizer"] == "sgd":
-            return SGD
+            return partial(SGD, **subdict_with_prefix_stripped(self.tc, "optim_"))
         else:
             raise ValueError(f"Unknown optimizer {self.tc['optimizer']}")
 
