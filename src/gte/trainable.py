@@ -50,13 +50,13 @@ def set_config_default_values(config: dict[str, Any]) -> dict[str, Any]:
     d("lr", 5e-4)
     d("optimizer", "adam")
     if config["optimizer"] == "sgd":
-        d("optim_momentum", 0.9)
+        d("optim_momentum", 0.0)
         d("optim_weight_decay", 0.0)
         d("optim_nesterov", False)
         d("optim_dampening", 0.0)
     d("scheduler", None)
     if config["scheduler"] is not None:
-        if config["optimizer"] == "adadm":
+        if config["optimizer"] == "adam":
             raise ValueError("Don't use lr scheduler with Adam.")
     elif config["scheduler"] == "steplr":
         d("sched_step_size", 10)
