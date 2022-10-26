@@ -10,7 +10,6 @@ from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
 from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
 from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from gnn_tracking.utils.log import logger
 
 from gte.config import auto_suggest_if_not_fixed, get_metadata
 from gte.trainable import TCNTrainable, suggest_default_values
@@ -34,9 +33,22 @@ def reduced_dbscan_scan(
         metrics=common_metrics,
         min_samples_range=(1, 1),
     )
-    n_trials = 20
-    if epoch > 3 and epoch % 2 != 0 or epoch > 7 and epoch % 4 != 0:
-        logger.debug("Skipping scanning over DBSCAN parameters")
+    n_trials_early = [
+        30,
+        20,
+        10,
+        10,
+        1,
+        10,
+        1,
+        10,
+        1,
+    ]
+    if epoch < len(n_trials_early):
+        n_trials = n_trials_early[epoch]
+    elif epoch % 4 == 0:
+        n_trials = 10
+    else:
         n_trials = 1
     return dbss.scan(
         n_jobs=12,  # todo: make flexible
