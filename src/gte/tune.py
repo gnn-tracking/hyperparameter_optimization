@@ -14,7 +14,12 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
-from ray.tune.stopper import CombinedStopper, TimeoutStopper, TrialPlateauStopper
+from ray.tune.stopper import (
+    CombinedStopper,
+    MaximumIterationStopper,
+    TimeoutStopper,
+    TrialPlateauStopper,
+)
 
 from gte.cli import enqueue_option, gpu_option, test_option, wandb_options
 from gte.config import della, get_points_to_evaluate, read_json
@@ -114,6 +119,8 @@ def main(
     ]
     if timeout_seconds is not None:
         stoppers.append(TimeoutStopper(timeout_seconds))
+    if test:
+        stoppers.append(MaximumIterationStopper(1))
     stopper = CombinedStopper(*stoppers)
 
     tuner = tune.Tuner(

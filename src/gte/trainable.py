@@ -191,7 +191,7 @@ class TCNTrainable(tune.Trainable):
         return trainer
 
     def step(self):
-        return self.trainer.step(max_batches=self.tc.get("max_batches", None))
+        return self.trainer.step(max_batches=None if not self.tc["test"] else 1)
 
     def save_checkpoint(
         self,

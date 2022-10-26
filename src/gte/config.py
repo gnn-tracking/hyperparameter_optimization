@@ -55,7 +55,6 @@ def read_json(path: PathLike | str) -> dict[str, Any]:
 def get_metadata(*, test=False):
     return {
         "test": test,
-        "max_batches": 1 if test else None,
         "gnn_tracking_hash": get_commit_hash(gnn_tracking),
         "gnn_tracking_experiments_hash": get_commit_hash(Path(__file__).parent),
     }
