@@ -20,22 +20,27 @@ def suggest_if_not_fixed(
         f(key, *args, **kwargs)
 
 
-def auto_suggest_if_not_fixed(key: str, config: dict[str, Any], trial, *args, **kwargs):
+def auto_suggest_if_not_fixed(
+    key: str, config: dict[str, Any], trial, *args, **kwargs
+) -> Any:
     """Similar to ``suggest_if_not_fixed``, but automatically chooses the correct
-    function
+    function.
+
+    **Important**: It matters whether the argument types are ints or floats!
     """
     if key in config:
         pass
     if len(args) == 2:
         if all(isinstance(x, int) for x in args):
-            trial.suggest_int(key, *args, **kwargs)
+            return trial.suggest_int(key, *args, **kwargs)
         else:
-            trial.suggest_float(key, *args, **kwargs)
+            return trial.suggest_float(key, *args, **kwargs)
     elif len(args) == 1:
         if isinstance(args[0], Iterable):
-            trial.suggest_categorical(key, *args, **kwargs)
+            return trial.suggest_categorical(key, *args, **kwargs)
         else:
             config[key] = args[0]
+            return args[0]
     else:
         raise ValueError("Do not understand specification")
 

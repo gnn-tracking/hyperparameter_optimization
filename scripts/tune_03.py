@@ -12,7 +12,7 @@ from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 
-from gte.config import get_metadata, suggest_if_not_fixed
+from gte.config import auto_suggest_if_not_fixed, get_metadata
 from gte.trainable import TCNTrainable, suggest_default_values
 from gte.tune import common_options, main
 
@@ -67,50 +67,30 @@ def suggest_config(
     config = get_metadata(test=test)
     config.update(fixed or {})
 
-    def sinf_int(key, *args, **kwargs):
-        suggest_if_not_fixed(trial.suggest_int, key, config, *args, **kwargs)
+    def d(key, *args, **kwargs):
+        auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
-    def sinf_float(key, *args, **kwargs):
-        suggest_if_not_fixed(trial.suggest_float, key, config, *args, **kwargs)
-
-    def sinf_choice(key, *args, **kwargs):
-        suggest_if_not_fixed(trial.suggest_categorical, key, config, *args, **kwargs)
-
-    def dinf(key, value):
-        sinf_choice(key, [value])
-
-    # def sinf_int(key, *args, **kwargs):
-    #     suggest_if_not_fixed(trial.suggest_int, key, fixed_config, *args, **kwargs)
-
-    dinf("optimizer", "sgd")
-    sinf_float("optim_momentum", 0.8, 0.99)
-    scheduler = sinf_choice("scheduler", ["steplr", "exponentiallr"])
+    d("optimizer", "sgd")
+    d("optim_momentum", 0.8, 0.99)
+    scheduler = d("scheduler", ["steplr", "exponentiallr"])
     if scheduler == "steplr":
-        sinf_int("sched_step_size", 3, 20)
-        sinf_float("sched_gamma", 0.02, 0.5)
+        d("sched_step_size", 3, 20)
+        d("sched_gamma", 0.02, 0.5)
     elif scheduler == "exponentiallr":
-        sinf_float("sched_gamma", 0.8, 0.999)
-    dinf("batch_size", 1)
-    # sinf_choice("attr_pt_thld", [0.0, 0.9])
-    dinf("attr_pt_thld", 0.0)
-    # sinf_choice("m_feed_edge_weights", [True, False])
-    dinf("m_feed_edge_weights", True)
-    dinf("m_h_outdim", 2)
-    dinf("q_min", 0.402200635027302)
-    dinf("sb", 0.1237745028815143)
-    sinf_float("lr", 1e-4, 9e-4)
-    # dinf("lr", 0.0003640386078772556)
-    # sinf_int("m_hidden_dim", 64, 256)
-    dinf("m_hidden_dim", 116)
-    # sinf_int("m_L_ec", 1, 7)
-    dinf("m_L_ec", 3)
-    # sinf_int("m_L_hc", 1, 7)
-    dinf("m_L_hc", 3)
-    # sinf_float("focal_gamma", 0, 20)  # 5 might be a good default
-    # sinf_float("focal_alpha", 0, 1)  # 0.95 might be a good default
-    dinf("rlw_edge", 9.724314205420344)
-    dinf("rlw_potential_attractive", 9.889861321497472)
-    dinf("rlw_potential_repulsive", 2.1784381633400933)
+        d("sched_gamma", 0.8, 0.999)
+    d("batch_size", 1)
+    d("attr_pt_thld", 0.0)
+    d("m_feed_edge_weights", True)
+    d("m_h_outdim", 2)
+    d("q_min", 0.402200635027302)
+    d("sb", 0.1237745028815143)
+    d("lr", 1e-4, 9e-4)
+    d("m_hidden_dim", 116)
+    d("m_L_ec", 3)
+    d("m_L_hc", 3)
+    d("rlw_edge", 9.724314205420344)
+    d("rlw_potential_attractive", 9.889861321497472)
+    d("rlw_potential_repulsive", 2.1784381633400933)
     suggest_default_values(config, trial)
     return config
 
