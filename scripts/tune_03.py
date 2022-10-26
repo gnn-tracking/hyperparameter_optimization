@@ -3,58 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 import click
-import numpy as np
 import optuna
-from gnn_tracking.postprocessing.cluster_metrics import common_metrics
-from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
-from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
 from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 
 from gte.config import auto_suggest_if_not_fixed, get_metadata
-from gte.trainable import TCNTrainable, suggest_default_values
+from gte.trainable import TCNTrainable, reduced_dbscan_scan, suggest_default_values
 from gte.tune import common_options, main
-
-
-def reduced_dbscan_scan(
-    graphs: np.ndarray,
-    truth: np.ndarray,
-    sectors: np.ndarray,
-    *,
-    guide="v_measure",
-    epoch=None,
-    start_params: dict[str, Any] | None = None,
-) -> ClusterScanResult:
-    dbss = DBSCANHyperParamScanner(
-        graphs=graphs,
-        truth=truth,
-        sectors=sectors,
-        guide=guide,
-        metrics=common_metrics,
-        min_samples_range=(1, 1),
-    )
-    n_trials_early = [
-        30,
-        20,
-        10,
-        10,
-        1,
-        10,
-        1,
-        10,
-        1,
-    ]
-    if epoch < len(n_trials_early):
-        n_trials = n_trials_early[epoch]
-    elif epoch % 4 == 0:
-        n_trials = 10
-    else:
-        n_trials = 1
-    return dbss.scan(
-        n_jobs=12,  # todo: make flexible
-        n_trials=n_trials,
-        start_params=start_params,
-    )
 
 
 class DynamicTCNTrainable(TCNTrainable):
