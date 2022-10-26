@@ -18,17 +18,10 @@ from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.search import BasicVariantGenerator
 from torch.optim import SGD
 
-from gte.util import (
-    TCNTrainable,
-    della,
-    enqueue_option,
-    get_fixed_config,
-    get_points_to_evaluate,
-    gpu_option,
-    maybe_run_distributed,
-    maybe_run_wandb_offline,
-    test_option,
-)
+from gte.cli import enqueue_option, gpu_option, test_option
+from gte.config import della, get_fixed_config, get_points_to_evaluate
+from gte.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+from gte.trainable import TCNTrainable
 
 server = della
 

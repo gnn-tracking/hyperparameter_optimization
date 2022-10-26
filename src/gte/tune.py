@@ -15,17 +15,10 @@ from ray.tune import SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.tune.stopper import CombinedStopper, TimeoutStopper, TrialPlateauStopper
-from util import (
-    della,
-    enqueue_option,
-    get_points_to_evaluate,
-    gpu_option,
-    maybe_run_distributed,
-    maybe_run_wandb_offline,
-    read_json,
-    test_option,
-    wandb_options,
-)
+
+from gte.cli import enqueue_option, gpu_option, test_option, wandb_options
+from gte.config import della, get_points_to_evaluate, read_json
+from gte.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
 
 server = della
 
