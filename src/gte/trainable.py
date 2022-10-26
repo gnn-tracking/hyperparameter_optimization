@@ -74,7 +74,7 @@ def suggest_default_values(
     # Schedulers
     if c["scheduler"] is None:
         pass
-    if c["scheduler"] == "steplr":
+    elif c["scheduler"] == "steplr":
         d("steplr_step_size", 10)
         d("steplr_gamma", 0.1)
     elif c["scheduler"] == "exponentiallr":
