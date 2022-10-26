@@ -44,8 +44,7 @@ def get_points_to_evaluate(
     """
     points_to_evaluate: list[dict[str, Any]] = []
     if paths is None:
-        paths = []  # type: ignore
-    assert paths is not None  # mypy
+        paths = list[str]()
     for path in paths:
         obj = read_json(path)
         if isinstance(obj, list):
