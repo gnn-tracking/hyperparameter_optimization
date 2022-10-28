@@ -129,6 +129,18 @@ def main(
         stoppers.append(MaximumIterationStopper(1))
     stopper = CombinedStopper(*stoppers)
 
+    callbacks = []
+    if not test:
+        callbacks = [
+            WandbLoggerCallback(
+                api_key_file="~/.wandb_api_key",
+                project="gnn_tracking",
+                tags=tags,
+                group=group,
+                notes=note,
+            ),
+        ]
+
     tuner = tune.Tuner(
         tune.with_resources(
             trainable,
@@ -145,15 +157,7 @@ def main(
         ),
         run_config=RunConfig(
             name="tcn",
-            callbacks=[
-                WandbLoggerCallback(
-                    api_key_file="~/.wandb_api_key",
-                    project="gnn_tracking",
-                    tags=tags,
-                    group=group,
-                    notes=note,
-                ),
-            ],
+            callbacks=callbacks,
             sync_config=SyncConfig(syncer=None),
             stop=stopper,
             checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
