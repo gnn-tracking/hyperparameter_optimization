@@ -15,10 +15,7 @@ from gnn_tracking.metrics.losses import (
 )
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
-from gnn_tracking.postprocessing.dbscanscanner import (
-    DBSCANHyperParamScanner,
-    dbscan_scan,
-)
+from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
@@ -30,12 +27,47 @@ from gte.config import server
 from gte.load import get_graphs, get_loaders
 
 
-def faster_dbscan_scan(*args, n_epoch=0, n_trials=100, **kwargs):
-    """Skip scanning every second trial."""
-    if n_epoch % 2 == 1 and n_epoch >= 4:
-        logger.debug("Not reevaluating scanning of DBSCAN in epoch %d", n_epoch)
+def reduced_dbscan_scan(
+    graphs: np.ndarray,
+    truth: np.ndarray,
+    sectors: np.ndarray,
+    pts: np.ndarray,
+    *,
+    guide="trk.double_majority_pt1.5",
+    epoch=None,
+    start_params: dict[str, Any] | None = None,
+) -> ClusterScanResult:
+    dbss = DBSCANHyperParamScanner(
+        graphs=graphs,
+        truth=truth,
+        sectors=sectors,
+        pts=pts,
+        guide=guide,
+        metrics=common_metrics,
+        min_samples_range=(1, 1),
+    )
+    n_trials_early = [
+        30,
+        20,
+        10,
+        10,
+        1,
+        10,
+        1,
+        10,
+        1,
+    ]
+    if epoch < len(n_trials_early):
+        n_trials = n_trials_early[epoch]
+    elif epoch % 4 == 0:
+        n_trials = 10
+    else:
         n_trials = 1
-    return dbscan_scan(*args, n_trials=n_trials, **kwargs)
+    return dbss.scan(
+        n_jobs=12,  # todo: make flexible
+        n_trials=n_trials,
+        start_params=start_params,
+    )
 
 
 def suggest_default_values(
@@ -141,7 +173,7 @@ class TCNTrainable(tune.Trainable):
     def get_cluster_functions(self) -> dict[str, Any]:
         return {
             "dbscan": partial(
-                faster_dbscan_scan,
+                reduced_dbscan_scan,
                 n_trials=100 if not self.tc.get("test", False) else 1,
                 n_jobs=server.cpus_per_gpu if not self.tc.get("test", False) else 1,
             )
@@ -208,46 +240,3 @@ class TCNTrainable(tune.Trainable):
 
     def load_checkpoint(self, checkpoint_path, **kwargs):
         self.trainer.load_checkpoint(checkpoint_path, **kwargs)
-
-
-def reduced_dbscan_scan(
-    graphs: np.ndarray,
-    truth: np.ndarray,
-    sectors: np.ndarray,
-    pts: np.ndarray,
-    *,
-    guide="trk.double_majority_pt1.5",
-    epoch=None,
-    start_params: dict[str, Any] | None = None,
-) -> ClusterScanResult:
-    dbss = DBSCANHyperParamScanner(
-        graphs=graphs,
-        truth=truth,
-        sectors=sectors,
-        pts=pts,
-        guide=guide,
-        metrics=common_metrics,
-        min_samples_range=(1, 1),
-    )
-    n_trials_early = [
-        30,
-        20,
-        10,
-        10,
-        1,
-        10,
-        1,
-        10,
-        1,
-    ]
-    if epoch < len(n_trials_early):
-        n_trials = n_trials_early[epoch]
-    elif epoch % 4 == 0:
-        n_trials = 10
-    else:
-        n_trials = 1
-    return dbss.scan(
-        n_jobs=12,  # todo: make flexible
-        n_trials=n_trials,
-        start_params=start_params,
-    )

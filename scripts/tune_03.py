@@ -8,7 +8,7 @@ from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 
 from gte.config import auto_suggest_if_not_fixed, get_metadata
-from gte.trainable import TCNTrainable, reduced_dbscan_scan, suggest_default_values
+from gte.trainable import TCNTrainable, suggest_default_values
 from gte.tune import common_options, main
 
 
@@ -24,11 +24,6 @@ class DynamicTCNTrainable(TCNTrainable):
             at=[0, 2],
             relative_weights=relative_weights,
         )
-
-    def get_cluster_functions(self) -> dict[str, Any]:
-        return {
-            "dbscan": reduced_dbscan_scan,
-        }
 
 
 def suggest_config(
