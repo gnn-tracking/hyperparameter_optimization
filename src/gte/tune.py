@@ -156,7 +156,7 @@ def main(
             search_alg=optuna_search,
         ),
         run_config=RunConfig(
-            name="tcn",
+            name="tcn" if not test else "tcn_test",
             callbacks=callbacks,
             sync_config=SyncConfig(syncer=None),
             stop=stopper,
