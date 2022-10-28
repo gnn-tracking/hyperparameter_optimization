@@ -141,6 +141,12 @@ def main(
             ),
         ]
 
+    name = "tcn"
+    if group is not None:
+        name = group
+    if test:
+        name += "_test"
+
     tuner = tune.Tuner(
         tune.with_resources(
             trainable,
@@ -156,7 +162,7 @@ def main(
             search_alg=optuna_search,
         ),
         run_config=RunConfig(
-            name="tcn" if not test else "tcn_test",
+            name=name,
             callbacks=callbacks,
             sync_config=SyncConfig(syncer=None),
             stop=stopper,
