@@ -23,7 +23,6 @@ from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
 from torch.optim import SGD, Adam, lr_scheduler
 
-from gte.config import server
 from gte.load import get_graphs, get_loaders
 
 
@@ -171,13 +170,7 @@ class TCNTrainable(tune.Trainable):
         }
 
     def get_cluster_functions(self) -> dict[str, Any]:
-        return {
-            "dbscan": partial(
-                reduced_dbscan_scan,
-                n_trials=100 if not self.tc.get("test", False) else 1,
-                n_jobs=server.cpus_per_gpu if not self.tc.get("test", False) else 1,
-            )
-        }
+        return {"dbscan": reduced_dbscan_scan}
 
     def get_lr_scheduler(self):
         if not self.tc["scheduler"]:
