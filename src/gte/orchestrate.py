@@ -25,7 +25,8 @@ def maybe_run_wandb_offline() -> None:
     if not have_internet():
         logger.warning("Setting wandb mode to offline because you do not have internet")
         os.environ["WANDB_MODE"] = "offline"
-    logger.debug("You seem to have internet, so directly syncing with wandb")
+    else:
+        logger.debug("You seem to have internet, so directly syncing with wandb")
 
 
 def maybe_run_distributed() -> None:
