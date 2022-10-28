@@ -82,10 +82,7 @@ def suggest_default_values(
             return
         if k in config:
             return
-        if trial is not None:
-            trial.suggest_categorical(k, [v])
-        else:
-            config[k] = v
+        config[k] = v
         c[k] = v
 
     # Loss function parameters

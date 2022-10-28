@@ -29,6 +29,19 @@ def auto_suggest_if_not_fixed(
             return trial.suggest_float(key, *args, **kwargs)
     elif len(args) == 1:
         if isinstance(args[0], list):
+            if all(isinstance(x, int) for x in args[0]):
+                ma = max(args[0])
+                mi = min(args[0])
+                if ma - mi == len(args[0]) - 1:
+                    logger.warning(
+                        "Substituting suggest_int from %s to %s instead of "
+                        "categorical %s",
+                        mi,
+                        ma,
+                        args[0],
+                    )
+                    return trial.suggest_int(key, mi, ma)
+                return trial.suggest_categorical(key, *args, **kwargs)
             return trial.suggest_categorical(key, *args, **kwargs)
         else:
             config[key] = args[0]
