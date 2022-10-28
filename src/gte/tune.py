@@ -56,6 +56,11 @@ def common_options(f):
         help="Do not abort tuning after trial fails.",
         is_flag=True,
     )
+    @click.option(
+        "--dname",
+        help="Name of ray output directory",
+        default="tcn",
+    )
     @wandb_options
     @functools.wraps(f)
     def wrapper_common_options(*args, **kwargs):
@@ -80,6 +85,7 @@ def main(
     group=None,
     note=None,
     fail_slow=False,
+    dname="tcn",
 ):
     """
     For most argument, see corresponding command line interface.
@@ -141,11 +147,8 @@ def main(
             ),
         ]
 
-    name = "tcn"
-    if group is not None:
-        name = group
     if test:
-        name += "_test"
+        dname += "_test"
 
     tuner = tune.Tuner(
         tune.with_resources(
@@ -162,7 +165,7 @@ def main(
             search_alg=optuna_search,
         ),
         run_config=RunConfig(
-            name=name,
+            name=dname,
             callbacks=callbacks,
             sync_config=SyncConfig(syncer=None),
             stop=stopper,
