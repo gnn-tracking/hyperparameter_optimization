@@ -7,13 +7,13 @@ from typing import Any
 
 import numpy as np
 import optuna
+from gnn_tracking.metrics.cluster_metrics import common_metrics
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
     EdgeWeightFocalLoss,
     PotentialLoss,
 )
 from gnn_tracking.models.track_condensation_networks import GraphTCN
-from gnn_tracking.postprocessing.cluster_metrics import common_metrics
 from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
 from gnn_tracking.postprocessing.dbscanscanner import (
     DBSCANHyperParamScanner,
@@ -214,8 +214,9 @@ def reduced_dbscan_scan(
     graphs: np.ndarray,
     truth: np.ndarray,
     sectors: np.ndarray,
+    pts: np.ndarray,
     *,
-    guide="v_measure",
+    guide="trk.double_majority_pt1.5",
     epoch=None,
     start_params: dict[str, Any] | None = None,
 ) -> ClusterScanResult:
@@ -223,6 +224,7 @@ def reduced_dbscan_scan(
         graphs=graphs,
         truth=truth,
         sectors=sectors,
+        pts=pts,
         guide=guide,
         metrics=common_metrics,
         min_samples_range=(1, 1),
