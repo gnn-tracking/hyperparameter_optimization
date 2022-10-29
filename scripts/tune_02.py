@@ -45,7 +45,13 @@ def suggest_config(
     d("m_hidden_dim", 116)
     d("m_L_ec", 3)
     d("m_L_hc", 3)
+    d("m_h_dim", 5, 8)
+    d("m_e_dim", 4, 6)
     d("rlw_edge", 1, 10)
+    d("m_L_ec", 3, 4)
+    d("m_L_hc", 3, 4)
+    d("m_alpha_ec", 0.3, 0.7)
+    d("m_alpha_hc", 0.3, 0.7)
     d("rlw_potential_attractive", 1, 30)
     d("rlw_potential_repulsive", 2, 3)
 
