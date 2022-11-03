@@ -49,7 +49,6 @@ def suggest_config(
 
     d("batch_size", 1)
     d("attr_pt_thld", 0.0, 0.9)
-    d("m_feed_edge_weights", False)
     d("m_h_outdim", 3, 5)
     d("q_min", 0.3, 0.5)
     d("sb", 0.12, 0.135)
@@ -63,7 +62,7 @@ def suggest_config(
     d("rlw_potential_attractive", 1.0)
     d("rlw_potential_repulsive", 2.0, 3.0)
 
-    suggest_default_values(config, trial)
+    suggest_default_values(config, trial, perfect_ec=True)
     return config
 
 

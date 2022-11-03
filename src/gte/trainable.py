@@ -70,7 +70,9 @@ def reduced_dbscan_scan(
 
 
 def suggest_default_values(
-    config: dict[str, Any], trial: None | optuna.Trial = None
+    config: dict[str, Any],
+    trial: None | optuna.Trial = None,
+    perfect_ec=False,
 ) -> None:
     """Set all config values, so that everything gets recorded in the database, even
     if we do not change anything.
@@ -84,6 +86,10 @@ def suggest_default_values(
             return
         config[k] = v
         c[k] = v
+
+    if perfect_ec:
+        d("m_ec_tpr", 1.0)
+        d("m_ec_tnr", 1.0)
 
     # Loss function parameters
     d("q_min", 0.01)
@@ -121,11 +127,13 @@ def suggest_default_values(
     d("m_e_dim", 4)
     d("m_h_outdim", 2)
     d("m_hidden_dim", 40)
-    d("m_L_ec", 3)
+    if not perfect_ec:
+        d("m_L_ec", 3)
+        d("m_alpha_ec", 0.5)
     d("m_L_hc", 3)
-    d("m_alpha_ec", 0.5)
     d("m_alpha_hc", 0.5)
-    d("m_feed_edge_weights", False)
+    if not perfect_ec:
+        d("m_feed_edge_weights", False)
 
 
 class TCNTrainable(tune.Trainable):
