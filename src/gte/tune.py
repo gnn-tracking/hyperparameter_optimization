@@ -20,11 +20,11 @@ from ray.tune.stopper import (
     TimeoutStopper,
     TrialPlateauStopper,
 )
+from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
 from gte.cli import enqueue_option, gpu_option, test_option, wandb_options
 from gte.config import della, get_points_to_evaluate, read_json
 from gte.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
-from gte.util.sync import TriggerSyncHook
 
 server = della
 
@@ -146,7 +146,7 @@ def main(
             group=group,
             notes=note,
         ),
-        TriggerSyncHook(),
+        TriggerWandbSyncRayHook(),
     ]
 
     if test:
