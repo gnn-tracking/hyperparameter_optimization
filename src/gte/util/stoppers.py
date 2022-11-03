@@ -5,6 +5,9 @@ from ray import tune
 
 class ResultThresholdStopper(tune.Stopper):
     def __init__(self, metric: str, thresholds: dict[int, float], mode: str = "max"):
+        """Stopper that stops if results at a certain epoch fall above/below a certain
+        threshold.
+        """
         self.metric = metric
         self.threshold = thresholds
         self.mode = mode

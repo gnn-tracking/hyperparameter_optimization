@@ -10,7 +10,7 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from torch import nn
 
 from gte.config import auto_suggest_if_not_fixed, get_metadata
-from gte.trainable import TCNTrainable, suggest_default_values
+from gte.trainable import TCNTrainable, fixed_dbscan_scan, suggest_default_values
 from gte.tune import common_options, main
 
 
@@ -20,6 +20,9 @@ class DynamicTCNTrainable(TCNTrainable):
             "potential": self.get_potential_loss_function(),
             "background": self.get_background_loss_function(),
         }
+
+    def get_cluster_functions(self) -> dict[str, Any]:
+        return {"dbscan": fixed_dbscan_scan}
 
     def get_loss_weights(self):
         relative_weights = [

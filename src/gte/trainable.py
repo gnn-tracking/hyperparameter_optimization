@@ -26,6 +26,36 @@ from torch.optim import SGD, Adam, lr_scheduler
 from gte.load import get_graphs, get_loaders
 
 
+def fixed_dbscan_scan(
+    graphs: np.ndarray,
+    truth: np.ndarray,
+    sectors: np.ndarray,
+    pts: np.ndarray,
+    *,
+    guide="trk.double_majority_pt1.5",
+    epoch=None,
+    start_params: dict[str, Any] | None = None,
+) -> ClusterScanResult:
+    if start_params is None:
+        start_params = {
+            "eps": 0.95,
+            "min_samples": 1,
+        }
+    dbss = DBSCANHyperParamScanner(
+        graphs=graphs,
+        truth=truth,
+        sectors=sectors,
+        pts=pts,
+        guide=guide,
+        metrics=common_metrics,
+    )
+    return dbss.scan(
+        n_jobs=1,
+        n_trials=1,
+        start_params=start_params,
+    )
+
+
 def reduced_dbscan_scan(
     graphs: np.ndarray,
     truth: np.ndarray,
