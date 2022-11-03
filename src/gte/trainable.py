@@ -124,8 +124,9 @@ def suggest_default_values(
     # Loss function parameters
     d("q_min", 0.01)
     d("attr_pt_thld", 0.9)
-    d("focal_alpha", 0.25)
-    d("focal_gamma", 2.0)
+    if not perfect_ec:
+        d("focal_alpha", 0.25)
+        d("focal_gamma", 2.0)
     d("sb", 0.1)
 
     # Optimizers
