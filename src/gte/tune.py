@@ -24,6 +24,7 @@ from ray.tune.stopper import (
 from gte.cli import enqueue_option, gpu_option, test_option, wandb_options
 from gte.config import della, get_points_to_evaluate, read_json
 from gte.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+from gte.util.sync import TriggerSyncHook
 
 server = della
 
@@ -145,6 +146,7 @@ def main(
                 group=group,
                 notes=note,
             ),
+            TriggerSyncHook(Path("~/.wandb_osh_command_dir")),
         ]
 
     if test:
