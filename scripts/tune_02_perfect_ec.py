@@ -12,7 +12,6 @@ from torch import nn
 from gte.config import auto_suggest_if_not_fixed, get_metadata
 from gte.trainable import TCNTrainable, suggest_default_values
 from gte.tune import common_options, main
-from gte.util.signature import remove_irrelevant_arguments
 
 
 class DynamicTCNTrainable(TCNTrainable):
@@ -34,11 +33,7 @@ class DynamicTCNTrainable(TCNTrainable):
 
     def get_model(self) -> nn.Module:
         return PerfectECGraphTCN(
-            node_indim=6,
-            edge_indim=4,
-            **remove_irrelevant_arguments(
-                PerfectECGraphTCN, subdict_with_prefix_stripped(self.tc, "m_")
-            ),
+            node_indim=6, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
         pass
 
@@ -54,6 +49,7 @@ def suggest_config(
 
     d("batch_size", 1)
     d("attr_pt_thld", 0.0, 0.9)
+    d("m_feed_edge_weights", False)
     d("m_h_outdim", 3, 5)
     d("q_min", 0.3, 0.5)
     d("sb", 0.12, 0.135)
