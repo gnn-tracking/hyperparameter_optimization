@@ -1,5 +1,7 @@
 # GNN Tracking Hyperparameter Optimization
 
+<img width="1042" alt="Screenshot of wandb" src="https://user-images.githubusercontent.com/13602468/200128053-403ba2ac-7b52-4822-a34a-f154f38cb874.png">
+
 This repository hosts submission scripts for hyperparameter optimization
 related to [the main library](https://github.com/GageDeZoort/gnn_tracking).
 
