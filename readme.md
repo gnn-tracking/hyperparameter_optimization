@@ -1,5 +1,8 @@
 # GNN Tracking Hyperparameter Optimization
 
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/gnn-tracking/hyperparameter_optimization/main.svg)](https://results.pre-commit.ci/latest/github/gnn-tracking/hyperparameter_optimization/main)
+[![Check Markdown links](https://github.com/gnn-tracking/hyperparameter_optimization/actions/workflows/check-links.yaml/badge.svg)](https://github.com/gnn-tracking/hyperparameter_optimization/actions/workflows/check-links.yaml)
+
 <img width="1042" alt="Screenshot of wandb" src="https://user-images.githubusercontent.com/13602468/200128053-403ba2ac-7b52-4822-a34a-f154f38cb874.png">
 
 This repository hosts submission scripts for hyperparameter optimization
