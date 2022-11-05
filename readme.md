@@ -8,4 +8,4 @@
 ## Setup
 
 * You need [the main library](https://github.com/GageDeZoort/gnn_tracking)
-* For synchronization with `wandb`, use [wandb-osh](github.com/klieret/wandb-offline-sync-hook/) (the hooks are already included in the tuning script, you only need to start `wandb-osh` on the head node)
+* For synchronization with `wandb`, use [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/) (the hooks are already included in the tuning script, you only need to start `wandb-osh` on the head node)
