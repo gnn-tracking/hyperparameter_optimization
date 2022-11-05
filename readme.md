@@ -7,7 +7,7 @@ related to [the main library](https://github.com/GageDeZoort/gnn_tracking).
 
 * Uses [ray tune](https://docs.ray.io/en/latest/tune/index.html) as overarching
   framework
-* [Optuna](optuna.readthedocs.io/) is used to power the search
+* [Optuna](https://optuna.readthedocs.io/) is used to power the search
 * Results are reported to [wandb/weights & biases](https://wandb.ai/)
 
 ## Setup
