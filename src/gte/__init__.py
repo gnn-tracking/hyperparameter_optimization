@@ -6,4 +6,4 @@ except ModuleNotFoundError:
     from importlib_metadata import version  # type: ignore
 
 
-__version__ = version("gnn_tracking_experiments")
+__version__ = version("gte")
