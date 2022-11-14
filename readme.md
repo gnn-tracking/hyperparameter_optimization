@@ -14,11 +14,13 @@ related to [the main library](https://github.com/GageDeZoort/gnn_tracking).
   framework
 * [Optuna](https://optuna.readthedocs.io/) is used to power the search
 * Results are reported to [wandb/weights & biases](https://wandb.ai/)
+* For synchronization with `wandb`, [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/) is used (the hooks are already included in the tuning script, you only need to start `wandb-osh` on the head node)
 
 ## Setup
 
-* You need [the main library](https://github.com/GageDeZoort/gnn_tracking)
-* For synchronization with `wandb`, use [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/) (the hooks are already included in the tuning script, you only need to start `wandb-osh` on the head node)
+1. Follow the instructions from [the main library](https://github.com/GageDeZoort/gnn_tracking)
+   to set up the conda environment and install the package
+2. `pip install .` this package.
 
 ## Get started
 
@@ -29,3 +31,5 @@ related to [the main library](https://github.com/GageDeZoort/gnn_tracking).
 * [ray-tune-slurm-test](https://github.com/klieret/ray-tune-slurm-test/):
   Simple project to try out some of the capabilities of ray tune and wandb,
   especially with batch submission
+* [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/) package to trigger
+  wandb syncs on compute nodes without internet
