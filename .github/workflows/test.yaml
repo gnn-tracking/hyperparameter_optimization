@@ -1,0 +1,47 @@
+name: Python package
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # See https://stackoverflow.com/questions/72703363
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get environment.yml
+        run: |
+          mkdir environments
+          wget https://raw.githubusercontent.com/gnn-tracking/gnn_tracking/main/environments/testing-linux-64.lock -O environments/testing-linux-64.lock
+      - name: Install Conda environment from environment.yml
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: environments/testing-linux-64.lock
+          environment-name: anaconda-client-env
+          cache-downloads: true
+          cache-env: true
+      - name: Pip install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[testing]
+      - name: Test with pytest
+        run: |
+          pytest
+      - name: Explicitly convert coverage to xml
+        run: coverage xml
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3.1.1
