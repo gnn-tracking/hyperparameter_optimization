@@ -18,7 +18,7 @@ extensions = ["sphinx.ext.napoleon"]
 extensions.append("autoapi.extension")
 
 autoapi_type = "python"
-autoapi_dirs = ["../../src/gte"]
+autoapi_dirs = ["../../src/gnn_tracking_hpo"]
 autoapi_ignore = ["*/test_*.py"]
 autoapi_python_class_content = "init"
 

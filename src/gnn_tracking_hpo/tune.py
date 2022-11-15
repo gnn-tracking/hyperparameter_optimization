@@ -22,9 +22,9 @@ from ray.tune.stopper import (
 )
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
-from gte.cli import enqueue_option, gpu_option, test_option, wandb_options
-from gte.config import della, get_points_to_evaluate, read_json
-from gte.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+from gnn_tracking_hpo.cli import enqueue_option, gpu_option, test_option, wandb_options
+from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
+from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
 
 server = della
 

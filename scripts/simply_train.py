@@ -7,9 +7,9 @@ from pathlib import Path
 import click
 from gnn_tracking.metrics.losses import PotentialLoss
 
-from gte.cli import test_option
-from gte.config import read_json
-from gte.trainable import TCNTrainable
+from gnn_tracking_hpo.cli import test_option
+from gnn_tracking_hpo.config import read_json
+from gnn_tracking_hpo.trainable import TCNTrainable
 
 
 class ThisTrainable(TCNTrainable):
