@@ -18,10 +18,10 @@ from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.search import BasicVariantGenerator
 from torch.optim import SGD
 
-from gte.cli import enqueue_option, gpu_option, test_option
-from gte.config import della, get_metadata, get_points_to_evaluate
-from gte.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
-from gte.trainable import TCNTrainable
+from gnn_tracking_hpo.cli import enqueue_option, gpu_option, test_option
+from gnn_tracking_hpo.config import della, get_metadata, get_points_to_evaluate
+from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+from gnn_tracking_hpo.trainable import TCNTrainable
 
 server = della
 

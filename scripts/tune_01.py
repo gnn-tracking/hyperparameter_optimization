@@ -5,9 +5,9 @@ from typing import Any
 import click
 import optuna
 
-from gte.config import auto_suggest_if_not_fixed, get_metadata
-from gte.trainable import TCNTrainable, suggest_default_values
-from gte.tune import common_options, main
+from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
+from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
+from gnn_tracking_hpo.tune import common_options, main
 
 
 def suggest_config(

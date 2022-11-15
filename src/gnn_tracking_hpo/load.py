@@ -7,7 +7,7 @@ from gnn_tracking.graph_construction.graph_builder import GraphBuilder
 from gnn_tracking.utils.log import logger
 from torch_geometric.loader import DataLoader
 
-from gte.config import server
+from gnn_tracking_hpo.config import server
 
 
 def get_graphs(test=False) -> dict[str, list]:

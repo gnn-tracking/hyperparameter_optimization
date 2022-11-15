@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from gte.util.log import get_logger, logger
+from gnn_tracking_hpo.util.log import get_logger, logger
 
 
 def test_logger():

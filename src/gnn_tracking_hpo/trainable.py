@@ -23,7 +23,7 @@ from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
 from torch.optim import SGD, Adam, lr_scheduler
 
-from gte.load import get_graphs, get_loaders
+from gnn_tracking_hpo.load import get_graphs, get_loaders
 
 
 def fixed_dbscan_scan(
