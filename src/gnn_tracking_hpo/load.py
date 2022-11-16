@@ -1,3 +1,6 @@
+"""Everything related to data loaders and data sets."""
+
+
 from __future__ import annotations
 
 import os
@@ -18,12 +21,13 @@ def get_graphs(
     val_frac=0.12,
     input_dir: os.PathLike | str = "~/data/gnn_tracking/graphs",
 ) -> dict[str, list]:
-    """
+    """Load graphs for training, testing, and validation.
 
     Args:
         n_graphs: Total number of graphs
-        test_frac:
-        val_frac:
+        test_frac: Fraction of graphs used for testing
+        val_frac: Fraction of graphs for validation
+        input_dir: Directory containing the graphs
 
     Returns:
 
