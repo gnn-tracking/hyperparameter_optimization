@@ -1,3 +1,6 @@
+"""Everything related to data loaders and data sets."""
+
+
 from __future__ import annotations
 
 import os
@@ -12,23 +15,45 @@ from gnn_tracking_hpo.config import server
 
 
 def get_graphs(
-    test=False, input_dir: os.PathLike | str = "~/data/gnn_tracking/graphs"
+    *,
+    n_graphs,
+    test_frac=0.2,
+    val_frac=0.12,
+    input_dir: os.PathLike | str = "~/data/gnn_tracking/graphs",
 ) -> dict[str, list]:
+    """Load graphs for training, testing, and validation.
+
+    Args:
+        n_graphs: Total number of graphs
+        test_frac: Fraction of graphs used for testing
+        val_frac: Fraction of graphs for validation
+        input_dir: Directory containing the graphs
+
+    Returns:
+
+    """
+    assert 0 <= test_frac < 1
+    assert 0 <= val_frac < 1
+    assert test_frac + val_frac < 1
+
+    if n_graphs is None:
+        raise ValueError(
+            "Please explicitly set n_graphs to track it as a hyperparameter"
+        )
     logger.info("Loading data to cpu memory")
     graph_builder = load_graphs(
         str(Path(input_dir).expanduser()),
     )
-    n_graphs = 100 if test else None
     logger.debug("Loading %s graphs", n_graphs)
     graph_builder.process(stop=n_graphs)
 
     # partition graphs into train, test, val splits
     graphs = graph_builder.data_list
-    _train_graphs, test_graphs = sklearn.model_selection.train_test_split(
-        graphs, test_size=0.2
+    rest, test_graphs = sklearn.model_selection.train_test_split(
+        graphs, test_size=test_frac
     )
     train_graphs, val_graphs = sklearn.model_selection.train_test_split(
-        _train_graphs, test_size=0.15
+        rest, test_size=val_frac / (1 - test_frac)
     )
     return {
         "train": train_graphs,
