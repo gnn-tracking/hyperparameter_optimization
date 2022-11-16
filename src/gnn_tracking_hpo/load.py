@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import sklearn.model_selection
@@ -10,10 +11,12 @@ from torch_geometric.loader import DataLoader
 from gnn_tracking_hpo.config import server
 
 
-def get_graphs(test=False) -> dict[str, list]:
+def get_graphs(
+    test=False, input_dir: os.PathLike | str = "~/data/gnn_tracking/graphs"
+) -> dict[str, list]:
     logger.info("Loading data to cpu memory")
     graph_builder = load_graphs(
-        str(Path("~/data/gnn_tracking/graphs").expanduser()),
+        str(Path(input_dir).expanduser()),
     )
     n_graphs = 100 if test else None
     logger.debug("Loading %s graphs", n_graphs)
