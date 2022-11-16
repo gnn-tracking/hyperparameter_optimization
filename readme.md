@@ -12,7 +12,7 @@
 </div>
 
 This repository hosts submission scripts for hyperparameter optimization
-related to [the main library](https://github.com/GageDeZoort/gnn_tracking).
+related to [the main library](https://github.com/gnn-tracking/gnn_tracking).
 
 ## Framework
 
@@ -24,7 +24,7 @@ related to [the main library](https://github.com/GageDeZoort/gnn_tracking).
 
 ## Setup
 
-1. Follow the instructions from [the main library](https://github.com/GageDeZoort/gnn_tracking)
+1. Follow the instructions from [the main library](https://github.com/gnn-tracking/gnn_tracking)
    to set up the conda environment and install the package
 2. `pip install .` this package.
 
