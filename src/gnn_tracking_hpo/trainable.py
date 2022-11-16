@@ -36,6 +36,7 @@ def fixed_dbscan_scan(
     epoch=None,
     start_params: dict[str, Any] | None = None,
 ) -> ClusterScanResult:
+    """Convenience function for not scanning for DBSCAN hyperparameters at all."""
     if start_params is None:
         start_params = {
             "eps": 0.95,
@@ -66,6 +67,10 @@ def reduced_dbscan_scan(
     epoch=None,
     start_params: dict[str, Any] | None = None,
 ) -> ClusterScanResult:
+    """Convenience function for scanning DBSCAN hyperparameters with trial count
+    that depends on the epoch (using many trials early on, then alternating between
+    fixed and low samples in later epochs).
+    """
     dbss = DBSCANHyperParamScanner(
         graphs=graphs,
         truth=truth,
@@ -116,6 +121,14 @@ def suggest_default_values(
             return
         config[k] = v
         c[k] = v
+
+    n_graphs_default = 3200
+    d("n_graphs_train", int(0.32 * n_graphs_default))
+    d("n_graphs_test", int(0.2 * n_graphs_default))
+    d("n_graphs_val", int(0.12 * n_graphs_default))
+    assert (
+        c["n_graphs_train"] + c["n_graphs_test"] + c["n_graphs_val"] <= n_graphs_default
+    )
 
     if perfect_ec:
         d("m_ec_tpr", 1.0)
@@ -168,6 +181,8 @@ def suggest_default_values(
 
 
 class TCNTrainable(tune.Trainable):
+    """A wrapper around `TCNTrainer` for use with Ray Tune."""
+
     # Do not add blank self.tc or self.trainer to __init__, because it will be called
     # after setup when setting ``reuse_actor == True`` and overwriting your values
     # from set
@@ -235,8 +250,15 @@ class TCNTrainable(tune.Trainable):
         return subdict_with_prefix_stripped(self.tc, "lw_")
 
     def get_loaders(self):
+        n_graphs = (
+            self.tc["n_graphs_train"]
+            + self.tc["n_graphs_test"]
+            + self.tc["n_graphs_val"]
+        )
+        test_frac = self.tc["n_graphs_test"] / n_graphs
+        val_frac = self.tc["n_graphs_val"] / n_graphs
         return get_loaders(
-            get_graphs(test=self.tc["test"]),
+            get_graphs(n_graphs=n_graphs, test_frac=test_frac, val_frac=val_frac),
             test=self.tc["test"],
             batch_size=self.tc["batch_size"],
         )
