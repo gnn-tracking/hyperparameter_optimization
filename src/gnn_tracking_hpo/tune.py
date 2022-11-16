@@ -137,17 +137,17 @@ def main(
     stopper = CombinedStopper(*stoppers)
 
     callbacks = []
-    # if not test:
-    callbacks = [
-        WandbLoggerCallback(
-            api_key_file="~/.wandb_api_key",
-            project="gnn_tracking",
-            tags=tags,
-            group=group,
-            notes=note,
-        ),
-        TriggerWandbSyncRayHook(),
-    ]
+    if not test:
+        callbacks = [
+            WandbLoggerCallback(
+                api_key_file="~/.wandb_api_key",
+                project="gnn_tracking",
+                tags=tags,
+                group=group,
+                notes=note,
+            ),
+            TriggerWandbSyncRayHook(),
+        ]
 
     if test:
         dname += "_test"
