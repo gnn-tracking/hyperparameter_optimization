@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ray.tune.suggest import optuna
+import optuna
 
 from gnn_tracking_hpo.config import get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
