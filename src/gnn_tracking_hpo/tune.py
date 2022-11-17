@@ -11,7 +11,7 @@ import pytimeparse
 from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
-from ray.tune import SyncConfig
+from ray.tune import Callback, Stopper, SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.tune.stopper import (
@@ -125,7 +125,7 @@ def main(
     if only_enqueued:
         num_samples = len(points_to_evaluate)
 
-    stoppers = [
+    stoppers: list[Stopper] = [
         TrialPlateauStopper(
             metric="total",
         )
@@ -136,7 +136,7 @@ def main(
         stoppers.append(MaximumIterationStopper(1))
     stopper = CombinedStopper(*stoppers)
 
-    callbacks = []
+    callbacks: list[Callback] = []
     if not test:
         callbacks = [
             WandbLoggerCallback(
