@@ -5,6 +5,8 @@ Welcome to gnn_tracking_experiments documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   readme
+
 
 Indices and tables
 ==================
