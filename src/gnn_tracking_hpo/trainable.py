@@ -83,6 +83,7 @@ def reduced_dbscan_scan(
         guide=guide,
         metrics=common_metrics,
         min_samples_range=(1, 1),
+        eps_range=(0.90, 1.0),
     )
     n_trials_early = [
         30,
