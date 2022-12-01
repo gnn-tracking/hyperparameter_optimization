@@ -112,10 +112,22 @@ def suggest_default_values(
     config: dict[str, Any],
     trial: None | optuna.Trial = None,
     perfect_ec=False,
+    only_ec=False,
 ) -> None:
     """Set all config values, so that everything gets recorded in the database, even
     if we do not change anything.
+
+    Args:
+        config:
+        trial:
+        perfect_ec: Perfect (truth-based) edge classifier: Do not set parameters for
+            edge classifier
+        only_ec: We're only training the edge classifier, do not set any other
+            parameters
     """
+    if perfect_ec and only_ec:
+        raise ValueError("perfect_ec and only_ec are mutually exclusive")
+
     c = {**config, **(trial.params if trial is not None else {})}
 
     def d(k, v):
@@ -139,12 +151,13 @@ def suggest_default_values(
         d("m_ec_tnr", 1.0)
 
     # Loss function parameters
-    d("q_min", 0.01)
-    d("attr_pt_thld", 0.9)
+    if not only_ec:
+        d("q_min", 0.01)
+        d("attr_pt_thld", 0.9)
+        d("sb", 0.1)
     if not perfect_ec:
         d("focal_alpha", 0.25)
         d("focal_gamma", 2.0)
-    d("sb", 0.1)
 
     # Optimizers
     d("lr", 5e-4)
@@ -173,14 +186,16 @@ def suggest_default_values(
     # Model parameters
     d("m_h_dim", 5)
     d("m_e_dim", 4)
-    d("m_h_outdim", 2)
+    if not only_ec:
+        d("m_h_outdim", 2)
     d("m_hidden_dim", 40)
     if not perfect_ec:
         d("m_L_ec", 3)
         d("m_alpha_ec", 0.5)
-    d("m_L_hc", 3)
-    d("m_alpha_hc", 0.5)
-    if not perfect_ec:
+    if not only_ec:
+        d("m_L_hc", 3)
+        d("m_alpha_hc", 0.5)
+    if not perfect_ec and not only_ec:
         d("m_feed_edge_weights", False)
 
 
