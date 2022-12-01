@@ -41,14 +41,7 @@ def get_graphs(
             "Please explicitly set n_graphs to track it as a hyperparameter"
         )
     logger.info("Loading data to cpu memory")
-    graph_builder = load_graphs(
-        str(Path(input_dir).expanduser()),
-    )
-    logger.debug("Loading %s graphs", n_graphs)
-    graph_builder.process(stop=n_graphs)
-
-    # partition graphs into train, test, val splits
-    graphs = graph_builder.data_list
+    graphs = load_graphs(str(Path(input_dir).expanduser()), stop=n_graphs)
     rest, test_graphs = sklearn.model_selection.train_test_split(
         graphs, test_size=test_frac
     )
