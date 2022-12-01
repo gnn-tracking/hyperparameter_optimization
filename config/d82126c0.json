@@ -1,0 +1,22 @@
+{
+    "lr": 0.0005228788255216564,
+    "sb": 0.1235475177884142,
+    "q_min": 0.34708453321560045,
+    "m_L_hc": 3,
+    "m_e_dim": 5,
+    "m_h_dim": 7,
+    "m_ec_tnr": 1,
+    "m_ec_tpr": 1,
+    "optimizer": "adam",
+    "scheduler": null,
+    "batch_size": 1,
+    "m_alpha_hc": 0.5701612792916482,
+    "m_h_outdim": 4,
+    "focal_alpha": 0.25,
+    "focal_gamma": 2,
+    "attr_pt_thld": 0.16037409963918367,
+    "m_hidden_dim": 116,
+    "rlw_background": 1,
+    "rlw_potential_repulsive": 2.7771976892096775,
+    "rlw_potential_attractive": 1
+}
