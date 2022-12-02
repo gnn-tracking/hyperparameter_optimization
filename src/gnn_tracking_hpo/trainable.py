@@ -121,7 +121,7 @@ def suggest_default_values(
     c = {**config, **(trial.params if trial is not None else {})}
 
     def d(k, v):
-        if k in trial.params:
+        if trial is not None and k in trial.params:
             return
         if k in config:
             return
