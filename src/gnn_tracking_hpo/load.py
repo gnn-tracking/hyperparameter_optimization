@@ -32,9 +32,9 @@ def get_graphs(
     Returns:
 
     """
-    assert 0 <= test_frac < 1
-    assert 0 <= val_frac < 1
-    assert test_frac + val_frac < 1
+    assert 0 <= test_frac <= 1
+    assert 0 <= val_frac <= 1
+    assert test_frac + val_frac <= 1
 
     if n_graphs is None:
         raise ValueError(
