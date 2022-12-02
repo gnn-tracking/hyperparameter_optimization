@@ -83,27 +83,16 @@ def reduced_dbscan_scan(
         guide=guide,
         metrics=common_metrics,
         min_samples_range=(1, 1),
-        eps_range=(0.90, 1.0),
+        eps_range=(0.95, 1.0),
     )
-    n_trials_early = [
-        30,
-        20,
-        10,
-        10,
-        1,
-        10,
-        1,
-        10,
-        1,
-    ]
-    if epoch < len(n_trials_early):
-        n_trials = n_trials_early[epoch]
+    if epoch < 8:
+        n_trials = 12
     elif epoch % 4 == 0:
-        n_trials = 10
+        n_trials = 12
     else:
         n_trials = 1
     return dbss.scan(
-        n_jobs=12,  # todo: make flexible
+        n_jobs=min(12, n_trials),  # todo: make flexible
         n_trials=n_trials,
         start_params=start_params,
     )
