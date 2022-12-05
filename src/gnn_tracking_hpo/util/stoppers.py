@@ -54,8 +54,10 @@ class NoImprovementStopper(tune.Stopper):
         self.grace_period = grace_period
         self._best = None
         self._stagnant = 0
+        self._epoch = 0
 
     def __call__(self, trial_id, result) -> bool:
+        self._epoch += 1
         if self._best is None:
             self._best = result[self.metric]
             return False
@@ -80,8 +82,7 @@ class NoImprovementStopper(tune.Stopper):
             self._stagnant = 0
             return False
         self._stagnant += 1
-        epoch = result["epoch"]
-        if epoch < self.grace_period:
+        if self.epoch < self.grace_period:
             return False
         if self._stagnant > self.patience:
             return True
