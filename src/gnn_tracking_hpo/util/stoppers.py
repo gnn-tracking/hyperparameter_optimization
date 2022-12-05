@@ -59,16 +59,22 @@ class NoImprovementStopper(tune.Stopper):
         if self._best is None:
             self._best = result[self.metric]
             return False
+        try:
+            ratio = result[self.metric] / self._best
+        except ZeroDivisionError:
+            ratio = None
         if (
             self.mode == "max"
-            and result[self.metric] / self._best > 1 + self.rel_change_thld
+            and ratio is not None
+            and ratio > 1 + self.rel_change_thld
         ):
             self._best = result[self.metric]
             self._stagnant = 0
             return False
         elif (
             self.mode == "min"
-            and result[self.metric] / self._best < 1 - self.rel_change_thld
+            and ratio is not None
+            and ratio < 1 - self.rel_change_thld
         ):
             self._best = result[self.metric]
             self._stagnant = 0
