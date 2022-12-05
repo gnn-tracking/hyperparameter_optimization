@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import partial
 from typing import Any
 
 import click
@@ -39,7 +40,11 @@ class DynamicTCNTrainable(TCNTrainable):
 
 
 def suggest_config(
-    trial: optuna.Trial, *, test=False, fixed: dict[str, Any] | None = None
+    trial: optuna.Trial,
+    *,
+    test=False,
+    fixed: dict[str, Any] | None = None,
+    sector: int | None = None,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -47,6 +52,7 @@ def suggest_config(
     def d(key, *args, **kwargs):
         auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
+    d("sector", sector)
     d("batch_size", 1)
     d("attr_pt_thld", 0.0, 0.9)
     d("m_h_outdim", 3, 5)
@@ -67,9 +73,15 @@ def suggest_config(
 
 
 @click.command()
+@click.option("--sector", type=int, default=None)
 @common_options
-def real_main(**kwargs):
-    main(DynamicTCNTrainable, suggest_config, grace_period=4, **kwargs)
+def real_main(sector, **kwargs):
+    main(
+        DynamicTCNTrainable,
+        partial(suggest_config, sector=sector),
+        grace_period=4,
+        **kwargs,
+    )
 
 
 if __name__ == "__main__":
