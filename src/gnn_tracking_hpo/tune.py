@@ -170,7 +170,11 @@ def main(
             callbacks=callbacks,
             sync_config=SyncConfig(syncer=None),
             stop=stopper,
-            checkpoint_config=CheckpointConfig(checkpoint_at_end=True),
+            checkpoint_config=CheckpointConfig(
+                checkpoint_score_attribute="trk.double_majority_pt1.5",
+                checkpoint_score_order="max",
+                num_to_keep=5,
+            ),
             log_to_file=True,
             # verbose=1,  # Only status reports, no results
             failure_config=FailureConfig(
