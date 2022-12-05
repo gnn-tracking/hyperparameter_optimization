@@ -19,7 +19,7 @@ def get_graphs(
     n_graphs,
     test_frac=0.2,
     val_frac=0.12,
-    input_dir: os.PathLike | str = "~/data/gnn_tracking/graphs",
+    input_dir: os.PathLike | str = "/tigress/jdezoort/object_condensation/graphs",
     sector: int | None = None,
 ) -> dict[str, list]:
     """Load graphs for training, testing, and validation.
