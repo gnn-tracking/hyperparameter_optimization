@@ -25,7 +25,7 @@ enqueue_option = click.option(
 def wandb_options(f):
     """To be used as a decorator. Add command line options for wandb metadata."""
 
-    @click.option("--tags", nargs=-1, help="Tags for wandb")
+    @click.option("--tags", multiple=True, help="Tags for wandb")
     @click.option(
         "--group",
         help="Wandb group name",
