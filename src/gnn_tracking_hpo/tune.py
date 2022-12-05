@@ -24,6 +24,7 @@ from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 from gnn_tracking_hpo.cli import enqueue_option, gpu_option, test_option, wandb_options
 from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+from gnn_tracking_hpo.util.stoppers import NoImprovementStopper
 
 server = della
 
@@ -125,9 +126,12 @@ def main(
         num_samples = len(points_to_evaluate)
 
     stoppers: list[Stopper] = [
-        # TrialPlateauStopper(
-        #     metric="total",
-        # )
+        NoImprovementStopper(
+            metric="trk.double_majority_pt1.5",
+            patience=10,
+            mode="max",
+            grace_period=grace_period,
+        ),
     ]
     if timeout_seconds is not None:
         stoppers.append(TimeoutStopper(timeout_seconds))
