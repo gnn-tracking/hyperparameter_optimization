@@ -20,6 +20,7 @@ def get_graphs(
     test_frac=0.2,
     val_frac=0.12,
     input_dir: os.PathLike | str = "~/data/gnn_tracking/graphs",
+    sector: int | None = None,
 ) -> dict[str, list]:
     """Load graphs for training, testing, and validation.
 
@@ -28,6 +29,7 @@ def get_graphs(
         test_frac: Fraction of graphs used for testing
         val_frac: Fraction of graphs for validation
         input_dir: Directory containing the graphs
+        sector: Only load specific sector
 
     Returns:
 
@@ -41,7 +43,9 @@ def get_graphs(
             "Please explicitly set n_graphs to track it as a hyperparameter"
         )
     logger.info("Loading data to cpu memory")
-    graphs = load_graphs(str(Path(input_dir).expanduser()), stop=n_graphs)
+    graphs = load_graphs(
+        str(Path(input_dir).expanduser()), stop=n_graphs, sector=sector
+    )
     rest, test_graphs = sklearn.model_selection.train_test_split(
         graphs, test_size=test_frac
     )

@@ -136,6 +136,8 @@ def suggest_default_values(
         c["n_graphs_train"] + c["n_graphs_test"] + c["n_graphs_val"] <= n_graphs_default
     )
 
+    d("sector", None)
+
     if perfect_ec:
         d("m_ec_tpr", 1.0)
         d("m_ec_tnr", 1.0)
@@ -267,7 +269,12 @@ class TCNTrainable(tune.Trainable):
         test_frac = self.tc["n_graphs_test"] / n_graphs
         val_frac = self.tc["n_graphs_val"] / n_graphs
         return get_loaders(
-            get_graphs(n_graphs=n_graphs, test_frac=test_frac, val_frac=val_frac),
+            get_graphs(
+                n_graphs=n_graphs,
+                test_frac=test_frac,
+                val_frac=val_frac,
+                sector=self.tc["sector"],
+            ),
             test=self.tc["test"],
             batch_size=self.tc["batch_size"],
         )
