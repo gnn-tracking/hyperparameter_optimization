@@ -14,11 +14,10 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import Callback, Stopper, SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
-from ray.tune.stopper import (
+from ray.tune.stopper import (  # TrialPlateauStopper,
     CombinedStopper,
     MaximumIterationStopper,
     TimeoutStopper,
-    TrialPlateauStopper,
 )
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
@@ -126,9 +125,9 @@ def main(
         num_samples = len(points_to_evaluate)
 
     stoppers: list[Stopper] = [
-        TrialPlateauStopper(
-            metric="total",
-        )
+        # TrialPlateauStopper(
+        #     metric="total",
+        # )
     ]
     if timeout_seconds is not None:
         stoppers.append(TimeoutStopper(timeout_seconds))
