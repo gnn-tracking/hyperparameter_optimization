@@ -53,6 +53,10 @@ def suggest_config(
         auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
     d("sector", sector)
+    if sector is not None:
+        d("n_graphs_train", 200)
+        d("n_graphs_val", 50)
+        d("n_graphs_test", 20)
     d("batch_size", 1)
     d("attr_pt_thld", 0.0, 0.9)
     d("m_h_outdim", 3, 5)
