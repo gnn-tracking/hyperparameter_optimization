@@ -136,6 +136,9 @@ def suggest_default_values(
         c["n_graphs_train"] + c["n_graphs_test"] + c["n_graphs_val"] <= n_graphs_default
     )
 
+    d("training_pt_thld", 0.0)
+    d("training_without_noise", False)
+
     d("sector", None)
 
     if perfect_ec:
@@ -292,6 +295,8 @@ class TCNTrainable(tune.Trainable):
             optimizer=self.get_optimizer(),
         )
         trainer.max_batches_for_clustering = 100 if not test else 10
+        trainer.training_without_noise = self.tc["training_without_noise"]
+        trainer.training_pt_thld = self.tc["training_pt_thld"]
         return trainer
 
     def step(self):
