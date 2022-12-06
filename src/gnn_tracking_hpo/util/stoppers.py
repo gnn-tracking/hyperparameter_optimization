@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import collections
+from typing import Any, DefaultDict
+
 from ray import tune
 
 
@@ -52,39 +55,35 @@ class NoImprovementStopper(tune.Stopper):
         self.mode = mode
         self.patience = patience
         self.grace_period = grace_period
-        self._best = None
-        self._stagnant = 0
-        self._epoch = 0
+        self._best: DefaultDict[Any, None | int] = collections.defaultdict(lambda: None)
+        self._stagnant: DefaultDict[Any, int] = collections.defaultdict(int)
+        self._epoch: DefaultDict[Any, int] = collections.defaultdict(int)
 
     def __call__(self, trial_id, result) -> bool:
-        self._epoch += 1
-        if self._best is None:
-            self._best = result[self.metric]
+        self._epoch[trial_id] += 1
+        if self._best[trial_id] is None:
+            self._best[trial_id] = result[self.metric]
             return False
         try:
-            ratio = result[self.metric] / self._best
+            ratio = result[self.metric] / self._best[trial_id]
         except ZeroDivisionError:
             ratio = None
         if (
             self.mode == "max"
             and ratio is not None
             and ratio > 1 + self.rel_change_thld
-        ):
-            self._best = result[self.metric]
-            self._stagnant = 0
-            return False
-        elif (
+        ) or (
             self.mode == "min"
             and ratio is not None
             and ratio < 1 - self.rel_change_thld
         ):
-            self._best = result[self.metric]
-            self._stagnant = 0
+            self._best[trial_id] = result[self.metric]
+            self._stagnant[trial_id] = 0
             return False
-        self._stagnant += 1
-        if self._epoch < self.grace_period:
+        self._stagnant[trial_id] += 1
+        if self._epoch[trial_id] < self.grace_period:
             return False
-        if self._stagnant > self.patience:
+        if self._stagnant[trial_id] > self.patience:
             return True
         return False
 
