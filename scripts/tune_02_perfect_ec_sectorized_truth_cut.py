@@ -44,6 +44,7 @@ def suggest_config(
     *,
     test=False,
     fixed: dict[str, Any] | None = None,
+    sector: int | None = None,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -51,6 +52,13 @@ def suggest_config(
     def d(key, *args, **kwargs):
         auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
+    assert sector is not None
+    d("sector", sector)
+    d("n_graphs_train", 300)
+    d("n_graphs_val", 69)
+    d("n_graphs_test", 1)
+    d("training_pt_thld", 0.9)
+    d("training_without_noise", True)
     d("batch_size", 1)
     d("attr_pt_thld", 0.0, 0.9)
     d("m_h_outdim", 3, 5)
@@ -71,6 +79,7 @@ def suggest_config(
 
 
 @click.command()
+@click.option("--sector", type=int, required=True)
 @common_options
 def real_main(sector, **kwargs):
     main(
