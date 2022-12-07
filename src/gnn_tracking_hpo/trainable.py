@@ -140,6 +140,7 @@ def suggest_default_values(
     d("training_without_noise", False)
 
     d("sector", None)
+    d("batch_size", 1)
 
     if perfect_ec:
         d("m_ec_tpr", 1.0)
