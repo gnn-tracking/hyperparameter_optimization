@@ -87,6 +87,7 @@ def main(
     note=None,
     fail_slow=False,
     dname="tcn",
+    metric="trk.double_majority_pt1.5",
 ):
     """
     For most argument, see corresponding command line interface.
@@ -111,7 +112,7 @@ def main(
 
     optuna_search = OptunaSearch(
         partial(suggest_config, test=test, fixed=fixed_config),
-        metric="trk.double_majority_pt1.5",
+        metric=metric,
         mode="max",
         points_to_evaluate=points_to_evaluate,
     )
@@ -127,7 +128,7 @@ def main(
 
     stoppers: list[Stopper] = [
         NoImprovementStopper(
-            metric="trk.double_majority_pt1.5",
+            metric=metric,
             patience=10,
             mode="max",
             grace_period=grace_period,
@@ -162,7 +163,7 @@ def main(
         ),
         tune_config=tune.TuneConfig(
             scheduler=ASHAScheduler(
-                metric="trk.double_majority_pt1.5",
+                metric=metric,
                 mode="max",
                 grace_period=grace_period,
             ),
@@ -175,7 +176,7 @@ def main(
             sync_config=SyncConfig(syncer=None),
             stop=stopper,
             checkpoint_config=CheckpointConfig(
-                checkpoint_score_attribute="trk.double_majority_pt1.5",
+                checkpoint_score_attribute=metric,
                 checkpoint_score_order="max",
                 num_to_keep=5,
             ),
