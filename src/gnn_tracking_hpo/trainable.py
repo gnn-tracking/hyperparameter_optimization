@@ -142,6 +142,10 @@ def suggest_default_values(
     d("sector", None)
     d("batch_size", 1)
 
+    # These defaults are for backward compatibility, they might not be reasonable
+    d("m_interaction_node_hidden_dim", 5)
+    d("m_interaction_edge_hidden_dim", 4)
+
     if perfect_ec:
         d("m_ec_tpr", 1.0)
         d("m_ec_tnr", 1.0)
