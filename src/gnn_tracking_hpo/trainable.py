@@ -146,6 +146,8 @@ def suggest_default_values(
     d("m_interaction_node_hidden_dim", 5)
     d("m_interaction_edge_hidden_dim", 4)
 
+    d("repulsive_radius_threshold", 10.0)
+
     if perfect_ec:
         d("m_ec_tpr", 1.0)
         d("m_ec_tnr", 1.0)
@@ -227,6 +229,7 @@ class TCNTrainable(tune.Trainable):
         return PotentialLoss(
             q_min=self.tc["q_min"],
             attr_pt_thld=self.tc["attr_pt_thld"],
+            radius_threshold=self.tc["repulsive_radius_threshold"],
         )
 
     def get_background_loss_function(self):
