@@ -6,7 +6,6 @@ from typing import Any
 import click
 import optuna
 from gnn_tracking.models.track_condensation_networks import PerfectECGraphTCN
-from gnn_tracking.training.dynamiclossweights import NormalizeAt
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from torch import nn
 
@@ -22,21 +21,10 @@ class DynamicTCNTrainable(TCNTrainable):
             "background": self.get_background_loss_function(),
         }
 
-    def get_loss_weights(self):
-        relative_weights = [
-            {},
-            subdict_with_prefix_stripped(self.tc, "rlw_"),
-        ]
-        return NormalizeAt(
-            at=[0, 1],
-            relative_weights=relative_weights,
-        )
-
     def get_model(self) -> nn.Module:
         return PerfectECGraphTCN(
             node_indim=6, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
-        pass
 
 
 def suggest_config(

@@ -4,8 +4,6 @@ from typing import Any
 
 import click
 import optuna
-from gnn_tracking.training.dynamiclossweights import NormalizeAt
-from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
@@ -13,17 +11,7 @@ from gnn_tracking_hpo.tune import common_options, main
 
 
 class DynamicTCNTrainable(TCNTrainable):
-    def get_loss_weights(self):
-        relative_weights = [
-            {
-                "edge": 10,
-            },
-            subdict_with_prefix_stripped(self.tc, "rlw_"),
-        ]
-        return NormalizeAt(
-            at=[0, 1],
-            relative_weights=relative_weights,
-        )
+    pass
 
 
 def suggest_config(
