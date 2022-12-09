@@ -138,6 +138,7 @@ def suggest_default_values(
 
     d("training_pt_thld", 0.0)
     d("training_without_noise", False)
+    d("training_without_non_reconstructable", False)
 
     d("sector", None)
     d("batch_size", 1)
@@ -305,6 +306,9 @@ class TCNTrainable(tune.Trainable):
         trainer.max_batches_for_clustering = 100 if not test else 10
         trainer.training_without_noise = self.tc["training_without_noise"]
         trainer.training_pt_thld = self.tc["training_pt_thld"]
+        trainer.training_without_non_reconstructable = self.tc[
+            "training_without_non_reconstructable"
+        ]
         return trainer
 
     def step(self):
