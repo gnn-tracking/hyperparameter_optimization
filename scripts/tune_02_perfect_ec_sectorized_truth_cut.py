@@ -47,20 +47,25 @@ def suggest_config(
     d("n_graphs_test", 1)
     d("training_pt_thld", 0.9)
     d("training_without_noise", True)
+    d("training_without_non_reconstructable", True)
     d("batch_size", 1)
     d("attr_pt_thld", 0.0, 0.9)
-    d("m_h_outdim", 3, 5)
+    d("m_h_outdim", 2, 5)
     d("q_min", 0.3, 0.5)
-    d("sb", 0.12, 0.135)
-    d("lr", 0.0002, 0.0006)
+    d("sb", 0.1, 0.15)
+    d("lr", 0.0001, 0.0006)
+    d("repulsive_radius_threshold", 1.5, 10)
     d("m_hidden_dim", 116)
     d("m_L_hc", 3)
     d("m_h_dim", 5, 8)
     d("m_e_dim", 4, 6)
-    d("m_alpha_hc", 0.3, 0.7)
-    d("rlw_background", 1.0)
-    d("rlw_potential_attractive", 1.0)
-    d("rlw_potential_repulsive", 2.0, 3.0)
+    d("m_alpha_hc", 0.3, 0.99)
+    # Keep one fixed because of normalization invariance
+    d("lw_potential_attractive", 1.0)
+    d("lw_background", 1e-6, 1e6, log=True)
+    d("lw_potential_repulsive", 1e-6, 1e6, log=True)
+    d("m_interaction_node_hidden_dim", 32, 128)
+    d("m_interaction_edge_hidden_dim", 32, 128)
 
     suggest_default_values(config, trial, perfect_ec=True)
     return config
@@ -73,7 +78,7 @@ def real_main(sector, **kwargs):
     main(
         DynamicTCNTrainable,
         partial(suggest_config, sector=sector),
-        grace_period=4,
+        grace_period=10,
         metric="tc_trk.double_majority",
         **kwargs,
     )
