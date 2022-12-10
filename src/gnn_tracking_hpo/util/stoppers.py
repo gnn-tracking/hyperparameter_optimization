@@ -36,7 +36,7 @@ class ThresholdByEpochStopper(tune.Stopper):
             raise ValueError(f"Invalid mode {self.mode}")
 
     def __call__(self, trial_id, result) -> bool:
-        epoch = result["epoch"]
+        epoch = result["iter"]
         threshold = self.get_threshold(epoch)
         if isnan(threshold):
             return False
