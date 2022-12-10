@@ -6,6 +6,7 @@ from typing import Any
 import click
 import optuna
 from gnn_tracking.models.track_condensation_networks import PerfectECGraphTCN
+from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from torch import nn
 
@@ -20,6 +21,21 @@ class DynamicTCNTrainable(TCNTrainable):
             "potential": self.get_potential_loss_function(),
             "background": self.get_background_loss_function(),
         }
+
+    def get_trainer(self) -> TCNTrainer:
+        trainer = super().get_trainer()
+
+        def test_every(*args, **kwargs):
+            if trainer._epoch % 9 == 1:
+                # note: first epoch we test is epoch 1
+                trainer.last_test_result = TCNTrainer.test_step(
+                    trainer, *args, **kwargs
+                )
+            return trainer.last_test_result
+
+        trainer.test_step = test_every
+
+        return trainer
 
     def get_model(self) -> nn.Module:
         return PerfectECGraphTCN(
@@ -78,7 +94,7 @@ def real_main(sector, **kwargs):
     main(
         DynamicTCNTrainable,
         partial(suggest_config, sector=sector),
-        grace_period=10,
+        grace_period=11,
         metric="tc_trk.double_majority",
         **kwargs,
     )
