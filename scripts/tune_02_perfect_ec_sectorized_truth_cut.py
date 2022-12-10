@@ -95,6 +95,7 @@ def real_main(sector, **kwargs):
         DynamicTCNTrainable,
         partial(suggest_config, sector=sector),
         grace_period=11,
+        no_improvement_patience=19,
         metric="tc_trk.double_majority",
         **kwargs,
     )

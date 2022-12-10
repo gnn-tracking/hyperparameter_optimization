@@ -88,6 +88,7 @@ def main(
     fail_slow=False,
     dname="tcn",
     metric="trk.double_majority_pt1.5",
+    no_improvement_patience=10,
 ):
     """
     For most argument, see corresponding command line interface.
@@ -96,6 +97,8 @@ def main(
         trainable: The trainable to run.
         suggest_config: A function that returns a config dictionary.
         grace_period: Grace period for ASHA scheduler.
+        no_improvement_patience: Number of iterations without improvement before
+            stopping
     """
     maybe_run_wandb_offline()
 
@@ -129,7 +132,7 @@ def main(
     stoppers: list[Stopper] = [
         NoImprovementStopper(
             metric=metric,
-            patience=10,
+            patience=no_improvement_patience,
             mode="max",
             grace_period=grace_period,
         ),
