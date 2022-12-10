@@ -24,7 +24,7 @@ from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 from gnn_tracking_hpo.cli import enqueue_option, gpu_option, test_option, wandb_options
 from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
-from gnn_tracking_hpo.util.stoppers import NoImprovementStopper
+from gnn_tracking_hpo.util.stoppers import NoImprovementStopper, ThresholdByEpochStopper
 
 server = della
 
@@ -89,6 +89,7 @@ def main(
     dname="tcn",
     metric="trk.double_majority_pt1.5",
     no_improvement_patience=10,
+    thresholds=None,
 ):
     """
     For most argument, see corresponding command line interface.
@@ -99,6 +100,7 @@ def main(
         grace_period: Grace period for ASHA scheduler.
         no_improvement_patience: Number of iterations without improvement before
             stopping
+        thresholds: Thresholds for stopping: Mapping of epoch -> expected FOM
     """
     maybe_run_wandb_offline()
 
@@ -136,6 +138,7 @@ def main(
             mode="max",
             grace_period=grace_period,
         ),
+        ThresholdByEpochStopper(metric=metric, thresholds=thresholds),
     ]
     if timeout_seconds is not None:
         stoppers.append(TimeoutStopper(timeout_seconds))

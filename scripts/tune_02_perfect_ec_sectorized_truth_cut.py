@@ -97,6 +97,11 @@ def real_main(sector, **kwargs):
         grace_period=11,
         no_improvement_patience=19,
         metric="tc_trk.double_majority",
+        thresholds={
+            40: 0.6,
+            60: 0.8,
+            70: 0.9,
+        },
         **kwargs,
     )
 

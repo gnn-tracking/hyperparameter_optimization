@@ -8,11 +8,15 @@ from ray import tune
 
 
 class ThresholdByEpochStopper(tune.Stopper):
-    def __init__(self, metric: str, thresholds: dict[int, float], mode: str = "max"):
+    def __init__(
+        self, metric: str, thresholds: None | dict[int, float], *, mode: str = "max"
+    ):
         """Stopper that stops if results at a certain epoch fall above/below a certain
         threshold.
         """
         self.metric = metric
+        if thresholds is None:
+            thresholds = {}
         self.threshold = thresholds
         self.mode = mode
 
@@ -46,6 +50,7 @@ class NoImprovementStopper(tune.Stopper):
     def __init__(
         self,
         metric: str,
+        *,
         rel_change_thld=0.01,
         mode: str = "max",
         patience=6,
