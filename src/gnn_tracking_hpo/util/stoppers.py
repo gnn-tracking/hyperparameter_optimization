@@ -31,11 +31,11 @@ class ThresholdByEpochStopper(tune.Stopper):
         """Get threshold for epoch. NaN is returned if no threshold is
         defined.
         """
-        relevant_epoch = max([k for k in self.threshold if k <= epoch], default=-1)
+        relevant_epoch = max([k for k in self._thresholds if k <= epoch], default=-1)
         if relevant_epoch < 0:
             return float("nan")
-        assert relevant_epoch in self.threshold
-        return self.threshold[relevant_epoch]
+        assert relevant_epoch in self._thresholds
+        return self._thresholds[relevant_epoch]
 
     def _better_than(self, a: float, b: float) -> bool:
         """Is a better than b based on the comparison mode?"""
