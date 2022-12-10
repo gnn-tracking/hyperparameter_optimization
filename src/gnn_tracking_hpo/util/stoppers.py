@@ -22,7 +22,7 @@ class ThresholdByEpochStopper(tune.Stopper):
         """
         self._metric = metric
         if thresholds is None:
-            thresholds = {}
+            thresholds = dict[int, float]()
         self._thresholds = thresholds
         self._comparison_mode = mode
         self._epoch: DefaultDict[Any, int] = collections.defaultdict(int)
