@@ -107,7 +107,14 @@ def main(
 
     maybe_run_distributed()
 
-    timeout_seconds = pytimeparse.parse(timeout) if timeout else None
+    if timeout is None:
+        timeout_seconds = None
+    else:
+        timeout_seconds = pytimeparse.parse(timeout)
+        if timeout_seconds is None:
+            raise ValueError(
+                "Could not parse timeout. Try specifying a unit, " "e.g., 1h13m"
+            )
     del timeout
 
     points_to_evaluate = get_points_to_evaluate(enqueue)
