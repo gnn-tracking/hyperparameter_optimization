@@ -19,12 +19,13 @@ from ray.tune.stopper import (  # TrialPlateauStopper,
     MaximumIterationStopper,
     TimeoutStopper,
 )
+from rt_stoppers_contrib.no_improvement import NoImprovementStopper
+from rt_stoppers_contrib.threshold_by_epoch import ThresholdByEpochStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
 from gnn_tracking_hpo.cli import enqueue_option, gpu_option, test_option, wandb_options
 from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
-from gnn_tracking_hpo.util.stoppers import NoImprovementStopper, ThresholdByEpochStopper
 
 server = della
 
