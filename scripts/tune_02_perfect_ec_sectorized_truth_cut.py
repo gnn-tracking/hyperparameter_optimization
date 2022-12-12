@@ -99,7 +99,7 @@ def suggest_config(
 def real_main(sector, tpr=1.0, no_truth_cut=False, **kwargs):
     main(
         DynamicTCNTrainable,
-        partial(suggest_config, sector=sector, trutch_cut=not no_truth_cut, tpr=tpr),
+        partial(suggest_config, sector=sector, truth_cut=not no_truth_cut, tpr=tpr),
         grace_period=11,
         no_improvement_patience=19,
         metric="tc_trk.double_majority",
