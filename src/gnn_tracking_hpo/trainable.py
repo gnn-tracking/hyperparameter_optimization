@@ -21,6 +21,7 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
+from torch import nn
 from torch.optim import SGD, Adam, lr_scheduler
 
 from gnn_tracking_hpo.load import get_graphs, get_loaders
@@ -147,7 +148,8 @@ def suggest_default_values(
     d("m_interaction_node_hidden_dim", 5)
     d("m_interaction_edge_hidden_dim", 4)
 
-    d("repulsive_radius_threshold", 10.0)
+    if not only_ec:
+        d("repulsive_radius_threshold", 10.0)
 
     if perfect_ec:
         d("m_ec_tpr", 1.0)
@@ -215,7 +217,7 @@ class TCNTrainable(tune.Trainable):
         self.trainer = self.get_trainer()
         self.trainer.pt_thlds = [1.5]
 
-    def get_model(self) -> GraphTCN:
+    def get_model(self) -> nn.Module:
         return GraphTCN(
             node_indim=6, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
