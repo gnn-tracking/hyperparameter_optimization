@@ -16,7 +16,7 @@ from gnn_tracking.metrics.losses import (
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
 from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
-from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.training.tcn_trainer import TCNTrainer, TrainingTruthCutConfig
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.seeds import fix_seeds
@@ -305,11 +305,12 @@ class TCNTrainable(tune.Trainable):
             optimizer=self.get_optimizer(),
         )
         trainer.max_batches_for_clustering = 100 if not test else 10
-        trainer.training_without_noise = self.tc["training_without_noise"]
-        trainer.training_pt_thld = self.tc["training_pt_thld"]
-        trainer.training_without_non_reconstructable = self.tc[
-            "training_without_non_reconstructable"
-        ]
+        trainer.training_truth_cuts = TrainingTruthCutConfig(
+            without_noise=self.tc["training_without_noise"],
+            pt_thld=self.tc["training_pt_thld"],
+            without_non_reconstructable=self.tc["training_without_non_reconstructable"],
+        )
+
         return trainer
 
     def step(self):
