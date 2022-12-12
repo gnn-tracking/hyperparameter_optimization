@@ -215,7 +215,6 @@ class TCNTrainable(tune.Trainable):
         self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
-        self.trainer.pt_thlds = [1.5]
 
     def get_model(self) -> nn.Module:
         return GraphTCN(

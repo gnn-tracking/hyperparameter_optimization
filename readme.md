@@ -11,8 +11,9 @@
 
 </div>
 
-This repository hosts submission scripts for hyperparameter optimization
-related to [the main library](https://github.com/gnn-tracking/gnn_tracking).
+This repository hosts submission scripts and framework for hyperparameter optimization
+of the models defined in [the main library](https://github.com/gnn-tracking/gnn_tracking).
+Part of this are fully parameterized versions of the models.
 
 ## Framework
 
