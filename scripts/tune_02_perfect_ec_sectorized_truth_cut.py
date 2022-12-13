@@ -72,7 +72,7 @@ def suggest_config(
     d("attr_pt_thld", 0.0, 0.9)
     d("m_h_outdim", 2, 5)
     d("q_min", 0.3, 0.5)
-    d("sb", 0.1, 0.15)
+    d("sb", 0.05, 0.12)
     d("lr", 0.0001, 0.0006)
     d("repulsive_radius_threshold", 1.5, 10)
     d("m_hidden_dim", 116)
@@ -82,8 +82,8 @@ def suggest_config(
     d("m_alpha_hc", 0.3, 0.99)
     # Keep one fixed because of normalization invariance
     d("lw_potential_attractive", 1.0)
-    d("lw_background", 1e-6, 1e6, log=True)
-    d("lw_potential_repulsive", 1e-6, 1e6, log=True)
+    d("lw_background", 1e-6, 1e-1, log=True)
+    d("lw_potential_repulsive", 1e-1, 1e1, log=True)
     d("m_interaction_node_hidden_dim", 32, 128)
     d("m_interaction_edge_hidden_dim", 32, 128)
 
@@ -99,7 +99,7 @@ def suggest_config(
 def real_main(sector, tpr=1.0, no_truth_cut=False, **kwargs):
     main(
         DynamicTCNTrainable,
-        partial(suggest_config, sector=sector, truth_cut=not no_truth_cut, tpr=tpr),
+        partial(suggest_config, sector=sector, truth_cut=not no_truth_cut, ec_tpr=tpr),
         grace_period=11,
         no_improvement_patience=19,
         metric="tc_trk.double_majority",
