@@ -38,5 +38,8 @@ Part of this are fully parameterized versions of the models.
 * [ray-tune-slurm-test](https://github.com/klieret/ray-tune-slurm-test/):
   Simple project to try out some of the capabilities of ray tune and wandb,
   especially with batch submission
-* [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/) package to trigger
+* [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/): package to trigger
   wandb syncs on compute nodes without internet
+* [additional stoppers for ray tune](https://github.com/klieret/ray-tune-stoppers-contrib.git):
+  package with additional early stopping conditions for trials used in our
+  HPO
