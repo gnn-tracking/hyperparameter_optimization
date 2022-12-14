@@ -19,8 +19,8 @@ from ray.tune.stopper import (  # TrialPlateauStopper,
     MaximumIterationStopper,
     TimeoutStopper,
 )
-from rt_stoppers_contrib.no_improvement import NoImprovementStopper
-from rt_stoppers_contrib.threshold_by_epoch import ThresholdByEpochStopper
+from rt_stoppers_contrib.no_improvement import NoImprovementTrialStopper
+from rt_stoppers_contrib.threshold_by_epoch import ThresholdTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
 from gnn_tracking_hpo.cli import enqueue_option, gpu_option, test_option, wandb_options
@@ -140,13 +140,13 @@ def main(
         num_samples = len(points_to_evaluate)
 
     stoppers: list[Stopper] = [
-        NoImprovementStopper(
+        NoImprovementTrialStopper(
             metric=metric,
             patience=no_improvement_patience,
             mode="max",
             grace_period=grace_period,
         ),
-        ThresholdByEpochStopper(metric=metric, thresholds=thresholds),
+        ThresholdTrialStopper(metric=metric, thresholds=thresholds),
     ]
     if timeout_seconds is not None:
         stoppers.append(TimeoutStopper(timeout_seconds))
