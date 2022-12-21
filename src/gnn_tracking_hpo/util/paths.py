@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+import gnn_tracking_hpo
 
 _default_base_path = Path("~/ray_results/").expanduser()
 
@@ -72,3 +75,12 @@ def get_config(
     with open(config_file) as f:
         config = json.load(f)
     return config
+
+
+def add_scripts_path() -> None:
+    """Add the path of the scripts directory of this repository to
+    the python PATH in order to import from there.
+    """
+    scripts_path = Path(gnn_tracking_hpo.__path__[0]).parent.parent / "scripts"
+    assert scripts_path.is_dir()
+    sys.path.append(str(scripts_path))
