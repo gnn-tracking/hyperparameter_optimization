@@ -65,6 +65,7 @@ class PretrainedECTrainable(TCNTrainable):
             return trainer.last_test_result
 
         trainer.test_step = test_every
+        trainer.ec_threshold = self.tc["m_ec_threshold"]
 
         return trainer
 
