@@ -276,6 +276,8 @@ class TCNTrainable(tune.Trainable):
         return subdict_with_prefix_stripped(self.tc, "lw_")
 
     def get_loaders(self):
+        if self.tc.get("no_data"):
+            return None
         n_graphs = (
             self.tc["n_graphs_train"]
             + self.tc["n_graphs_test"]
