@@ -87,7 +87,7 @@ def suggest_config(
     d("m_interaction_node_hidden_dim", 32, 128)
     d("m_interaction_edge_hidden_dim", 32, 128)
 
-    suggest_default_values(config, trial, perfect_ec=True)
+    suggest_default_values(config, trial, ec="perfect")
     return config
 
 

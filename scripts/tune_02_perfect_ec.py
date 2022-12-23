@@ -50,11 +50,12 @@ def suggest_config(
     d("m_h_dim", 5, 8)
     d("m_e_dim", 4, 6)
     d("m_alpha_hc", 0.3, 0.7)
+    # fixme: Don't use RLW anymore
     d("rlw_background", 1.0)
     d("rlw_potential_attractive", 1.0)
     d("rlw_potential_repulsive", 2.0, 3.0)
 
-    suggest_default_values(config, trial, perfect_ec=True)
+    suggest_default_values(config, trial, ec="perfect")
     return config
 
 

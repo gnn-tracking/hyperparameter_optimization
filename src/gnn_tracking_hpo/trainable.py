@@ -102,8 +102,8 @@ def reduced_dbscan_scan(
 def suggest_default_values(
     config: dict[str, Any],
     trial: None | optuna.Trial = None,
-    perfect_ec=False,
-    only_ec=False,
+    ec="default",
+    hc="default",
 ) -> None:
     """Set all config values, so that everything gets recorded in the database, even
     if we do not change anything.
@@ -111,13 +111,13 @@ def suggest_default_values(
     Args:
         config:
         trial:
-        perfect_ec: Perfect (truth-based) edge classifier: Do not set parameters for
-            edge classifier
-        only_ec: We're only training the edge classifier, do not set any other
-            parameters
+        ec: One of "default" (train), "perfect" (perfect ec), "fixed"
+        hc: One of "default" (train), "none" (no hc)
     """
-    if perfect_ec and only_ec:
-        raise ValueError("perfect_ec and only_ec are mutually exclusive")
+    if ec not in ["default", "perfect", "fixed"]:
+        raise ValueError(f"Invalid ec: {ec}")
+    if hc not in ["default", "none"]:
+        raise ValueError(f"Invalid hc: {hc}")
 
     c = {**config, **(trial.params if trial is not None else {})}
 
@@ -148,19 +148,19 @@ def suggest_default_values(
     d("m_interaction_node_hidden_dim", 5)
     d("m_interaction_edge_hidden_dim", 4)
 
-    if not only_ec:
+    if hc != "none":
         d("repulsive_radius_threshold", 10.0)
 
-    if perfect_ec:
+    if ec == "perfect":
         d("m_ec_tpr", 1.0)
         d("m_ec_tnr", 1.0)
 
     # Loss function parameters
-    if not only_ec:
+    if hc != "none":
         d("q_min", 0.01)
         d("attr_pt_thld", 0.9)
         d("sb", 0.1)
-    if not perfect_ec:
+    if ec in ["default"]:
         d("focal_alpha", 0.25)
         d("focal_gamma", 2.0)
 
@@ -191,16 +191,16 @@ def suggest_default_values(
     # Model parameters
     d("m_h_dim", 5)
     d("m_e_dim", 4)
-    if not only_ec:
+    if hc != "none":
         d("m_h_outdim", 2)
     d("m_hidden_dim", 40)
-    if not perfect_ec:
+    if ec in ["default"]:
         d("m_L_ec", 3)
         d("m_alpha_ec", 0.5)
-    if not only_ec:
+    if hc != "none":
         d("m_L_hc", 3)
         d("m_alpha_hc", 0.5)
-    if not perfect_ec and not only_ec:
+    if ec in ["default"] and hc != "none":
         d("m_feed_edge_weights", False)
 
 
