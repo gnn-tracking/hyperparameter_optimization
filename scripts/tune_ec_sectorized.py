@@ -69,6 +69,7 @@ def suggest_config(
     def d(key, *args, **kwargs):
         auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
+    d("ec_pt_thld", ec_pt_thld)
     d("sector", sector)
     d("n_graphs_train", 300)
     d("n_graphs_val", 69)
