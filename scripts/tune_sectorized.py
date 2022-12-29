@@ -92,7 +92,7 @@ def real_main(sector, **kwargs):
         #     60: 0.8,
         #     70: 0.9,
         # },
-        # **kwargs,
+        **kwargs,
     )
 
 
