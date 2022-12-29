@@ -140,6 +140,7 @@ def suggest_default_values(
     d("training_pt_thld", 0.0)
     d("training_without_noise", False)
     d("training_without_non_reconstructable", False)
+    d("ec_pt_thld", 0.0)
 
     d("sector", None)
     d("batch_size", 1)
@@ -225,6 +226,7 @@ class TCNTrainable(tune.Trainable):
 
     def get_edge_loss_function(self):
         return EdgeWeightFocalLoss(
+            pt_thld=self.tc["ec_pt_thld"],
             alpha=self.tc["focal_alpha"],
             gamma=self.tc["focal_gamma"],
         )

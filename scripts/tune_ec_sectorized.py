@@ -61,6 +61,7 @@ def suggest_config(
     test=False,
     fixed: dict[str, Any] | None = None,
     sector: int | None = None,
+    ec_pt_thld: float = 0.0,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -88,11 +89,12 @@ def suggest_config(
 
 @click.command()
 @click.option("--sector", type=int, required=True)
+@click.option("--ec-pt-thld", type=float, required=False)
 @common_options
-def real_main(sector, **kwargs):
+def real_main(sector: int, ec_pt_thld: float = 0.0, **kwargs):
     main(
         ECTrainable,
-        partial(suggest_config, sector=sector),
+        partial(suggest_config, sector=sector, ec_pt_thld=ec_pt_thld),
         **kwargs,
         metric="roc_auc_5FPR",
         grace_period=11,
