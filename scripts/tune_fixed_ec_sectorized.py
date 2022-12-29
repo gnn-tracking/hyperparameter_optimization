@@ -31,9 +31,9 @@ class UnPackDictionaryForward(nn.Module):
 def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn.Module:
     checkpoint_path = find_checkpoints(project, hash)[-1]
     config = get_config(project, hash)
+    config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
     if config_update is not None:
         config.update(config_update)
-    config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
     trainable = ECTrainable(config)
     trainable.load_checkpoint(checkpoint_path, device="cpu")
     ec = trainable.trainer.model
