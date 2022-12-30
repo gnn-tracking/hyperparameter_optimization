@@ -97,7 +97,7 @@ def real_main(sector: int, ec_pt_thld: float = 0.0, **kwargs):
         ECTrainable,
         partial(suggest_config, sector=sector, ec_pt_thld=ec_pt_thld),
         **kwargs,
-        metric="roc_auc_5FPR",
+        metric="tpr_eq_tnr_pt0.9",
         grace_period=11,
         no_improvement_patience=19,
     )
