@@ -31,6 +31,8 @@ class UnPackDictionaryForward(nn.Module):
 def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn.Module:
     checkpoint_path = find_checkpoints(project, hash)[-1]
     config = get_config(project, hash)
+    # In case any new values were added, we need to suggest this again
+    suggest_default_values(config, None, ec="default", hc="none")
     config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
     if config_update is not None:
         config.update(config_update)
