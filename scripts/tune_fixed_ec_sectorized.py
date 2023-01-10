@@ -82,6 +82,8 @@ def suggest_config(
     trial: optuna.Trial,
     *,
     sector: int,
+    ec_project: str,
+    ec_hash: str,
     test=False,
     fixed: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -96,8 +98,10 @@ def suggest_config(
     d("n_graphs_val", 69)
     d("n_graphs_test", 1)
 
-    d("ec_project", "ec-s9")
-    d("ec_hash", "009d")
+    d("m_mask_nodes_with_leq_connections", 2)
+
+    d("ec_project", ec_project)
+    d("ec_hash", ec_hash)
     d("m_ec_threshold", 0.3746)
 
     d("batch_size", 1)
@@ -124,11 +128,25 @@ def suggest_config(
 
 
 @click.command()
+@click.option(
+    "--ec-hash", required=True, type=str, help="Hash of the edge classifier to load"
+)
+@click.option(
+    "--ec-project",
+    required=True,
+    type=str,
+    help="Name of the jfolder that the edge classifier to load belongs to",
+)
 @common_options
-def real_main(**kwargs):
+def real_main(ec_hash: str, ec_project: str, **kwargs):
     main(
         PretrainedECTrainable,
-        partial(suggest_config, sector=9),
+        partial(
+            suggest_config,
+            sector=9,
+            ec_hash=ec_hash,
+            ec_project=ec_project,
+        ),
         grace_period=11,
         no_improvement_patience=19,
         metric="trk.double_majority_pt0.9",
