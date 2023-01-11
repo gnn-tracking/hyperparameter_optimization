@@ -7,6 +7,7 @@ from functools import partial
 from pathlib import Path
 
 import click
+import optuna
 import pytimeparse
 from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
@@ -63,6 +64,12 @@ def common_options(f):
         help="Name of ray output directory",
         default="tcn",
     )
+    @click.option(
+        "--no-tune",
+        help="Do not run tuner, simply train (useful for debugging)",
+        is_flag=True,
+        default=False,
+    )
     @wandb_options
     @functools.wraps(f)
     def wrapper_common_options(*args, **kwargs):
@@ -91,9 +98,10 @@ def main(
     metric="trk.double_majority_pt1.5",
     no_improvement_patience=10,
     thresholds=None,
+    no_tune=False,
 ):
     """
-    For most argument, see corresponding command line interface.
+    For most arguments, see corresponding command line interface.
 
     Args:
         trainable: The trainable to run.
@@ -103,6 +111,18 @@ def main(
             stopping
         thresholds: Thresholds for stopping: Mapping of epoch -> expected FOM
     """
+    if no_tune:
+        assert test
+        study = optuna.create_study()
+        trial = study.ask()
+        config = suggest_config(trial, test=test)
+        config = {**config, **trial.params}
+        assert config["test"]
+        train_instance = trainable(config)
+        for _ in range(2):
+            train_instance.trainer.step()
+        raise SystemExit(0)
+
     maybe_run_wandb_offline()
 
     maybe_run_distributed()
