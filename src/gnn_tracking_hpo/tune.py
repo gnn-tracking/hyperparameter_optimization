@@ -120,7 +120,7 @@ def main(
         assert config["test"]
         train_instance = trainable(config)
         for _ in range(2):
-            train_instance.trainer.step()
+            train_instance.trainer.step(max_batches=1)
         raise SystemExit(0)
 
     maybe_run_wandb_offline()
