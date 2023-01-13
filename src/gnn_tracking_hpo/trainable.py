@@ -61,15 +61,16 @@ def fixed_dbscan_scan(
 
 
 def reduced_dbscan_scan(
-    graphs: np.ndarray,
-    truth: np.ndarray,
-    sectors: np.ndarray,
-    pts: np.ndarray,
-    reconstructable: np.ndarray,
+    graphs: list[np.ndarray],
+    truth: list[np.ndarray],
+    sectors: list[np.ndarray],
+    pts: list[np.ndarray],
+    reconstructable: list[np.ndarray],
     *,
     guide="trk.double_majority_pt1.5",
     epoch=None,
     start_params: dict[str, Any] | None = None,
+    node_mask: list[np.ndarray],
 ) -> ClusterScanResult:
     """Convenience function for scanning DBSCAN hyperparameters with trial count
     that depends on the epoch (using many trials early on, then alternating between
@@ -85,6 +86,7 @@ def reduced_dbscan_scan(
         metrics=common_metrics,
         min_samples_range=(1, 1),
         eps_range=(0.95, 1.0),
+        node_mask=node_mask,
     )
     if epoch < 8:
         n_trials = 12
