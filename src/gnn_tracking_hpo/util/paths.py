@@ -24,9 +24,9 @@ def find_result_dir(project: str, part: str, *, base_path=_default_base_path) ->
     project_dir = base_path / project
     hits = [d for d in project_dir.iterdir() if d.is_dir and part in d.name]
     if len(hits) == 0:
-        raise ValueError("No such directory found")
+        raise ValueError(f"No such directory found: {project_dir}")
     if len(hits) >= 2:
-        raise ValueError("Non-unique description of dir")
+        raise ValueError(f"Non-unique description of dir: {project_dir}")
     result_dir = hits[0]
     assert result_dir.is_dir()
     return result_dir
