@@ -77,7 +77,7 @@ def reduced_dbscan_scan(
     fixed and low samples in later epochs).
     """
     dbss = DBSCANHyperParamScanner(
-        graphs=graphs,
+        data=graphs,
         truth=truth,
         sectors=sectors,
         pts=pts,
