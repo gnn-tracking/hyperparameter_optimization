@@ -14,6 +14,7 @@ from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from torch import nn
 
+from gnn_tracking_hpo.cli import add_truth_cut_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import add_common_options, main
@@ -66,6 +67,9 @@ def suggest_config(
     fixed: dict[str, Any] | None = None,
     sector: int | None = None,
     ec_pt_thld: float = 0.0,
+    training_pt_thld=0.0,
+    training_without_noise=False,
+    trainign_without_non_reconstructable=False,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -82,6 +86,10 @@ def suggest_config(
         d("n_graphs_train", 300)
         d("n_graphs_val", 69)
         d("n_graphs_test", 1)
+
+    d("training_pt_thld", training_pt_thld)
+    d("training_without_noise", training_without_noise)
+    d("training_without_non_reconstructable", trainign_without_non_reconstructable)
 
     # Tuned parameters
     # ----------------
@@ -101,19 +109,29 @@ def suggest_config(
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
-    parser.add_argument("--sector", type=int, required=False)
+    parser.add_argument("--sector", type=int, required=False, default=None)
     parser.add_argument(
         "--ec-pt-thld",
         type=float,
         required=False,
         help="Falsify all edges below this pt value",
     )
+    add_truth_cut_options(parser)
     kwargs = vars(parser.parse_args())
 
     sector = kwargs.pop("sector")
     main(
         ECTrainable,
-        partial(suggest_config, sector=sector, ec_pt_thld=kwargs.pop("ec_pt_thld")),
+        partial(
+            suggest_config,
+            sector=sector,
+            ec_pt_thld=kwargs.pop("ec_pt_thld"),
+            training_pt_thld=kwargs.pop("training_pt_thld"),
+            training_without_noise=kwargs.pop("training_without_noise"),
+            trainign_without_non_reconstructable=kwargs.pop(
+                "trainign_without_non_reconstructable"
+            ),
+        ),
         **kwargs,
         metric="tpr_eq_tnr_pt0.9",
         grace_period=11 if sector is not None else 4,

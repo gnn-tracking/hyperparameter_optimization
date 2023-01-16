@@ -38,3 +38,19 @@ def add_wandb_options(parser: ArgumentParser):
         help="Wandb group name",
     )
     parser.add_argument("--note", help="Wandb note")
+
+
+def add_truth_cut_options(parser: ArgumentParser):
+    parser.add_argument(
+        "--training-pt-thld",
+        default=0.0,
+        type=float,
+    )
+    parser.add_argument(
+        "--training-without-noise",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--training-without-non-reconstructable",
+        action="store_true",
+    )
