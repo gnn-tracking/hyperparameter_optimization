@@ -7,7 +7,7 @@ def add_test_option(parser: ArgumentParser):
     parser.add_argument(
         "--test",
         help="As-fast-as-possible run to test the setup.",
-        is_flag=True,
+        action="store_true",
     )
 
 
@@ -15,7 +15,7 @@ def add_gpu_option(parser: ArgumentParser):
     parser.add_argument(
         "--gpu",
         help="Run on a GPU",
-        is_flag=True,
+        action="store_true",
     )
 
 

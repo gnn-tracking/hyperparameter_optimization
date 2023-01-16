@@ -47,7 +47,7 @@ def add_common_options(parser: ArgumentParser):
     parser.add_argument(
         "--only-enqueued",
         help="Only run enqueued points, do not tune any parameters",
-        is_flag=True,
+        action="store_true",
     )
     parser.add_argument(
         "--fixed",
@@ -61,7 +61,7 @@ def add_common_options(parser: ArgumentParser):
     parser.add_argument(
         "--fail-slow",
         help="Do not abort tuning after trial fails.",
-        is_flag=True,
+        action="store_true",
     )
     parser.add_argument(
         "--dname",
@@ -71,7 +71,7 @@ def add_common_options(parser: ArgumentParser):
     parser.add_argument(
         "--no-tune",
         help="Do not run tuner, simply train (useful for debugging)",
-        is_flag=True,
+        action="store_true",
         default=False,
     )
     add_wandb_options(parser)

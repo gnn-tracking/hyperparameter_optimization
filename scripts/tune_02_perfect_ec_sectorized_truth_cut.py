@@ -94,7 +94,7 @@ def suggest_config(
 def real_main():
     parser = ArgumentParser()
     parser.add_argument("--sector", type=int, required=True)
-    parser.add_argument("--no-truth-cut", is_flag=True)
+    parser.add_argument("--no-truth-cut", action="store_true")
     parser.add_argument("--tpr", type=float, default=1.0)
     add_common_options(parser)
     args = parser.parse_args()
