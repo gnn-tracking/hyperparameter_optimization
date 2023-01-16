@@ -44,7 +44,11 @@ class ECTrainable(TCNTrainable):
                 )
             return trainer.last_test_result
 
-        trainer.test_step = test_every
+        if self.tc["sector"] is not None:
+            # Because we don't have many graphs, let's train
+            # longer before validation
+            trainer.test_step = test_every
+
         trainer.pt_thlds = [0.0, 0.9, 1.5]
 
         return trainer
@@ -71,35 +75,46 @@ def suggest_config(
 
     d("ec_pt_thld", ec_pt_thld)
     d("sector", sector)
-    d("n_graphs_train", 300)
-    d("n_graphs_val", 69)
-    d("n_graphs_test", 1)
+    d("lw_edge", 1.0)
+
+    if sector is not None:
+        # Currently only have limited graphs available in that case
+        d("n_graphs_train", 300)
+        d("n_graphs_val", 69)
+        d("n_graphs_test", 1)
+
+    # Tuned parameters
+    # ----------------
     d("lr", 0.0001, 0.0006)
     d("m_hidden_dim", 64, 256)
-    d("m_L_ec", 1, 7)
+    d("m_L_ec", 1, 5)
     d("focal_gamma", 1, 20)  # 5 might be a good default
     d("focal_alpha", 0.1, 1)  # 0.95 might be a good default
     d("m_alpha_ec", 0.3, 0.99)
     d("m_interaction_node_hidden_dim", 32, 128)
     d("m_interaction_edge_hidden_dim", 32, 128)
-    d("lw_edge", 1.0)
 
     suggest_default_values(config, trial, hc="none")
     return config
 
 
 @click.command()
-@click.option("--sector", type=int, required=True)
-@click.option("--ec-pt-thld", type=float, required=False)
+@click.option("--sector", type=int, required=False)
+@click.option(
+    "--ec-pt-thld",
+    type=float,
+    required=False,
+    help="Falsify all edges below this pt value",
+)
 @common_options
-def real_main(sector: int, ec_pt_thld: float = 0.0, **kwargs):
+def real_main(sector: int | None, ec_pt_thld: float = 0.0, **kwargs):
     main(
         ECTrainable,
         partial(suggest_config, sector=sector, ec_pt_thld=ec_pt_thld),
         **kwargs,
         metric="tpr_eq_tnr_pt0.9",
-        grace_period=11,
-        no_improvement_patience=19,
+        grace_period=11 if sector is not None else 4,
+        no_improvement_patience=19 if sector is not None else 6,
     )
 
 

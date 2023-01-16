@@ -16,7 +16,7 @@ from gnn_tracking_hpo.tune import common_options, main
 from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoints, get_config
 
 add_scripts_path()
-from tune_ec_sectorized import ECTrainable  # noqa: E402
+from tune_ec import ECTrainable  # noqa: E402
 
 
 class UnPackDictionaryForward(nn.Module):
