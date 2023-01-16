@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from typing import Any
 
-import click
 import optuna
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import common_options, main
+from gnn_tracking_hpo.tune import add_common_options, main
 
 
 def suggest_config(
@@ -35,11 +35,8 @@ def suggest_config(
     return config
 
 
-@click.command()
-@common_options
-def real_main(**kwargs):
-    main(TCNTrainable, suggest_config, **kwargs)
-
-
 if __name__ == "__main__":
-    real_main()
+    parser = ArgumentParser()
+    add_common_options(parser)
+    args = parser.parse_args()
+    main(TCNTrainable, suggest_config, **vars(args))

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from functools import partial
 from typing import Any
 
-import click
 import optuna
 from gnn_tracking.models.track_condensation_networks import PerfectECGraphTCN
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
@@ -11,7 +11,7 @@ from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import common_options, main
+from gnn_tracking_hpo.tune import add_common_options, main
 
 
 class DynamicTCNTrainable(TCNTrainable):
@@ -59,16 +59,14 @@ def suggest_config(
     return config
 
 
-@click.command()
-@common_options
-def real_main(sector, **kwargs):
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    add_common_options(parser)
+    args = parser.parse_args()
+    kwargs = vars(args)
     main(
         DynamicTCNTrainable,
-        partial(suggest_config, sector=sector),
+        partial(suggest_config, sector=kwargs.pop("sector")),
         grace_period=4,
         **kwargs,
     )
-
-
-if __name__ == "__main__":
-    real_main()

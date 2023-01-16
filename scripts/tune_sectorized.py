@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from functools import partial
 from typing import Any
 
-import click
 import optuna
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import common_options, main
+from gnn_tracking_hpo.tune import add_common_options, main
 
 
 class ThisTrainable(TCNTrainable):
@@ -74,15 +74,16 @@ def suggest_config(
     return config
 
 
-@click.command()
-@click.option("--sector", type=int, required=True)
-@common_options
-def real_main(sector, **kwargs):
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    add_common_options(parser)
+    parser.add_argument("--sector", type=int, required=True)
+    kwargs = vars(parser.parse_args())
     main(
         ThisTrainable,
         partial(
             suggest_config,
-            sector=sector,
+            sector=kwargs.pop("sector"),
         ),
         grace_period=11,
         no_improvement_patience=19,
@@ -94,7 +95,3 @@ def real_main(sector, **kwargs):
         # },
         **kwargs,
     )
-
-
-if __name__ == "__main__":
-    real_main()

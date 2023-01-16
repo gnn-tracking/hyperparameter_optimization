@@ -4,10 +4,10 @@ model.
 
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from functools import partial
 from typing import Any
 
-import click
 import optuna
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
@@ -16,7 +16,7 @@ from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import common_options, main
+from gnn_tracking_hpo.tune import add_common_options, main
 
 
 class SignatureAdaptedECForGraphTCN(ECForGraphTCN):
@@ -98,25 +98,24 @@ def suggest_config(
     return config
 
 
-@click.command()
-@click.option("--sector", type=int, required=False)
-@click.option(
-    "--ec-pt-thld",
-    type=float,
-    required=False,
-    help="Falsify all edges below this pt value",
-)
-@common_options
-def real_main(sector: int | None, ec_pt_thld: float = 0.0, **kwargs):
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    add_common_options(parser)
+    parser.add_argument("--sector", type=int, required=False)
+    parser.add_argument(
+        "--ec-pt-thld",
+        type=float,
+        required=False,
+        help="Falsify all edges below this pt value",
+    )
+    kwargs = vars(parser.parse_args())
+
+    sector = kwargs.pop("sector")
     main(
         ECTrainable,
-        partial(suggest_config, sector=sector, ec_pt_thld=ec_pt_thld),
+        partial(suggest_config, sector=sector, ec_pt_thld=kwargs.pop("ec_pt_thld")),
         **kwargs,
         metric="tpr_eq_tnr_pt0.9",
         grace_period=11 if sector is not None else 4,
         no_improvement_patience=19 if sector is not None else 6,
     )
-
-
-if __name__ == "__main__":
-    real_main()

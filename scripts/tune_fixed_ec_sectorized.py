@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from functools import partial
 from typing import Any
 
-import click
 import optuna
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
@@ -12,7 +12,7 @@ from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import common_options, main
+from gnn_tracking_hpo.tune import add_common_options, main
 from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoints, get_config
 
 add_scripts_path()
@@ -129,32 +129,29 @@ def suggest_config(
     return config
 
 
-@click.command()
-@click.option(
-    "--ec-hash", required=True, type=str, help="Hash of the edge classifier to load"
-)
-@click.option(
-    "--ec-project",
-    required=True,
-    type=str,
-    help="Name of the jfolder that the edge classifier to load belongs to",
-)
-@common_options
-def real_main(ec_hash: str, ec_project: str, **kwargs):
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--ec-hash", required=True, type=str, help="Hash of the edge classifier to load"
+    )
+    parser.add_argument(
+        "--ec-project",
+        required=True,
+        type=str,
+        help="Name of the jfolder that the edge classifier to load belongs to",
+    )
+    add_common_options(parser)
+    kwargs = vars(parser.parse_args())
     main(
         PretrainedECTrainable,
         partial(
             suggest_config,
             sector=9,
-            ec_hash=ec_hash,
-            ec_project=ec_project,
+            ec_hash=kwargs.pop("ec_hash"),
+            ec_project=kwargs.pop("ec_project"),
         ),
         grace_period=11,
         no_improvement_patience=19,
         metric="trk.double_majority_pt0.9",
         **kwargs,
     )
-
-
-if __name__ == "__main__":
-    real_main()

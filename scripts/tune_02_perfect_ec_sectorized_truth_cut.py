@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from functools import partial
 from typing import Any
 
-import click
 import optuna
 from gnn_tracking.models.track_condensation_networks import PerfectECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
@@ -12,7 +12,7 @@ from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import common_options, main
+from gnn_tracking_hpo.tune import add_common_options, main
 
 
 class DynamicTCNTrainable(TCNTrainable):
@@ -91,15 +91,22 @@ def suggest_config(
     return config
 
 
-@click.command()
-@click.option("--sector", type=int, required=True)
-@click.option("--no-truth-cut", is_flag=True)
-@click.option("--tpr", type=float, default=1.0)
-@common_options
-def real_main(sector, tpr=1.0, no_truth_cut=False, **kwargs):
+def real_main():
+    parser = ArgumentParser()
+    parser.add_argument("--sector", type=int, required=True)
+    parser.add_argument("--no-truth-cut", is_flag=True)
+    parser.add_argument("--tpr", type=float, default=1.0)
+    add_common_options(parser)
+    args = parser.parse_args()
+    kwargs = vars(args)
     main(
         DynamicTCNTrainable,
-        partial(suggest_config, sector=sector, truth_cut=not no_truth_cut, ec_tpr=tpr),
+        partial(
+            suggest_config,
+            sector=kwargs.pop("sector"),
+            truth_cut=not kwargs.pop("no_truth_cut"),
+            ec_tpr=kwargs.pop("tpr"),
+        ),
         grace_period=11,
         no_improvement_patience=19,
         metric="tc_trk.double_majority",

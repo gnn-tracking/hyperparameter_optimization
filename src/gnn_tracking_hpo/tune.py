@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import functools
+from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
 
-import click
 import optuna
 import pytimeparse
 from ray import tune
@@ -24,58 +23,58 @@ from rt_stoppers_contrib.no_improvement import NoImprovementTrialStopper
 from rt_stoppers_contrib.threshold_by_epoch import ThresholdTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
-from gnn_tracking_hpo.cli import enqueue_option, gpu_option, test_option, wandb_options
+from gnn_tracking_hpo.cli import (
+    add_enqueue_option,
+    add_gpu_option,
+    add_test_option,
+    add_wandb_options,
+)
 from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
 
 server = della
 
 
-def common_options(f):
-    @test_option
-    @gpu_option
-    @click.option(
+def add_common_options(parser: ArgumentParser):
+    add_test_option(parser)
+    add_gpu_option(parser)
+    parser.add_argument(
         "--restore",
         help="Restore previous training state from this directory",
         default=None,
     )
-    @enqueue_option
-    @click.option(
+    add_enqueue_option(parser)
+    parser.add_argument(
         "--only-enqueued",
         help="Only run enqueued points, do not tune any parameters",
         is_flag=True,
     )
-    @click.option(
+    parser.add_argument(
         "--fixed",
         help="Read config values from file and fix these values in all trials.",
     )
-    @click.option(
+    parser.add_argument(
         "--timeout",
         help="Stop all trials after certain time. Natural time specifications "
         "supported.",
     )
-    @click.option(
+    parser.add_argument(
         "--fail-slow",
         help="Do not abort tuning after trial fails.",
         is_flag=True,
     )
-    @click.option(
+    parser.add_argument(
         "--dname",
         help="Name of ray output directory",
         default="tcn",
     )
-    @click.option(
+    parser.add_argument(
         "--no-tune",
         help="Do not run tuner, simply train (useful for debugging)",
         is_flag=True,
         default=False,
     )
-    @wandb_options
-    @functools.wraps(f)
-    def wrapper_common_options(*args, **kwargs):
-        return f(*args, **kwargs)
-
-    return wrapper_common_options
+    add_wandb_options(parser)
 
 
 def main(
