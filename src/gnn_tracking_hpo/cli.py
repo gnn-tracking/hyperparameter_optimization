@@ -25,14 +25,14 @@ def add_enqueue_option(parser: ArgumentParser):
         help="Read trials from these json files and enqueue "
         "them. Json files can either contain dictionary "
         "(single config) or a list thereof.",
-        multiple=True,
+        nargs="+",
     )
 
 
 def add_wandb_options(parser: ArgumentParser):
     """To be used as a decorator. Add command line options for wandb metadata."""
 
-    parser.add_argument("--tags", multiple=True, help="Tags for wandb")
+    parser.add_argument("--tags", nargs="+", help="Tags for wandb")
     parser.add_argument(
         "--group",
         help="Wandb group name",

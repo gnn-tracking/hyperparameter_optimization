@@ -69,7 +69,7 @@ def suggest_config(
     ec_pt_thld: float = 0.0,
     training_pt_thld=0.0,
     training_without_noise=False,
-    trainign_without_non_reconstructable=False,
+    training_without_non_reconstructable=False,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -89,7 +89,7 @@ def suggest_config(
 
     d("training_pt_thld", training_pt_thld)
     d("training_without_noise", training_without_noise)
-    d("training_without_non_reconstructable", trainign_without_non_reconstructable)
+    d("training_without_non_reconstructable", training_without_non_reconstructable)
 
     # Tuned parameters
     # ----------------
@@ -113,6 +113,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ec-pt-thld",
         type=float,
+        default="0.",
         required=False,
         help="Falsify all edges below this pt value",
     )
@@ -128,8 +129,8 @@ if __name__ == "__main__":
             ec_pt_thld=kwargs.pop("ec_pt_thld"),
             training_pt_thld=kwargs.pop("training_pt_thld"),
             training_without_noise=kwargs.pop("training_without_noise"),
-            trainign_without_non_reconstructable=kwargs.pop(
-                "trainign_without_non_reconstructable"
+            training_without_non_reconstructable=kwargs.pop(
+                "training_without_non_reconstructable"
             ),
         ),
         **kwargs,
