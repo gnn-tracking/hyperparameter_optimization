@@ -50,7 +50,7 @@ class ECTrainable(TCNTrainable):
             # longer before validation
             trainer.test_step = test_every
 
-        trainer.ec_eval_pt_thlds = [0.0, 0.9, 1.5]
+        trainer.ec_eval_pt_thlds = [0.0, 0.5, 0.9, 1.2, 1.5]
 
         return trainer
 
