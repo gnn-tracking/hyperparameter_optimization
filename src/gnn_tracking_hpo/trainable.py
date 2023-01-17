@@ -131,10 +131,10 @@ def suggest_default_values(
         config[k] = v
         c[k] = v
 
-    n_graphs_default = 3200
-    d("n_graphs_train", int(0.32 * n_graphs_default))
-    d("n_graphs_test", int(0.2 * n_graphs_default))
-    d("n_graphs_val", int(0.12 * n_graphs_default))
+    n_graphs_default = 10_000
+    d("n_graphs_train", int(0.9 * n_graphs_default))
+    d("n_graphs_test", 1)
+    d("n_graphs_val", int(0.1 * n_graphs_default))
     assert (
         c["n_graphs_train"] + c["n_graphs_test"] + c["n_graphs_val"] <= n_graphs_default
     )
