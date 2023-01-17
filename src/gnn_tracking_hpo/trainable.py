@@ -131,13 +131,19 @@ def suggest_default_values(
         config[k] = v
         c[k] = v
 
-    n_graphs_default = 10_000
-    d("n_graphs_train", int(0.9 * n_graphs_default))
-    d("n_graphs_test", 1)
-    d("n_graphs_val", int(0.1 * n_graphs_default))
-    assert (
-        c["n_graphs_train"] + c["n_graphs_test"] + c["n_graphs_val"] <= n_graphs_default
-    )
+    if c["test"]:
+        config["n_graphs_train"] = 1
+        config["n_graphs_test"] = 1
+        config["n_graphs_val"] = 1
+    else:
+        n_graphs_default = 10_000
+        d("n_graphs_train", int(0.9 * n_graphs_default))
+        d("n_graphs_test", 1)
+        d("n_graphs_val", int(0.1 * n_graphs_default))
+        assert (
+            c["n_graphs_train"] + c["n_graphs_test"] + c["n_graphs_val"]
+            <= n_graphs_default
+        )
 
     d("training_pt_thld", 0.0)
     d("training_without_noise", False)
