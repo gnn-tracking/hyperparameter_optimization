@@ -74,6 +74,13 @@ def add_common_options(parser: ArgumentParser):
         action="store_true",
         default=False,
     )
+    parser.add_argument(
+        "--n-trials",
+        dest="num_samples",
+        help="Maximum number of trials to run",
+        default=None,
+        type=int,
+    )
     add_wandb_options(parser)
 
 
@@ -98,6 +105,7 @@ def main(
     no_improvement_patience=10,
     thresholds=None,
     no_tune=False,
+    num_samples=None,
 ):
     """
     For most arguments, see corresponding command line interface.
@@ -152,7 +160,7 @@ def main(
         print(f"Restoring previous state from {restore}")
         optuna_search.restore_from_dir(restore)
 
-    num_samples = 50
+    num_samples = num_samples or 20
     if test:
         num_samples = 1
     if only_enqueued:
