@@ -33,7 +33,13 @@ def maybe_run_distributed() -> None:
     """If it looks like we're running across multiple nodes, enable distributed
     mode of ray
     """
-    if "redis_password" in os.environ:
-        # We're running distributed
-        ray.init(address="auto", _redis_password=os.environ["redis_password"])
+    if "redis_password" in os.environ or "head_ip" in os.environ:
+        logger.info("Detected distributed mode, initializing ray")
+        logger.debug("redis_password %s", os.environ.get("redis_password"))
+        logger.debug("head_ip %s", os.environ.get("head_ip"))
+        ray.init(
+            address="auto",
+            _redis_password=os.environ["redis_password"],
+            _node_ip_address=os.environ["head_ip"].split(":")[0],
+        )
         register_ray()
