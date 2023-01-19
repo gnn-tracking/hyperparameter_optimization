@@ -9,4 +9,4 @@ export redis_password
 
 export ip_head
 echo "IP head: ${ip_head}"
-ray start -vvv --head --node-ip-address="$head_node_ip" --port=$port --num-cpus 1 --num-gpus 0 --block --dashboard-host=0.0.0.0 --dashboard-port=8841
+ray start -vvv --head --node-ip-address="$head_node_ip" --port=$port --num-cpus 1 --num-gpus 0 --block --dashboard-host=0.0.0.0 --dashboard-port=8841 --include-dashboard=true
