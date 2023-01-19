@@ -136,8 +136,8 @@ def suggest_default_values(
         config["n_graphs_test"] = 1
         config["n_graphs_val"] = 1
     else:
-        n_graphs_default = 10_000
-        n_graphs_val = min(400, int(0.1 * n_graphs_default))
+        n_graphs_default = 5_000
+        n_graphs_val = c.get("n_graphs_val", min(400, int(0.1 * n_graphs_default)))
         d("n_graphs_train", n_graphs_default - 1 - n_graphs_val)
         d("n_graphs_test", 1)
         d("n_graphs_val", n_graphs_val)

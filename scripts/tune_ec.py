@@ -109,7 +109,7 @@ def suggest_config(
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
-    parser.add_argument("--sector", type=int, required=False, default=None)
+    # parser.add_argument("--sector", type=int, required=False, default=None)
     parser.add_argument(
         "--ec-pt-thld",
         type=float,
@@ -120,12 +120,12 @@ if __name__ == "__main__":
     add_truth_cut_options(parser)
     kwargs = vars(parser.parse_args())
 
-    sector = kwargs.pop("sector")
+    # sector = kwargs.pop("sector")
     main(
         ECTrainable,
         partial(
             suggest_config,
-            sector=sector,
+            # sector=sector,
             ec_pt_thld=kwargs.pop("ec_pt_thld"),
             training_pt_thld=kwargs.pop("training_pt_thld"),
             training_without_noise=kwargs.pop("training_without_noise"),
@@ -134,7 +134,11 @@ if __name__ == "__main__":
             ),
         ),
         **kwargs,
-        metric="tpr_eq_tnr_pt0.9",
-        grace_period=11 if sector is not None else 4,
-        no_improvement_patience=19 if sector is not None else 6,
+        metric="max_mcc_pt0.9",
+        grace_period=3,
+        no_improvement_patience=2,
+        thresholds={
+            1: 0.74,
+            5: 0.78,
+        },
     )
