@@ -110,132 +110,181 @@ def simple_run_without_tune(trainable, suggest_config):
     raise SystemExit(0)
 
 
-def main(
-    trainable,
-    suggest_config,
-    *,
-    test=False,
-    gpu=False,
-    restore=None,
-    enqueue: None | list[str] = None,
-    only_enqueued=False,
-    fixed: None | str = None,
-    grace_period=3,
-    timeout=None,
-    tags=None,
-    group=None,
-    note=None,
-    fail_slow=False,
-    dname="tcn",
-    metric="trk.double_majority_pt1.5",
-    no_improvement_patience=10,
-    no_tune=False,
-    num_samples=None,
-    additional_stoppers=None,
-):
-    """
-    For most arguments, see corresponding command line interface.
+class Dispatcher:
+    def __init__(
+        self,
+        trainable,
+        suggest_config,
+        *,
+        test=False,
+        gpu=False,
+        restore=None,
+        enqueue: None | list[str] = None,
+        only_enqueued=False,
+        fixed: None | str = None,
+        grace_period=3,
+        timeout: None | str = None,
+        tags=None,
+        group=None,
+        note=None,
+        fail_slow=False,
+        dname="tcn",
+        metric="trk.double_majority_pt1.5",
+        no_improvement_patience=10,
+        no_tune=False,
+        num_samples: None | int = None,
+        additional_stoppers=None,
+    ):
+        """For most arguments, see corresponding command line interface.
 
-    Args:
-        trainable: The trainable to run.
-        suggest_config: A function that returns a config dictionary.
-        grace_period: Grace period for ASHA scheduler.
-        no_improvement_patience: Number of iterations without improvement before
-            stopping
-        thresholds: Thresholds for stopping: Mapping of epoch -> expected FOM
-    """
-    if additional_stoppers is None:
-        additional_stoppers = []
-    if no_tune:
-        assert test
-        simple_run_without_tune(trainable, suggest_config)
+        Args:
+            trainable: The trainable to run.
+            suggest_config: A function that returns a config dictionary.
+            grace_period: Grace period for ASHA scheduler.
+            no_improvement_patience: Number of iterations without improvement before
+                stopping
+        """
+        self.trainable = trainable
+        self.suggest_config = suggest_config
+        self.test = test
+        self.gpu = gpu
+        self.restore = restore
+        self.enqueue = enqueue
+        self.only_enqueued = only_enqueued
+        self.fixed = fixed
+        self.grace_period = grace_period
+        self.timeout = timeout
+        self.tags = tags
+        self.group = group
+        self.note = note
+        self.fail_slow = fail_slow
+        self.dname = dname
+        self.metric = metric
+        self.no_improvement_patience = no_improvement_patience
+        self.no_tune = no_tune
+        self.num_samples = num_samples
+        self.additional_stoppers = additional_stoppers
+        if self.test and not self.dname.endswith("_test"):
+            self.dname += "_test"
 
-    maybe_run_wandb_offline()
+    def __call__(
+        self,
+    ):
+        if self.no_tune:
+            assert self.test
+            simple_run_without_tune(self.trainable, self.suggest_config)
 
-    maybe_run_distributed()
+        maybe_run_wandb_offline()
+        maybe_run_distributed()
+        tuner = self.get_tuner()
+        tuner.fit()
 
-    points_to_evaluate = get_points_to_evaluate(enqueue)
-
-    fixed_config: None | dict[str, Any] = None
-    if fixed is not None:
-        fixed_config = read_json(Path(fixed))
-
-    optuna_search = OptunaSearch(
-        partial(suggest_config, test=test, fixed=fixed_config),
-        metric=metric,
-        mode="max",
-        points_to_evaluate=points_to_evaluate,
-    )
-    if restore:
-        logger.info(f"Restoring previous state from {restore}")
-        optuna_search.restore_from_dir(restore)
-
-    num_samples = num_samples or 20
-    if test:
-        num_samples = 1
-    if only_enqueued:
-        num_samples = len(points_to_evaluate)
-
-    stoppers: list[Stopper] = [
-        NoImprovementTrialStopper(
-            metric=metric,
-            patience=no_improvement_patience,
-            mode="max",
-            grace_period=grace_period,
-        ),
-        *additional_stoppers,
-    ]
-    if timeout_stopper := get_timeout_stopper(timeout):
-        stoppers.append(timeout_stopper)
-    if test:
-        stoppers.append(MaximumIterationStopper(1))
-    stopper = CombinedStopper(*stoppers)
-
-    callbacks: list[Callback] = []
-    if not test:
-        callbacks = [
-            WandbLoggerCallback(
-                api_key_file="~/.wandb_api_key",
-                project="gnn_tracking",
-                tags=tags,
-                group=group,
-                notes=note,
+    def get_tuner(self):
+        return tune.Tuner(
+            tune.with_resources(
+                self.trainable,
+                {
+                    "gpu": 1 if self.gpu else 0,
+                    "cpu": server.cpus_per_gpu if not self.test else 1,
+                },
             ),
-            TriggerWandbSyncRayHook(),
-        ]
+            tune_config=self.get_tune_config(),
+            run_config=self.get_run_config(),
+        )
 
-    if test:
-        dname += "_test"
-
-    tuner = tune.Tuner(
-        tune.with_resources(
-            trainable,
-            {"gpu": 1 if gpu else 0, "cpu": server.cpus_per_gpu if not test else 1},
-        ),
-        tune_config=tune.TuneConfig(
-            scheduler=ASHAScheduler(
-                metric=metric,
+    def get_stoppers(self):
+        additional_stoppers = self.additional_stoppers
+        if self.additional_stoppers is None:
+            additional_stoppers = []
+        stoppers: list[Stopper] = [
+            NoImprovementTrialStopper(
+                metric=self.metric,
+                patience=self.no_improvement_patience,
                 mode="max",
-                grace_period=grace_period,
+                grace_period=self.grace_period,
+            ),
+            *additional_stoppers,
+        ]
+        if timeout_stopper := get_timeout_stopper(self.timeout):
+            stoppers.append(timeout_stopper)
+        if self.test:
+            stoppers.append(MaximumIterationStopper(1))
+        return stoppers
+
+    def get_callbacks(self):
+        callbacks: list[Callback] = []
+        if not self.test:
+            callbacks = [
+                WandbLoggerCallback(
+                    api_key_file="~/.wandb_api_key",
+                    project="gnn_tracking",
+                    tags=self.tags,
+                    group=self.group,
+                    notes=self.note,
+                ),
+                TriggerWandbSyncRayHook(),
+            ]
+        return callbacks
+
+    def get_optuna_search(self):
+        fixed_config: None | dict[str, Any] = None
+        if self.fixed is not None:
+            fixed_config = read_json(Path(self.fixed))
+
+        points_to_evaluate = get_points_to_evaluate(self.enqueue)
+        optuna_search = OptunaSearch(
+            partial(self.suggest_config, test=self.test, fixed=fixed_config),
+            metric=self.metric,
+            mode="max",
+            points_to_evaluate=points_to_evaluate,
+        )
+        if self.restore:
+            logger.info(f"Restoring previous state from {self.restore}")
+            optuna_search.restore_from_dir(self.restore)
+        return optuna_search
+
+    def get_tune_config(
+        self,
+    ):
+        optuna_search = self.get_optuna_search()
+        num_samples = self.num_samples or 20
+        if self.test:
+            num_samples = 1
+        if self.only_enqueued:
+            num_samples = len(optuna_search._points_to_evaluate)
+        return tune.TuneConfig(
+            scheduler=ASHAScheduler(
+                metric=self.metric,
+                mode="max",
+                grace_period=self.grace_period,
             ),
             num_samples=num_samples,
             search_alg=optuna_search,
-        ),
-        run_config=RunConfig(
-            name=dname,
-            callbacks=callbacks,
+        )
+
+    def get_checkpoint_config(self):
+        return CheckpointConfig(
+            checkpoint_score_attribute=self.metric,
+            checkpoint_score_order="max",
+            num_to_keep=5,
+        )
+
+    def get_run_config(self):
+        return RunConfig(
+            name=self.dname,
+            callbacks=self.get_callbacks(),
             sync_config=SyncConfig(syncer=None),
-            stop=stopper,
-            checkpoint_config=CheckpointConfig(
-                checkpoint_score_attribute=metric,
-                checkpoint_score_order="max",
-                num_to_keep=5,
-            ),
+            stop=CombinedStopper(*self.get_stoppers()),
+            checkpoint_config=self.get_checkpoint_config(),
             log_to_file=True,
-            # verbose=1,  # Only status reports, no results
             failure_config=FailureConfig(
-                fail_fast=not fail_slow,
+                fail_fast=not self.fail_slow,
             ),
-        ),
-    )
-    tuner.fit()
+        )
+
+
+def main(*args, **kwargs):
+    """Dispatch with ray tune Arguments see Dispater.__call__."""
+    logger.warning("Deprecated, use Dispatcher class directly")
+    dispatcher = Dispatcher(*args, **kwargs)
+    dispatcher()
