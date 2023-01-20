@@ -20,7 +20,6 @@ from ray.tune.stopper import (  # TrialPlateauStopper,
     TimeoutStopper,
 )
 from rt_stoppers_contrib.no_improvement import NoImprovementTrialStopper
-from rt_stoppers_contrib.threshold_by_epoch import ThresholdTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
 from gnn_tracking_hpo.cli import (
@@ -103,9 +102,9 @@ def main(
     dname="tcn",
     metric="trk.double_majority_pt1.5",
     no_improvement_patience=10,
-    thresholds=None,
     no_tune=False,
     num_samples=None,
+    additional_stoppers=None,
 ):
     """
     For most arguments, see corresponding command line interface.
@@ -118,6 +117,8 @@ def main(
             stopping
         thresholds: Thresholds for stopping: Mapping of epoch -> expected FOM
     """
+    if additional_stoppers is None:
+        additional_stoppers = []
     if no_tune:
         assert test
         study = optuna.create_study()
@@ -173,7 +174,7 @@ def main(
             mode="max",
             grace_period=grace_period,
         ),
-        ThresholdTrialStopper(metric=metric, thresholds=thresholds),
+        *additional_stoppers,
     ]
     if timeout_seconds is not None:
         stoppers.append(TimeoutStopper(timeout_seconds))

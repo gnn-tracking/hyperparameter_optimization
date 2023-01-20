@@ -12,6 +12,7 @@ import optuna
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
+from rt_stoppers_contrib.threshold_by_epoch import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -119,6 +120,23 @@ if __name__ == "__main__":
     # add_truth_cut_options(parser)
     kwargs = vars(parser.parse_args())
 
+    additional_stoppers = [
+        ThresholdTrialStopper(
+            "tpr_eq_tnr_pt0.9",
+            thresholds={
+                1: 0.88,
+                3: 0.9,
+            },
+        ),
+        ThresholdTrialStopper(
+            "max_mcc_pt0.9",
+            thresholds={
+                1: 0.7,
+                3: 0.75,
+            },
+        ),
+    ]
+
     # sector = kwargs.pop("sector")
     main(
         ECTrainable,
@@ -133,11 +151,7 @@ if __name__ == "__main__":
             # ),
         ),
         **kwargs,
-        metric="tpr_eq_tnr_pt0.9",
+        metric="max_mcc_pt0.9",
         grace_period=3,
         no_improvement_patience=2,
-        thresholds={
-            1: 0.89,
-            2: 0.9,
-        },
     )
