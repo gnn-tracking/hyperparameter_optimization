@@ -81,6 +81,11 @@ def add_common_options(parser: ArgumentParser):
         default=None,
         type=int,
     )
+    parser.add_argument(
+        "--no-scheduler",
+        action="store_true",
+        help="Do not use scheduler, run all trials only stopping them on plateaus.",
+    )
     add_wandb_options(parser)
 
 
@@ -116,6 +121,7 @@ class Dispatcher:
         trainable,
         suggest_config,
         *,
+        # ---- Supplied fom CLI
         test=False,
         gpu=False,
         restore=None,
@@ -130,9 +136,11 @@ class Dispatcher:
         fail_slow=False,
         dname="tcn",
         metric="trk.double_majority_pt1.5",
-        no_improvement_patience=10,
         no_tune=False,
         num_samples: None | int = None,
+        no_scheduler=False,
+        # ----
+        no_improvement_patience=10,
         additional_stoppers=None,
     ):
         """For most arguments, see corresponding command line interface.
@@ -163,6 +171,7 @@ class Dispatcher:
         self.no_improvement_patience = no_improvement_patience
         self.no_tune = no_tune
         self.num_samples = num_samples
+        self.no_scheduler = no_scheduler
         if self.test and not self.dname.endswith("_test"):
             self.dname += "_test"
         if additional_stoppers is None:
@@ -258,6 +267,9 @@ class Dispatcher:
         return self.num_samples or 20
 
     def get_scheduler(self):
+        if self.no_scheduler:
+            # FIFO scheduler
+            return None
         return ASHAScheduler(
             metric=self.metric,
             mode="max",

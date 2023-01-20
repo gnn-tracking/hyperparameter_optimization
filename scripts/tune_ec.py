@@ -21,6 +21,10 @@ from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 
 
 class SignatureAdaptedECForGraphTCN(ECForGraphTCN):
+    """Adapt signature of ECForGraphTCN to match the signature of the
+    main model.
+    """
+
     def forward(self, *args, **kwargs):
         return {"W": ECForGraphTCN.forward(self, *args, **kwargs)}
 
