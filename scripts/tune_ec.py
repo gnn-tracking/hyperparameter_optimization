@@ -14,7 +14,6 @@ from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from torch import nn
 
-from gnn_tracking_hpo.cli import add_truth_cut_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import add_common_options, main
@@ -67,9 +66,9 @@ def suggest_config(
     fixed: dict[str, Any] | None = None,
     sector: int | None = None,
     ec_pt_thld: float = 0.0,
-    training_pt_thld=0.0,
-    training_without_noise=False,
-    training_without_non_reconstructable=False,
+    # training_pt_thld=0.0,
+    # training_without_noise=False,
+    # training_without_non_reconstructable=False,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -87,9 +86,9 @@ def suggest_config(
         d("n_graphs_val", 69)
         d("n_graphs_test", 1)
 
-    d("training_pt_thld", training_pt_thld)
-    d("training_without_noise", training_without_noise)
-    d("training_without_non_reconstructable", training_without_non_reconstructable)
+    d("training_pt_thld", 0.0, 0.9)
+    d("training_without_noise", [True, False])
+    d("training_without_non_reconstructable", [True, False])
 
     # Tuned parameters
     # ----------------
@@ -117,7 +116,7 @@ if __name__ == "__main__":
         required=False,
         help="Falsify all edges below this pt value",
     )
-    add_truth_cut_options(parser)
+    # add_truth_cut_options(parser)
     kwargs = vars(parser.parse_args())
 
     # sector = kwargs.pop("sector")
@@ -127,18 +126,18 @@ if __name__ == "__main__":
             suggest_config,
             # sector=sector,
             ec_pt_thld=kwargs.pop("ec_pt_thld"),
-            training_pt_thld=kwargs.pop("training_pt_thld"),
-            training_without_noise=kwargs.pop("training_without_noise"),
-            training_without_non_reconstructable=kwargs.pop(
-                "training_without_non_reconstructable"
-            ),
+            # training_pt_thld=kwargs.pop("training_pt_thld"),
+            # training_without_noise=kwargs.pop("training_without_noise"),
+            # training_without_non_reconstructable=kwargs.pop(
+            #     "training_without_non_reconstructable"
+            # ),
         ),
         **kwargs,
-        metric="max_mcc_pt0.9",
+        metric="tpr_eq_tnr_pt0.9",
         grace_period=3,
         no_improvement_patience=2,
         thresholds={
-            1: 0.74,
-            5: 0.78,
+            1: 0.89,
+            2: 0.9,
         },
     )
