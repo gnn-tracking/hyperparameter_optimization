@@ -17,7 +17,7 @@ from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import add_common_options, main
+from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 
 
 class SignatureAdaptedECForGraphTCN(ECForGraphTCN):
@@ -36,22 +36,7 @@ class ECTrainable(TCNTrainable):
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
-
-        def test_every(*args, **kwargs):
-            if trainer._epoch % 9 == 1:
-                # note: first epoch we test is epoch 1
-                trainer.last_test_result = TCNTrainer.test_step(
-                    trainer, *args, **kwargs
-                )
-            return trainer.last_test_result
-
-        if self.tc["sector"] is not None:
-            # Because we don't have many graphs, let's train
-            # longer before validation
-            trainer.test_step = test_every
-
         trainer.ec_eval_pt_thlds = [0.0, 0.5, 0.9, 1.2, 1.5]
-
         return trainer
 
     def get_model(self) -> nn.Module:
@@ -67,9 +52,6 @@ def suggest_config(
     fixed: dict[str, Any] | None = None,
     sector: int | None = None,
     ec_pt_thld: float = 0.0,
-    # training_pt_thld=0.0,
-    # training_without_noise=False,
-    # training_without_non_reconstructable=False,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -109,7 +91,6 @@ def suggest_config(
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
-    # parser.add_argument("--sector", type=int, required=False, default=None)
     parser.add_argument(
         "--ec-pt-thld",
         type=float,
@@ -117,7 +98,6 @@ if __name__ == "__main__":
         required=False,
         help="Falsify all edges below this pt value",
     )
-    # add_truth_cut_options(parser)
     kwargs = vars(parser.parse_args())
 
     additional_stoppers = [
@@ -137,7 +117,7 @@ if __name__ == "__main__":
         ),
     ]
 
-    main(
+    Dispatcher(
         ECTrainable,
         partial(
             suggest_config,
@@ -147,4 +127,5 @@ if __name__ == "__main__":
         metric="max_mcc_pt0.9",
         grace_period=3,
         no_improvement_patience=2,
-    )
+        additional_stoppers=additional_stoppers,
+    )()
