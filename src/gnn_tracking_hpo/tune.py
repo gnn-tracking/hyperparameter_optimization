@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser
-from functools import partial
+from functools import cached_property, partial
 from pathlib import Path
 from typing import Any
 
@@ -163,9 +163,12 @@ class Dispatcher:
         self.no_improvement_patience = no_improvement_patience
         self.no_tune = no_tune
         self.num_samples = num_samples
-        self.additional_stoppers = additional_stoppers
         if self.test and not self.dname.endswith("_test"):
             self.dname += "_test"
+        if additional_stoppers is None:
+            self.additional_stoppers = []
+        else:
+            self.additional_stoppers = additional_stoppers
 
     def __call__(
         self,
@@ -192,24 +195,25 @@ class Dispatcher:
             run_config=self.get_run_config(),
         )
 
+    def get_no_improvement_stopper(self):
+        return NoImprovementTrialStopper(
+            metric=self.metric,
+            patience=self.no_improvement_patience,
+            mode="max",
+            grace_period=self.grace_period,
+        )
+
     def get_stoppers(self):
-        additional_stoppers = self.additional_stoppers
-        if self.additional_stoppers is None:
-            additional_stoppers = []
+        # For easier subclassing, methods can be overridden to return None
+        # to disable
         stoppers: list[Stopper] = [
-            NoImprovementTrialStopper(
-                metric=self.metric,
-                patience=self.no_improvement_patience,
-                mode="max",
-                grace_period=self.grace_period,
-            ),
-            *additional_stoppers,
+            self.get_no_improvement_stopper() * self.additional_stoppers,
         ]
         if timeout_stopper := get_timeout_stopper(self.timeout):
             stoppers.append(timeout_stopper)
         if self.test:
             stoppers.append(MaximumIterationStopper(1))
-        return stoppers
+        return [stopper for stopper in stoppers if stopper is not None]
 
     def get_callbacks(self):
         callbacks: list[Callback] = []
@@ -226,40 +230,47 @@ class Dispatcher:
             ]
         return callbacks
 
+    @cached_property
+    def points_to_evaluate(self):
+        return get_points_to_evaluate(self.enqueue)
+
     def get_optuna_search(self):
         fixed_config: None | dict[str, Any] = None
         if self.fixed is not None:
             fixed_config = read_json(Path(self.fixed))
 
-        points_to_evaluate = get_points_to_evaluate(self.enqueue)
         optuna_search = OptunaSearch(
             partial(self.suggest_config, test=self.test, fixed=fixed_config),
             metric=self.metric,
             mode="max",
-            points_to_evaluate=points_to_evaluate,
+            points_to_evaluate=self.points_to_evaluate,
         )
         if self.restore:
             logger.info(f"Restoring previous state from {self.restore}")
             optuna_search.restore_from_dir(self.restore)
         return optuna_search
 
+    def get_num_samples(self):
+        if self.test:
+            return 1
+        if self.only_enqueued:
+            return len(self.points_to_evaluate)
+        return self.num_samples or 20
+
+    def get_scheduler(self):
+        return ASHAScheduler(
+            metric=self.metric,
+            mode="max",
+            grace_period=self.grace_period,
+        )
+
     def get_tune_config(
         self,
     ):
-        optuna_search = self.get_optuna_search()
-        num_samples = self.num_samples or 20
-        if self.test:
-            num_samples = 1
-        if self.only_enqueued:
-            num_samples = len(optuna_search._points_to_evaluate)
         return tune.TuneConfig(
-            scheduler=ASHAScheduler(
-                metric=self.metric,
-                mode="max",
-                grace_period=self.grace_period,
-            ),
-            num_samples=num_samples,
-            search_alg=optuna_search,
+            scheduler=self.get_scheduler(),
+            num_samples=self.get_num_samples(),
+            search_alg=self.get_optuna_search(),
         )
 
     def get_checkpoint_config(self):
