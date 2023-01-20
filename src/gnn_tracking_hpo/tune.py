@@ -39,7 +39,7 @@ def add_common_options(parser: ArgumentParser):
     add_gpu_option(parser)
     parser.add_argument(
         "--restore",
-        help="Restore previous training state from this directory",
+        help="Restore previous training search state from this directory",
         default=None,
     )
     add_enqueue_option(parser)

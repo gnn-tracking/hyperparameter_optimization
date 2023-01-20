@@ -71,13 +71,17 @@ def get_metadata(*, test=False):
 def get_points_to_evaluate(
     paths: None | list[str] | list[PathLike] = None,
 ) -> list[dict[str, Any]]:
-    """Read json files and return a list of dicts.
+    """Read json files or read from wandb online and return a list of dicts.
     Json files can either contain dictionary (single config) or a list thereof.
     """
     points_to_evaluate: list[dict[str, Any]] = []
     if paths is None:
         paths = list[str]()
     for path in paths:
+        if isinstance(path, str) and "/" not in path and not Path(path).exists():
+            # Assume it's a wandb hash
+            points_to_evaluate.append(retrieve_config_from_wandb(str(path)))
+            continue
         obj = read_json(path)
         if isinstance(obj, list):
             points_to_evaluate.extend(obj)
@@ -108,3 +112,40 @@ class ServerConfig:
 
 della = ServerConfig(gpus=4, cpus=48, max_batches=20)
 server = della
+
+
+def retrieve_config_from_wandb(hash: str) -> dict[str, Any]:
+    """Retrieve configuration of run from wandb based on (part of) a hash"""
+    import wandb
+
+    logger.debug("Attempting to retrieve config for hash %s from wandb", hash)
+    api = wandb.Api()
+    runs = api.runs("gnn_tracking/gnn_tracking")
+    logger.debug("Obtained runs from wandb.")
+    results = []
+    for run in runs:
+        hash = run.url.split("/")[-1]
+        if hash in hash:
+            results.append(run)
+    if len(results) == 0:
+        raise ValueError(f"Couldn't find hash {hash}")
+    elif len(results) > 1:
+        raise ValueError(f"Found multiple runs that include {hash}")
+    run = results[0]
+    logger.debug("Found run %s", run)
+    ignored_keys = [
+        "pid",
+        "test",
+        "node_ip",
+        "trial_id",
+        "experiment_id",
+        "gnn_tracking_experiments_hash",
+        "gnn_tracking_hash",
+        "hostname",
+        "date",
+    ]
+    return {
+        k: v
+        for k, v in run.config.items()
+        if not k.startswith("_") and k not in ignored_keys
+    }
