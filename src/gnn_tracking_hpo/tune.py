@@ -84,7 +84,7 @@ def add_common_options(parser: ArgumentParser):
     parser.add_argument(
         "--no-scheduler",
         action="store_true",
-        help="Do not use scheduler, run all trials only stopping them on plateaus.",
+        help="Do not use scheduler, run all trials, only stopping them on plateaus.",
     )
     add_wandb_options(parser)
 

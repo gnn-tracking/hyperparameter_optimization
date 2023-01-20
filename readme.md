@@ -33,6 +33,8 @@ Part of this are fully parameterized versions of the models.
 
 * Use or adapt one of the tuning scripts in `scripts/`
 
+### Training with fixed parameters (no tuning)
+
 ## Other links
 
 * [ray-tune-slurm-test](https://github.com/klieret/ray-tune-slurm-test/):

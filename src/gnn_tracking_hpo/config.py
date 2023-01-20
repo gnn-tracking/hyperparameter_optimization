@@ -132,6 +132,7 @@ def retrieve_config_from_wandb(hash: str) -> dict[str, Any]:
         "gnn_tracking_hash",
         "hostname",
         "date",
+        "trial_log_path",
     ]
     return {
         k: v
