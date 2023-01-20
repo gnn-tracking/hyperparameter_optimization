@@ -120,19 +120,8 @@ def retrieve_config_from_wandb(hash: str) -> dict[str, Any]:
 
     logger.debug("Attempting to retrieve config for hash %s from wandb", hash)
     api = wandb.Api()
-    runs = api.runs("gnn_tracking/gnn_tracking")
-    logger.debug("Obtained runs from wandb.")
-    results = []
-    for run in runs:
-        hash = run.url.split("/")[-1]
-        if hash in hash:
-            results.append(run)
-    if len(results) == 0:
-        raise ValueError(f"Couldn't find hash {hash}")
-    elif len(results) > 1:
-        raise ValueError(f"Found multiple runs that include {hash}")
-    run = results[0]
-    logger.debug("Found run %s", run)
+    run = api.run(f"gnn_tracking/{hash}")
+    logger.debug("Obtained run with URL %s from wandb", run.url)
     ignored_keys = [
         "pid",
         "test",

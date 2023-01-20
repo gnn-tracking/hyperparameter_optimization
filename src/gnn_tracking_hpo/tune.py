@@ -5,10 +5,11 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
+from typing import Any
 
 import optuna
 import pytimeparse
-from ray import tune
+from ray import logger, tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import Callback, Stopper, SyncConfig
@@ -83,6 +84,32 @@ def add_common_options(parser: ArgumentParser):
     add_wandb_options(parser)
 
 
+def get_timeout_stopper(timeout: str | None = None) -> TimeoutStopper | None:
+    """Interpret timeout string as seconds."""
+    if timeout is None:
+        return None
+    else:
+        timeout_seconds = pytimeparse.parse(timeout)
+        if timeout_seconds is None:
+            raise ValueError(
+                "Could not parse timeout. Try specifying a unit, " "e.g., 1h13m"
+            )
+        return TimeoutStopper(timeout_seconds)
+
+
+def simple_run_without_tune(trainable, suggest_config):
+    """Simple run without tuning for testing purposes."""
+    study = optuna.create_study()
+    trial = study.ask()
+    config = suggest_config(trial, test=True)
+    config = {**config, **trial.params}
+    assert config["test"]
+    train_instance = trainable(config)
+    for _ in range(2):
+        train_instance.trainer.step(max_batches=1)
+    raise SystemExit(0)
+
+
 def main(
     trainable,
     suggest_config,
@@ -121,34 +148,16 @@ def main(
         additional_stoppers = []
     if no_tune:
         assert test
-        study = optuna.create_study()
-        trial = study.ask()
-        config = suggest_config(trial, test=test)
-        config = {**config, **trial.params}
-        assert config["test"]
-        train_instance = trainable(config)
-        for _ in range(2):
-            train_instance.trainer.step(max_batches=1)
-        raise SystemExit(0)
+        simple_run_without_tune(trainable, suggest_config)
 
     maybe_run_wandb_offline()
 
     maybe_run_distributed()
 
-    if timeout is None:
-        timeout_seconds = None
-    else:
-        timeout_seconds = pytimeparse.parse(timeout)
-        if timeout_seconds is None:
-            raise ValueError(
-                "Could not parse timeout. Try specifying a unit, " "e.g., 1h13m"
-            )
-    del timeout
-
     points_to_evaluate = get_points_to_evaluate(enqueue)
 
-    fixed_config = None
-    if fixed:
+    fixed_config: None | dict[str, Any] = None
+    if fixed is not None:
         fixed_config = read_json(Path(fixed))
 
     optuna_search = OptunaSearch(
@@ -158,7 +167,7 @@ def main(
         points_to_evaluate=points_to_evaluate,
     )
     if restore:
-        print(f"Restoring previous state from {restore}")
+        logger.info(f"Restoring previous state from {restore}")
         optuna_search.restore_from_dir(restore)
 
     num_samples = num_samples or 20
@@ -176,8 +185,8 @@ def main(
         ),
         *additional_stoppers,
     ]
-    if timeout_seconds is not None:
-        stoppers.append(TimeoutStopper(timeout_seconds))
+    if timeout_stopper := get_timeout_stopper(timeout):
+        stoppers.append(timeout_stopper)
     if test:
         stoppers.append(MaximumIterationStopper(1))
     stopper = CombinedStopper(*stoppers)
