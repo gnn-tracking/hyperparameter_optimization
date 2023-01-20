@@ -216,7 +216,8 @@ class Dispatcher:
         # For easier subclassing, methods can be overridden to return None
         # to disable
         stoppers: list[Stopper] = [
-            self.get_no_improvement_stopper() * self.additional_stoppers,
+            self.get_no_improvement_stopper(),
+            *self.additional_stoppers,
         ]
         if timeout_stopper := get_timeout_stopper(self.timeout):
             stoppers.append(timeout_stopper)
