@@ -137,18 +137,11 @@ if __name__ == "__main__":
         ),
     ]
 
-    # sector = kwargs.pop("sector")
     main(
         ECTrainable,
         partial(
             suggest_config,
-            # sector=sector,
             ec_pt_thld=kwargs.pop("ec_pt_thld"),
-            # training_pt_thld=kwargs.pop("training_pt_thld"),
-            # training_without_noise=kwargs.pop("training_without_noise"),
-            # training_without_non_reconstructable=kwargs.pop(
-            #     "training_without_non_reconstructable"
-            # ),
         ),
         **kwargs,
         metric="max_mcc_pt0.9",
