@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=ray-worker
-#SBATCH --output=logs/ray_workers/%j.log
+#SBATCH --output=logs/ray-worker-%j.log
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=02:00:00
