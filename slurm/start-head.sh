@@ -29,3 +29,6 @@ ray start \
   --dashboard-host=0.0.0.0  \
   --dashboard-port=${dashboard_port} \
   --include-dashboard=true
+
+rm -f "${HOME}/.ray_head_redis_password"
+rm -f "${HOME}/.ray_head_ip_address"

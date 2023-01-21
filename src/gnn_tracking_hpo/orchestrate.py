@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from http import client as httplib
+from pathlib import Path
 
 import ray
 from gnn_tracking.utils.log import logger
@@ -33,10 +34,23 @@ def maybe_run_distributed() -> None:
     """If it looks like we're running across multiple nodes, enable distributed
     mode of ray
     """
-    if "redis_password" in os.environ or "head_ip" in os.environ:
-        logger.info("Detected distributed mode, initializing ray")
-        logger.debug("redis_password %s", os.environ.get("redis_password"))
-        logger.debug("head_ip %s", os.environ.get("head_ip"))
+
+    def try_get_from_file(path: Path) -> str:
+        try:
+            return path.read_text().strip()
+        except FileNotFoundError:
+            return ""
+
+    redis_password = os.environ.get("redis_password", "").strip() or try_get_from_file(
+        Path.home() / ".ray_head_redis_password"
+    )
+    head_ip = os.environ.get("head_ip", "").strip() or try_get_from_file(
+        Path.home() / ".ray_head_ip_address"
+    )
+    if redis_password and head_ip:
+        logger.info(
+            f"Connecting to ray head at {head_ip} with password {redis_password}"
+        )
         ray.init(
             address="auto",
             _redis_password=os.environ["redis_password"],

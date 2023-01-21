@@ -26,6 +26,7 @@ from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 from gnn_tracking_hpo.cli import (
     add_enqueue_option,
     add_gpu_option,
+    add_local_option,
     add_test_option,
     add_wandb_options,
 )
@@ -38,12 +39,13 @@ server = della
 def add_common_options(parser: ArgumentParser):
     add_test_option(parser)
     add_gpu_option(parser)
+    add_enqueue_option(parser)
+    add_local_option(parser)
     parser.add_argument(
         "--restore",
         help="Restore previous training search state from this directory",
         default=None,
     )
-    add_enqueue_option(parser)
     parser.add_argument(
         "--only-enqueued",
         help="Only run enqueued points, do not tune any parameters",
@@ -136,6 +138,7 @@ class Dispatcher:
         no_tune=False,
         num_samples: None | int = None,
         no_scheduler=False,
+        local=False,
         # ----
         grace_period=3,
         no_improvement_patience=10,
@@ -166,6 +169,7 @@ class Dispatcher:
         self.no_tune = no_tune
         self.num_samples = num_samples
         self.no_scheduler = no_scheduler
+        self.local = local
         if self.test and not self.dname.endswith("_test"):
             self.dname += "_test"
         if additional_stoppers is None:
@@ -191,7 +195,8 @@ class Dispatcher:
             simple_run_without_tune(trainable, suggest_config)
 
         maybe_run_wandb_offline()
-        maybe_run_distributed()
+        if not self.local:
+            maybe_run_distributed()
         tuner = self.get_tuner(trainable, suggest_config)
         tuner.fit()
 

@@ -3,6 +3,14 @@ from __future__ import annotations
 from argparse import ArgumentParser
 
 
+def add_local_option(parser: ArgumentParser):
+    parser.add_argument(
+        "--local",
+        help="Run locally, not with head node",
+        action="store_true",
+    )
+
+
 def add_test_option(parser: ArgumentParser):
     parser.add_argument(
         "--test",
