@@ -79,9 +79,9 @@ def suggest_config(
 
     d("lr", 0.0001, 0.0006)
     d("m_hidden_dim", 64, 256)
-    d("m_L_ec", 1, 5)
-    d("focal_gamma", 1, 20)  # 5 might be a good default
-    d("focal_alpha", 0.1, 1)  # 0.95 might be a good default
+    d("m_L_ec", 2, 6)
+    d("focal_gamma", 0.0, 5.0)
+    d("focal_alpha", 0.1, 1.0)
     d("m_alpha_ec", 0.3, 0.99)
     d("m_interaction_node_hidden_dim", 32, 128)
     d("m_interaction_edge_hidden_dim", 32, 128)
