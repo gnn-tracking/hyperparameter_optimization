@@ -15,11 +15,7 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import Callback, Stopper, SyncConfig
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
-from ray.tune.stopper import (  # TrialPlateauStopper,
-    CombinedStopper,
-    MaximumIterationStopper,
-    TimeoutStopper,
-)
+from ray.tune.stopper import CombinedStopper, MaximumIterationStopper, TimeoutStopper
 from rt_stoppers_contrib.no_improvement import NoImprovementTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 

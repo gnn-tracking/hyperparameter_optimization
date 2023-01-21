@@ -63,6 +63,11 @@ def suggest_config(
     d("sector", sector)
     d("lw_edge", 1.0)
 
+    d("n_graphs_train", 12180)
+    d("n_graphs_val", 299)
+    d("n_graphs_val", 1)
+    d("batch_size", 5)
+
     if sector is not None:
         # Currently only have limited graphs available in that case
         d("n_graphs_train", 300)
