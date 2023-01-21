@@ -121,15 +121,17 @@ if __name__ == "__main__":
         ),
     ]
 
-    Dispatcher(
-        ECTrainable,
-        partial(
-            suggest_config,
-            ec_pt_thld=kwargs.pop("ec_pt_thld"),
-        ),
+    dispatcher = Dispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
         grace_period=3,
         no_improvement_patience=2,
         additional_stoppers=additional_stoppers,
-    )()
+    )
+    dispatcher(
+        ECTrainable,
+        partial(
+            suggest_config,
+            ec_pt_thld=kwargs.pop("ec_pt_thld"),
+        ),
+    )

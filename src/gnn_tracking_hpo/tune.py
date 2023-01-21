@@ -5,7 +5,7 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import optuna
 import pytimeparse
@@ -118,8 +118,6 @@ def simple_run_without_tune(trainable, suggest_config):
 class Dispatcher:
     def __init__(
         self,
-        trainable,
-        suggest_config,
         *,
         # ---- Supplied fom CLI
         test=False,
@@ -146,14 +144,10 @@ class Dispatcher:
         """For most arguments, see corresponding command line interface.
 
         Args:
-            trainable: The trainable to run.
-            suggest_config: A function that returns a config dictionary.
             grace_period: Grace period for ASHA scheduler.
             no_improvement_patience: Number of iterations without improvement before
                 stopping
         """
-        self.trainable = trainable
-        self.suggest_config = suggest_config
         self.test = test
         self.gpu = gpu
         self.restore = restore
@@ -181,20 +175,30 @@ class Dispatcher:
 
     def __call__(
         self,
+        trainable: Callable,
+        suggest_config: Callable,
     ):
+        """
+        Args:
+            trainable: The trainable to run.
+            suggest_config: A function that returns a config dictionary.
+
+        Returns:
+
+        """
         if self.no_tune:
             assert self.test
-            simple_run_without_tune(self.trainable, self.suggest_config)
+            simple_run_without_tune(trainable, suggest_config)
 
         maybe_run_wandb_offline()
         maybe_run_distributed()
-        tuner = self.get_tuner()
+        tuner = self.get_tuner(trainable)
         tuner.fit()
 
-    def get_tuner(self):
+    def get_tuner(self, trainable):
         return tune.Tuner(
             tune.with_resources(
-                self.trainable,
+                trainable,
                 {
                     "gpu": 1 if self.gpu else 0,
                     "cpu": server.cpus_per_gpu if not self.test else 1,
@@ -307,8 +311,8 @@ class Dispatcher:
         )
 
 
-def main(*args, **kwargs):
+def main(trainable, suggest_config, *args, **kwargs):
     """Dispatch with ray tune Arguments see Dispater.__call__."""
     logger.warning("Deprecated, use Dispatcher class directly")
     dispatcher = Dispatcher(*args, **kwargs)
-    dispatcher()
+    dispatcher(trainable, suggest_config)
