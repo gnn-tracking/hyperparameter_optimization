@@ -15,3 +15,4 @@ python3 ../scripts/tune_ec.py \
   --enqueue $1 \
   --no-scheduler \
   --test
+  --include-dashboard=false
