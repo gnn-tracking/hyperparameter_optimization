@@ -11,7 +11,7 @@ from gnn_tracking_hpo.util.log import logger
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("hash", nargs="+", dest="hashes")
+    parser.add_argument("hashes", nargs="+")
     args = parser.parse_args()
     for this_hash in args.hashes:
         config = retrieve_config_from_wandb(this_hash)
