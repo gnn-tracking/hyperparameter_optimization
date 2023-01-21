@@ -9,6 +9,7 @@
 #SBATCH --gres=gpu:1
 
 python3 ../scripts/tune_ec.py \
+  --local \
   --gpu \
   --dname ec \
   --group ec \
