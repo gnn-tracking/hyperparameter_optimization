@@ -8,4 +8,9 @@
 #SBATCH --cpus-per-task 1
 #SBATCH --gres=gpu:1
 
-python3 ../scripts/tune_ec.py --gpu --only-enqueued --enqueue $1 --no-scheduler --test
+python3 ../scripts/tune_ec.py \
+  --gpu \
+  --only-enqueued \
+  --enqueue $1 \
+  --no-scheduler \
+  --test

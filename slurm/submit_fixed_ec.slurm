@@ -8,4 +8,11 @@
 #SBATCH --cpus-per-task 12
 #SBATCH --gres=gpu:1
 
-python3 ../scripts/tune_ec.py --gpu --dname ec --group ec --timeout 1h50min --only-enqueued --enqueue $1 --no-scheduler
+python3 ../scripts/tune_ec.py \
+  --gpu \
+  --dname ec \
+  --group ec \
+  --timeout 1h50min \
+  --only-enqueued \
+  --enqueue $1 \
+  --no-scheduler

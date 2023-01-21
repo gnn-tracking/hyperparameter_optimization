@@ -126,7 +126,6 @@ class Dispatcher:
         enqueue: None | list[str] = None,
         only_enqueued=False,
         fixed: None | str = None,
-        grace_period=3,
         timeout: None | str = None,
         tags=None,
         group=None,
@@ -138,6 +137,7 @@ class Dispatcher:
         num_samples: None | int = None,
         no_scheduler=False,
         # ----
+        grace_period=3,
         no_improvement_patience=10,
         additional_stoppers=None,
     ):
