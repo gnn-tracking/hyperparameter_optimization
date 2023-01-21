@@ -14,5 +14,5 @@ python3 ../scripts/tune_ec.py \
   --only-enqueued \
   --enqueue $1 \
   --no-scheduler \
-  --test
+  --test \
   --include-dashboard=false
