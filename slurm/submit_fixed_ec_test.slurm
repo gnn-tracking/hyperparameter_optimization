@@ -12,6 +12,6 @@ python3 ../scripts/tune_ec.py \
   --local \
   --gpu \
   --only-enqueued \
-  --enqueue $1 \
+  --enqueue "${1}" \
   --no-scheduler \
   --test

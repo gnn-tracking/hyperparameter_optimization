@@ -10,13 +10,13 @@ echo "Using port ${dashboard_port} for the ray dashboard. Make sure this is uniq
 redis_password=$(uuidgen)
 echo "Redis password ${redis_password}"
 export redis_password
-echo ${redis_password} > "${HOME}/.ray_head_redis_password"
+echo "${redis_password}" > "${HOME}/.ray_head_redis_password"
 ip_head="${head_node_ip}:${port}"
 
 head_node_ip=$(hostname --ip-address)
 echo "IP ray head: ${ip_head}"
 export ip_head
-echo ${head_node_ip} > "${HOME}/.ray_head_ip_address"
+echo "${head_node_ip}:${port}" > "${HOME}/.ray_head_ip_address"
 
 ray start \
   -vvv  \
