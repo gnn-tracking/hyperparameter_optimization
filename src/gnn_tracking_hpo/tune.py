@@ -192,10 +192,10 @@ class Dispatcher:
 
         maybe_run_wandb_offline()
         maybe_run_distributed()
-        tuner = self.get_tuner(trainable)
+        tuner = self.get_tuner(trainable, suggest_config)
         tuner.fit()
 
-    def get_tuner(self, trainable):
+    def get_tuner(self, trainable, suggest_config):
         return tune.Tuner(
             tune.with_resources(
                 trainable,
@@ -204,7 +204,7 @@ class Dispatcher:
                     "cpu": server.cpus_per_gpu if not self.test else 1,
                 },
             ),
-            tune_config=self.get_tune_config(),
+            tune_config=self.get_tune_config(suggest_config),
             run_config=self.get_run_config(),
         )
 
@@ -248,13 +248,13 @@ class Dispatcher:
     def points_to_evaluate(self):
         return get_points_to_evaluate(self.enqueue)
 
-    def get_optuna_search(self):
+    def get_optuna_search(self, suggest_config):
         fixed_config: None | dict[str, Any] = None
         if self.fixed is not None:
             fixed_config = read_json(Path(self.fixed))
 
         optuna_search = OptunaSearch(
-            partial(self.suggest_config, test=self.test, fixed=fixed_config),
+            partial(suggest_config, test=self.test, fixed=fixed_config),
             metric=self.metric,
             mode="max",
             points_to_evaluate=self.points_to_evaluate,
@@ -283,11 +283,12 @@ class Dispatcher:
 
     def get_tune_config(
         self,
+        suggest_config: Callable,
     ):
         return tune.TuneConfig(
             scheduler=self.get_scheduler(),
             num_samples=self.get_num_samples(),
-            search_alg=self.get_optuna_search(),
+            search_alg=self.get_optuna_search(suggest_config),
         )
 
     def get_checkpoint_config(self):

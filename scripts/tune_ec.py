@@ -5,7 +5,6 @@ model.
 from __future__ import annotations
 
 from argparse import ArgumentParser
-from functools import partial
 from typing import Any
 
 import optuna
@@ -104,8 +103,5 @@ if __name__ == "__main__":
     )
     dispatcher(
         ECTrainable,
-        partial(
-            suggest_config,
-            ec_pt_thld=kwargs.pop("ec_pt_thld"),
-        ),
+        suggest_config,
     )
