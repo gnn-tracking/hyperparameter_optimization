@@ -16,5 +16,4 @@ python3 ../scripts/tune_ec.py \
   --timeout 1h50min \
   --only-enqueued \
   --enqueue $1 \
-  --no-scheduler \
-  --include-dashboard=false
+  --no-scheduler
