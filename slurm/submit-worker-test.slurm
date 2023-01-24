@@ -4,9 +4,10 @@
 #SBATCH --output=logs/ray-worker-%j.log
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --time=00:05:00
+#SBATCH --time=00:15:00
 #SBATCH --cpus-per-task 1
 #SBATCH --gres=gpu:1
+#SBATCH --mem=70G
 
 ip_head=$(cat "${HOME}/.ray_head_ip_address")
 echo "Using head node at ${ip_head}"

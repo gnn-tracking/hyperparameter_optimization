@@ -7,6 +7,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --cpus-per-task 12
 #SBATCH --gres=gpu:1
+#SBATCH --mem=70G
 
 ip_head=$(cat "${HOME}/.ray_head_ip_address")
 echo "Using head node at ${ip_head}"
