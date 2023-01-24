@@ -83,7 +83,7 @@ def suggest_config(
 
     d("lr", 0.0001, 0.0006)
     d("m_hidden_dim", 64, 256)
-    d("m_L_ec", 2, 6)
+    d("m_L_ec", 6, 8)
     d("focal_gamma", 0.0, 5.0)
     d("focal_alpha", 0.1, 1.0)
     d("m_alpha_ec", 0.3, 0.99)
