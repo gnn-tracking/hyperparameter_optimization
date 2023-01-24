@@ -8,6 +8,9 @@
 #SBATCH --cpus-per-task 12
 #SBATCH --gres=gpu:1
 #SBATCH --mem=70G
+#SBATCH --mail-type=end
+#SBATCH --mail-type=fail
+#SBATCH --mail-user=kl5675@princeton.edu
 
 ip_head=$(cat "${HOME}/.ray_head_ip_address")
 echo "Using head node at ${ip_head}"
