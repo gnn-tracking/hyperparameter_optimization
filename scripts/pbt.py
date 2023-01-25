@@ -18,7 +18,7 @@ from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.search import BasicVariantGenerator
 from torch.optim import SGD
 
-from gnn_tracking_hpo.cli import add_enqueue_option, add_gpu_option, add_test_option
+from gnn_tracking_hpo.cli import add_cpu_option, add_enqueue_option, add_test_option
 from gnn_tracking_hpo.config import della, get_metadata, get_points_to_evaluate
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
 from gnn_tracking_hpo.trainable import TCNTrainable
@@ -79,7 +79,7 @@ def main(
     maybe_run_wandb_offline()
     parser = ArgumentParser()
     add_test_option(parser)
-    add_gpu_option(parser)
+    add_cpu_option(parser)
     add_enqueue_option(parser)
 
     maybe_run_distributed()

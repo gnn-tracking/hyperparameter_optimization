@@ -20,8 +20,8 @@ from rt_stoppers_contrib.no_improvement import NoImprovementTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
 from gnn_tracking_hpo.cli import (
+    add_cpu_option,
     add_enqueue_option,
-    add_gpu_option,
     add_local_option,
     add_test_option,
     add_wandb_options,
@@ -34,7 +34,7 @@ server = della
 
 def add_common_options(parser: ArgumentParser):
     add_test_option(parser)
-    add_gpu_option(parser)
+    add_cpu_option(parser)
     add_enqueue_option(parser)
     add_local_option(parser)
     parser.add_argument(
@@ -119,7 +119,7 @@ class Dispatcher:
         *,
         # ---- Supplied fom CLI
         test=False,
-        gpu=False,
+        cpu=False,
         restore=None,
         enqueue: None | list[str] = None,
         only_enqueued=False,
@@ -148,7 +148,7 @@ class Dispatcher:
                 stopping
         """
         self.test = test
-        self.gpu = gpu
+        self.cpu = cpu
         self.restore = restore
         self.enqueue = enqueue
         self.only_enqueued = only_enqueued
@@ -207,7 +207,7 @@ class Dispatcher:
             tune.with_resources(
                 trainable,
                 {
-                    "gpu": 1 if self.gpu else 0,
+                    "gpu": 1 if not self.cpu else 0,
                     "cpu": server.cpus_per_gpu if not self.test else 1,
                 },
             ),

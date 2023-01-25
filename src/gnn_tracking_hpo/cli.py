@@ -19,10 +19,10 @@ def add_test_option(parser: ArgumentParser):
     )
 
 
-def add_gpu_option(parser: ArgumentParser):
+def add_cpu_option(parser: ArgumentParser):
     parser.add_argument(
-        "--gpu",
-        help="Run on a GPU",
+        "--cpu",
+        help="Do not run on a GPU, only use CPU",
         action="store_true",
     )
 
