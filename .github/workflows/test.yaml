@@ -23,6 +23,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        submodules: 'recursive'
       - name: Get environment.yml
         run: |
           mkdir environments
