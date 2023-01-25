@@ -11,7 +11,7 @@ import optuna
 import pytimeparse
 from ray import logger, tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
-from ray.air.callbacks.wandb import WandbLoggerCallback
+from ray.air.integrations.wandb import WandbLoggerCallback
 from ray.tune import Callback, ResultGrid, Stopper, SyncConfig, Trainable
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
