@@ -191,7 +191,7 @@ class Dispatcher:
             simple_run_without_tune(trainable, suggest_config)
 
         maybe_run_wandb_offline()
-        if not self.local:
+        if not self.local and not self.test:
             maybe_run_distributed()
         tuner = self.get_tuner(trainable, suggest_config)
         return tuner.fit()
