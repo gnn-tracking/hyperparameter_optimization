@@ -231,19 +231,22 @@ class Dispatcher:
             stoppers.append(MaximumIterationStopper(1))
         return [stopper for stopper in stoppers if stopper is not None]
 
+    def get_wandb_callbacks(self) -> list[Callback]:
+        return [
+            WandbLoggerCallback(
+                api_key_file="~/.wandb_api_key",
+                project="gnn_tracking",
+                tags=self.tags,
+                group=self.group,
+                notes=self.note,
+            ),
+            TriggerWandbSyncRayHook(),
+        ]
+
     def get_callbacks(self) -> list[Callback]:
         callbacks: list[Callback] = []
         if not self.test:
-            callbacks = [
-                WandbLoggerCallback(
-                    api_key_file="~/.wandb_api_key",
-                    project="gnn_tracking",
-                    tags=self.tags,
-                    group=self.group,
-                    notes=self.note,
-                ),
-                TriggerWandbSyncRayHook(),
-            ]
+            callbacks.extend(self.get_wandb_callbacks())
         return callbacks
 
     @cached_property
