@@ -265,12 +265,16 @@ class Dispatcher:
             optuna_search.restore_from_dir(self.restore)
         return optuna_search
 
-    def get_num_samples(self):
+    def get_num_samples(self) -> int:
+        """Return number of samples/trials to run"""
         if self.test:
             return 1
         if self.only_enqueued:
             return len(self.points_to_evaluate)
-        return self.num_samples or 20
+        if self.num_samples is not None:
+            return self.num_samples
+        logger.warning("No n-samples specified, defaulting to only 20")
+        return 20
 
     def get_scheduler(self):
         if self.no_scheduler:

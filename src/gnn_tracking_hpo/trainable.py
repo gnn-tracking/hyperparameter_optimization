@@ -336,4 +336,5 @@ class TCNTrainable(tune.Trainable):
         )
 
     def load_checkpoint(self, checkpoint_path, **kwargs):
+        logger.debug("Loading checkpoint from %s", checkpoint_path)
         self.trainer.load_checkpoint(checkpoint_path, **kwargs)

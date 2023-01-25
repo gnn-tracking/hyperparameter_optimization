@@ -20,7 +20,11 @@ from tune_ec import ECTrainable  # noqa: E402
 
 
 class UnPackDictionaryForward(nn.Module):
-    def __init__(self, ec):
+    def __init__(self, ec: nn.Module):
+        """Small wrapper class that basically undos what the
+        `SignatureAdaptedECForGraphTCN` class that was used to adapt the signature of
+        the edge classifier for training with the normal TCN trainer does.
+        """
         super().__init__()
         self.ec = ec
 
@@ -29,6 +33,13 @@ class UnPackDictionaryForward(nn.Module):
 
 
 def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn.Module:
+    """Load pre-trained edge classifier
+
+    Args:
+        project (str): Project name (probably ``gnn_tracking``)
+        hash (str): Hash of the run
+        config_update (dict, optional): Update the config with this dict.
+    """
     checkpoint_path = find_checkpoints(project, hash)[-1]
     config = get_config(project, hash)
     # In case any new values were added, we need to suggest this again
