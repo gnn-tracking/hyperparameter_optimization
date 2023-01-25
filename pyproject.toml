@@ -2,6 +2,7 @@
 minversion = "6.0"
 addopts = ["--cov=gnn_tracking_hpo", "-ra", "--showlocals", "--strict-markers", "--strict-config", "--cov-branch"]
 xfail_strict = true
+testpaths = ["test"]
 
 [tool.pycln]
 all = true
