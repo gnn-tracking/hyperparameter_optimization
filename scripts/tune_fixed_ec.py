@@ -12,7 +12,7 @@ from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
-from gnn_tracking_hpo.tune import add_common_options, main
+from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoints, get_config
 
 add_scripts_path()
@@ -68,18 +68,7 @@ class PretrainedECTrainable(TCNTrainable):
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
-
-        def test_every(*args, **kwargs):
-            if trainer._epoch % 9 == 1:
-                # note: first epoch we test is epoch 1
-                trainer.last_test_result = TCNTrainer.test_step(
-                    trainer, *args, **kwargs
-                )
-            return trainer.last_test_result
-
-        trainer.test_step = test_every
         trainer.ec_threshold = self.tc["m_ec_threshold"]
-
         return trainer
 
     def get_model(self) -> nn.Module:
@@ -94,7 +83,7 @@ class PretrainedECTrainable(TCNTrainable):
 def suggest_config(
     trial: optuna.Trial,
     *,
-    sector: int,
+    sector: int | None = None,
     ec_project: str,
     ec_hash: str,
     test=False,
@@ -105,6 +94,9 @@ def suggest_config(
 
     def d(key, *args, **kwargs):
         auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
+
+    # Definitely Fixed hyperparameters
+    # --------------------------------
 
     d("sector", sector)
     d("n_graphs_train", 300)
@@ -118,19 +110,24 @@ def suggest_config(
     d("m_ec_threshold", 0.3746)
 
     d("batch_size", 1)
+
+    # Keep one fixed because of normalization invariance
+    d("lw_potential_attractive", 1.0)
+
+    # Tuned hyperparameters
+    # ---------------------
+
     d("attr_pt_thld", 0.0, 0.9)
     d("m_h_outdim", 2, 5)
     d("q_min", 0.3, 0.5)
     d("sb", 0.05, 0.12)
     d("lr", 0.0001, 0.0006)
     d("repulsive_radius_threshold", 1.5, 10)
-    d("m_hidden_dim", 116)
-    d("m_L_hc", 3)
+    d("m_hidden_dim", 128, 256)
+    d("m_L_hc", 3, 7)
     d("m_h_dim", 5, 8)
     d("m_e_dim", 4, 6)
     d("m_alpha_hc", 0.3, 0.99)
-    # Keep one fixed because of normalization invariance
-    d("lw_potential_attractive", 1.0)
     d("lw_background", 1e-6, 1e-1, log=True)
     d("lw_potential_repulsive", 1e-1, 1e1, log=True)
     d("m_interaction_node_hidden_dim", 32, 128)
@@ -149,20 +146,22 @@ if __name__ == "__main__":
         "--ec-project",
         required=True,
         type=str,
-        help="Name of the jfolder that the edge classifier to load belongs to",
+        help="Name of the folder that the edge classifier to load belongs to",
     )
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
-    main(
-        PretrainedECTrainable,
-        partial(
-            suggest_config,
-            sector=9,
-            ec_hash=kwargs.pop("ec_hash"),
-            ec_project=kwargs.pop("ec_project"),
-        ),
+    this_suggest_config = partial(
+        suggest_config,
+        ec_hash=kwargs.pop("ec_hash"),
+        ec_project=kwargs.pop("ec_project"),
+    )
+    dispatcher = Dispatcher(
         grace_period=11,
         no_improvement_patience=19,
         metric="trk.double_majority_pt0.9",
         **kwargs,
+    )
+    dispatcher(
+        PretrainedECTrainable,
+        this_suggest_config,
     )
