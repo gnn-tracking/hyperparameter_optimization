@@ -194,7 +194,7 @@ class Dispatcher:
         if not self.local:
             maybe_run_distributed()
         tuner = self.get_tuner(trainable, suggest_config)
-        tuner.fit()
+        return tuner.fit()
 
     def get_tuner(self, trainable, suggest_config):
         return tune.Tuner(
@@ -321,4 +321,4 @@ def main(trainable, suggest_config, *args, **kwargs):
     """Dispatch with ray tune Arguments see Dispater.__call__."""
     logger.warning("Deprecated, use Dispatcher class directly")
     dispatcher = Dispatcher(*args, **kwargs)
-    dispatcher(trainable, suggest_config)
+    return dispatcher(trainable, suggest_config)

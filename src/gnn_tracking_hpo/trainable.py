@@ -70,12 +70,18 @@ def reduced_dbscan_scan(
     guide="trk.double_majority_pt1.5",
     epoch=None,
     start_params: dict[str, Any] | None = None,
-    node_mask: list[np.ndarray],
+    node_mask: list[np.ndarray] | None = None,
 ) -> ClusterScanResult:
     """Convenience function for scanning DBSCAN hyperparameters with trial count
     that depends on the epoch (using many trials early on, then alternating between
     fixed and low samples in later epochs).
     """
+    version_dependent_kwargs = {}
+    if node_mask is not None:
+        logger.warning(
+            "Running on a gnn_tracking version without post-EC node pruning."
+        )
+        version_dependent_kwargs["node_mask"] = node_mask
     dbss = DBSCANHyperParamScanner(
         data=graphs,
         truth=truth,
@@ -86,7 +92,7 @@ def reduced_dbscan_scan(
         metrics=common_metrics,
         min_samples_range=(1, 1),
         eps_range=(0.95, 1.0),
-        node_mask=node_mask,
+        **version_dependent_kwargs,
     )
     if epoch < 8:
         n_trials = 12
@@ -283,7 +289,9 @@ class TCNTrainable(tune.Trainable):
         return subdict_with_prefix_stripped(self.tc, "lw_")
 
     def get_loaders(self):
+        logger.debug("Getting loaders")
         if self.tc.get("no_data"):
+            logger.debug("No data requested")
             return None
         n_graphs = (
             self.tc["n_graphs_train"]
@@ -298,6 +306,7 @@ class TCNTrainable(tune.Trainable):
                 test_frac=test_frac,
                 val_frac=val_frac,
                 sector=self.tc["sector"],
+                test=self.tc["test"],
             ),
             test=self.tc["test"],
             batch_size=self.tc["batch_size"],
