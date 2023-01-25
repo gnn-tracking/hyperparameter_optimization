@@ -51,7 +51,7 @@ def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn
     config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
     if config_update is not None:
         config.update(config_update)
-    trainable = ECTrainable(config).to(DEVICE)
+    trainable = ECTrainable(config)
     trainable.load_checkpoint(checkpoint_path, device=DEVICE)
     ec = trainable.trainer.model
     for param in ec.parameters():
@@ -107,7 +107,7 @@ def suggest_config(
     d("n_graphs_val", 69)
     d("n_graphs_test", 1)
 
-    d("m_mask_nodes_with_leq_connections", 2)
+    # d("m_mask_nodes_with_leq_connections", 2)
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
