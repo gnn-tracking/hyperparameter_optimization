@@ -64,7 +64,7 @@ def add_common_options(parser: ArgumentParser):
     parser.add_argument(
         "--dname",
         help="Name of ray output directory",
-        default="tcn",
+        default=None,
     )
     parser.add_argument(
         "--no-tune",
@@ -129,7 +129,7 @@ class Dispatcher:
         group=None,
         note=None,
         fail_slow=False,
-        dname="tcn",
+        dname: str | None = None,
         metric="trk.double_majority_pt1.5",
         no_tune=False,
         num_samples: None | int = None,
@@ -157,9 +157,14 @@ class Dispatcher:
         self.timeout = timeout
         self.tags = tags
         self.group = group
+        if not group:
+            raise ValueError("Group must be specified")
         self.note = note
         self.fail_slow = fail_slow
-        self.dname = dname
+        if dname is None:
+            dname = self.group
+        assert dname  # for mypy
+        self.dname: str = dname
         self.metric = metric
         self.no_improvement_patience = no_improvement_patience
         self.no_tune = no_tune
