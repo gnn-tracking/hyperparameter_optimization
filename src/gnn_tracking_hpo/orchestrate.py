@@ -53,7 +53,7 @@ def maybe_run_distributed() -> None:
         )
         ray.init(
             address="auto",
-            _redis_password=os.environ["redis_password"],
-            _node_ip_address=os.environ["head_ip"].split(":")[0],
+            _redis_password=redis_password,
+            _node_ip_address=head_ip.split(":")[0],
         )
         register_ray()
