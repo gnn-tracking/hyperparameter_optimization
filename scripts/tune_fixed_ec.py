@@ -51,7 +51,6 @@ def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn
     config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
     if config_update is not None:
         config.update(config_update)
-    global DEVICE
     trainable = ECTrainable(config).to(DEVICE)
     trainable.load_checkpoint(checkpoint_path, device=DEVICE)
     ec = trainable.trainer.model
@@ -156,7 +155,6 @@ if __name__ == "__main__":
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
     if kwargs["gpu"]:
-        global DEVICE
         DEVICE = "gpu"
     this_suggest_config = partial(
         suggest_config,
