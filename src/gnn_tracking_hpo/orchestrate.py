@@ -44,7 +44,9 @@ def maybe_run_distributed(local=False) -> None:
     def get_from_file_or_environ(name: str, path: Path, env_name: str) -> str | None:
         from_env = os.environ.get(env_name)
         if from_env is not None:
-            logger.debug("Got %s = %s from environment var", name, from_env)
+            logger.debug(
+                "Got %s = %s from environment var '%s'", name, from_env, env_name
+            )
             return from_env
         try:
             from_file = path.read_text().strip()
@@ -55,7 +57,8 @@ def maybe_run_distributed(local=False) -> None:
                 path,
                 env_name,
             )
-        logger.debug("Got %s = %s from file", name, from_file)
+            return None
+        logger.debug("Got %s = %s from file '%s'", name, from_file, path)
         return from_file
 
     redis_password = get_from_file_or_environ(
