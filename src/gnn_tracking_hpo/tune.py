@@ -12,7 +12,7 @@ import pytimeparse
 from ray import logger, tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.callbacks.wandb import WandbLoggerCallback
-from ray.tune import Callback, Stopper, SyncConfig
+from ray.tune import Callback, ResultGrid, Stopper, SyncConfig, Trainable
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.tune.stopper import CombinedStopper, MaximumIterationStopper, TimeoutStopper
@@ -100,7 +100,7 @@ def get_timeout_stopper(timeout: str | None = None) -> TimeoutStopper | None:
         return TimeoutStopper(timeout_seconds)
 
 
-def simple_run_without_tune(trainable, suggest_config):
+def simple_run_without_tune(trainable, suggest_config: Callable) -> None:
     """Simple run without tuning for testing purposes."""
     study = optuna.create_study()
     trial = study.ask()
@@ -175,9 +175,9 @@ class Dispatcher:
 
     def __call__(
         self,
-        trainable: Callable,
+        trainable: type[Trainable],
         suggest_config: Callable,
-    ):
+    ) -> ResultGrid:
         """
         Args:
             trainable: The trainable to run.
@@ -196,7 +196,9 @@ class Dispatcher:
         tuner = self.get_tuner(trainable, suggest_config)
         return tuner.fit()
 
-    def get_tuner(self, trainable, suggest_config):
+    def get_tuner(
+        self, trainable: type[Trainable], suggest_config: Callable
+    ) -> tune.Tuner:
         return tune.Tuner(
             tune.with_resources(
                 trainable,
@@ -209,7 +211,7 @@ class Dispatcher:
             run_config=self.get_run_config(),
         )
 
-    def get_no_improvement_stopper(self):
+    def get_no_improvement_stopper(self) -> NoImprovementTrialStopper:
         return NoImprovementTrialStopper(
             metric=self.metric,
             patience=self.no_improvement_patience,
@@ -217,7 +219,7 @@ class Dispatcher:
             grace_period=self.grace_period,
         )
 
-    def get_stoppers(self):
+    def get_stoppers(self) -> list[Stopper]:
         # For easier subclassing, methods can be overridden to return None
         # to disable
         stoppers: list[Stopper] = [
@@ -230,7 +232,7 @@ class Dispatcher:
             stoppers.append(MaximumIterationStopper(1))
         return [stopper for stopper in stoppers if stopper is not None]
 
-    def get_callbacks(self):
+    def get_callbacks(self) -> list[Callback]:
         callbacks: list[Callback] = []
         if not self.test:
             callbacks = [
@@ -246,10 +248,10 @@ class Dispatcher:
         return callbacks
 
     @cached_property
-    def points_to_evaluate(self):
+    def points_to_evaluate(self) -> list[dict[str, Any]]:
         return get_points_to_evaluate(self.enqueue)
 
-    def get_optuna_search(self, suggest_config):
+    def get_optuna_search(self, suggest_config: Callable) -> OptunaSearch:
         fixed_config: None | dict[str, Any] = None
         if self.fixed is not None:
             fixed_config = read_json(Path(self.fixed))
@@ -276,7 +278,7 @@ class Dispatcher:
         logger.warning("No n-samples specified, defaulting to only 20")
         return 20
 
-    def get_scheduler(self):
+    def get_scheduler(self) -> None | ASHAScheduler:
         if self.no_scheduler:
             # FIFO scheduler
             return None
@@ -289,14 +291,14 @@ class Dispatcher:
     def get_tune_config(
         self,
         suggest_config: Callable,
-    ):
+    ) -> tune.TuneConfig:
         return tune.TuneConfig(
             scheduler=self.get_scheduler(),
             num_samples=self.get_num_samples(),
             search_alg=self.get_optuna_search(suggest_config),
         )
 
-    def get_checkpoint_config(self):
+    def get_checkpoint_config(self) -> CheckpointConfig:
         return CheckpointConfig(
             checkpoint_score_attribute=self.metric,
             checkpoint_score_order="max",
@@ -304,7 +306,7 @@ class Dispatcher:
             checkpoint_frequency=1,
         )
 
-    def get_run_config(self):
+    def get_run_config(self) -> RunConfig:
         return RunConfig(
             name=self.dname,
             callbacks=self.get_callbacks(),
@@ -318,7 +320,7 @@ class Dispatcher:
         )
 
 
-def main(trainable, suggest_config, *args, **kwargs):
+def main(trainable, suggest_config, *args, **kwargs) -> ResultGrid:
     """Dispatch with ray tune Arguments see Dispater.__call__."""
     logger.warning("Deprecated, use Dispatcher class directly")
     dispatcher = Dispatcher(*args, **kwargs)
