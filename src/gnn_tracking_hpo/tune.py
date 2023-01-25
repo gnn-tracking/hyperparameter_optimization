@@ -301,6 +301,7 @@ class Dispatcher:
             checkpoint_score_attribute=self.metric,
             checkpoint_score_order="max",
             num_to_keep=5,
+            checkpoint_frequency=1,
         )
 
     def get_run_config(self):
