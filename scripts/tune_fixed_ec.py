@@ -20,7 +20,7 @@ from tune_ec import ECTrainable  # noqa: E402
 
 # hacky global variable, but it's hard to pass this on to the Trainable because
 # we don't initialize it ourselves
-DEVICE = "cpu"
+DEVICE = "cuda"
 
 
 class UnPackDictionaryForward(nn.Module):
@@ -154,8 +154,8 @@ if __name__ == "__main__":
     )
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
-    if kwargs["gpu"]:
-        DEVICE = "gpu"
+    if kwargs["cpu"]:
+        DEVICE = "cpu"
     this_suggest_config = partial(
         suggest_config,
         ec_hash=kwargs.pop("ec_hash"),
