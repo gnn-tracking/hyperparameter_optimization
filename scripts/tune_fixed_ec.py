@@ -13,6 +13,7 @@ from torch import nn
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
+from gnn_tracking_hpo.util.log import logger
 from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoints, get_config
 
 add_scripts_path()
@@ -44,6 +45,7 @@ def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn
         hash (str): Hash of the run
         config_update (dict, optional): Update the config with this dict.
     """
+    logger.info("Initializing pre-trained EC")
     checkpoint_path = find_checkpoints(project, hash)[-1]
     config = get_config(project, hash)
     # In case any new values were added, we need to suggest this again
@@ -56,6 +58,7 @@ def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn
     ec = trainable.trainer.model
     for param in ec.parameters():
         param.requires_grad = False
+    logger.info("Pre-trained EC initialized")
     return UnPackDictionaryForward(ec)
 
 

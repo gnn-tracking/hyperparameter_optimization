@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import gnn_tracking_hpo
+from gnn_tracking_hpo.util.log import logger
 
 _default_base_path = Path("~/ray_results/").expanduser()
 
@@ -72,9 +73,9 @@ def get_config(
     """
     result_dir = find_result_dir(project, part, base_path=base_path)
     config_file = result_dir / "params.json"
+    logger.debug("Loading config from %s", config_file)
     if not config_file.exists():
         raise ValueError(f"No config file at {config_file}")
-
     with open(config_file) as f:
         config = json.load(f)
     return config
