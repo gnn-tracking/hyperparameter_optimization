@@ -18,6 +18,10 @@ from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoints, get_
 add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
 
+# hacky global variable, but it's hard to pass this on to the Trainable because
+# we don't initialize it ourselves
+DEVICE = "cpu"
+
 
 class UnPackDictionaryForward(nn.Module):
     def __init__(self, ec: nn.Module):
@@ -47,8 +51,9 @@ def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn
     config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
     if config_update is not None:
         config.update(config_update)
-    trainable = ECTrainable(config)
-    trainable.load_checkpoint(checkpoint_path, device="cpu")
+    global DEVICE
+    trainable = ECTrainable(config).to(DEVICE)
+    trainable.load_checkpoint(checkpoint_path, device=DEVICE)
     ec = trainable.trainer.model
     for param in ec.parameters():
         param.requires_grad = False
@@ -150,6 +155,9 @@ if __name__ == "__main__":
     )
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
+    if kwargs["gpu"]:
+        global DEVICE
+        DEVICE = "gpu"
     this_suggest_config = partial(
         suggest_config,
         ec_hash=kwargs.pop("ec_hash"),
