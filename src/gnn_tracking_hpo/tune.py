@@ -57,8 +57,8 @@ def add_common_options(parser: ArgumentParser):
         "supported.",
     )
     parser.add_argument(
-        "--fail-slow",
-        help="Do not abort tuning after trial fails.",
+        "--fail-fast",
+        help="Abort tuning after trial fails.",
         action="store_true",
     )
     parser.add_argument(
@@ -128,7 +128,7 @@ class Dispatcher:
         tags=None,
         group=None,
         note=None,
-        fail_slow=False,
+        fail_fast=False,
         dname: str | None = None,
         metric="trk.double_majority_pt1.5",
         no_tune=False,
@@ -160,7 +160,7 @@ class Dispatcher:
         if not group:
             raise ValueError("Group must be specified")
         self.note = note
-        self.fail_slow = fail_slow
+        self.fail_fast = fail_fast
         if dname is None:
             dname = self.group
         assert dname  # for mypy
@@ -322,7 +322,7 @@ class Dispatcher:
             checkpoint_config=self.get_checkpoint_config(),
             log_to_file=True,
             failure_config=FailureConfig(
-                fail_fast=not self.fail_slow,
+                fail_fast=self.fail_fast,
             ),
         )
 
