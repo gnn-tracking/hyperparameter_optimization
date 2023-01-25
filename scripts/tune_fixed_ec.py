@@ -114,7 +114,8 @@ def suggest_config(
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
-    d("m_ec_threshold", 0.3746)
+    # >>>>>>>>>>>>> IMPORTANT, adjust that based on the EC <<<<<<<
+    d("m_ec_threshold", 0.1, 0.4)
 
     d("batch_size", 5)
 
