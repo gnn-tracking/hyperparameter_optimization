@@ -103,8 +103,8 @@ def suggest_config(
     # --------------------------------
 
     d("sector", sector)
-    d("n_graphs_train", 300)
-    d("n_graphs_val", 69)
+    d("n_graphs_train", 12180)
+    d("n_graphs_val", 299)
     d("n_graphs_test", 1)
 
     # d("m_mask_nodes_with_leq_connections", 2)
