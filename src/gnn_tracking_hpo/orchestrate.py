@@ -27,26 +27,44 @@ def maybe_run_wandb_offline() -> None:
         logger.warning("Setting wandb mode to offline because you do not have internet")
         os.environ["WANDB_MODE"] = "offline"
     else:
-        logger.debug("You seem to have internet, so directly syncing with wandb")
+        logger.debug("You seem to have internet, so setting wandb to online")
 
 
-def maybe_run_distributed() -> None:
+def maybe_run_distributed(local=False) -> None:
     """If it looks like we're running across multiple nodes, enable distributed
     mode of ray
+
+    Args:
+        local: Force not to connect distributed
     """
+    if local:
+        logger.debug("Running in local mode, so not attempting to connect to ray head")
+        return
 
-    def try_get_from_file(path: Path) -> str:
+    def get_from_file_or_environ(name: str, path: Path, env_name: str) -> str | None:
+        from_env = os.environ.get(env_name)
+        if from_env is not None:
+            logger.debug("Got %s = %s from environment var", name, from_env)
+            return from_env
         try:
-            return path.read_text().strip()
+            from_file = path.read_text().strip()
         except FileNotFoundError:
-            return ""
+            logger.debug(
+                "Could not get %s from file %s or environment var %s",
+                name,
+                path,
+                env_name,
+            )
+        logger.debug("Got %s = %s from file", name, from_file)
+        return from_file
 
-    redis_password = os.environ.get("redis_password", "").strip() or try_get_from_file(
-        Path.home() / ".ray_head_redis_password"
+    redis_password = get_from_file_or_environ(
+        "Redis password", Path.home() / ".ray_head_redis_password", "redis_password"
     )
-    head_ip = os.environ.get("head_ip", "").strip() or try_get_from_file(
-        Path.home() / ".ray_head_ip_address"
+    head_ip = get_from_file_or_environ(
+        "Head IP", Path.home() / ".ray_head_ip_address", "head_ip"
     )
+
     if redis_password and head_ip:
         logger.info(
             f"Connecting to ray head at {head_ip} with password {redis_password}"
@@ -57,3 +75,5 @@ def maybe_run_distributed() -> None:
             _node_ip_address=head_ip.split(":")[0],
         )
         register_ray()
+    else:
+        logger.info("Not connecting to ray head because redis pwd or head ip not found")
