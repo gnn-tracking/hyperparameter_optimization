@@ -116,7 +116,7 @@ def suggest_config(
     d("ec_hash", ec_hash)
     d("m_ec_threshold", 0.3746)
 
-    d("batch_size", 1)
+    d("batch_size", 5)
 
     # Keep one fixed because of normalization invariance
     d("lw_potential_attractive", 1.0)
