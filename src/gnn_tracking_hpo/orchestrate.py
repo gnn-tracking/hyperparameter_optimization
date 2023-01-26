@@ -73,7 +73,7 @@ def maybe_run_distributed(local=False) -> None:
             f"Connecting to ray head at {head_ip} with password {redis_password}"
         )
         ray.init(
-            address="auto",
+            address=head_ip,
             _redis_password=redis_password,
             _node_ip_address=head_ip.split(":")[0],
         )
