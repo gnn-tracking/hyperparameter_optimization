@@ -219,16 +219,31 @@ def suggest_default_values(
 
 
 class TCNTrainable(tune.Trainable):
+    wait_command_file = Path.home() / ".hold_all_trials"
+
     """A wrapper around `TCNTrainer` for use with Ray Tune."""
 
     # Do not add blank self.tc or self.trainer to __init__, because it will be called
     # after setup when setting ``reuse_actor == True`` and overwriting your values
     # from set
     def setup(self, config: dict[str, Any]):
+        # while self.wait_command_file.exists():
+        #     logger.warning("Blocking initialization of trainable. Waiting for wait file %s to be removed before resuming. Sleeping for 10s now.",
+        #                    self.wait_command_file)
+        #     time.sleep(10)
+
         logger.debug("Got config\n%s", pprint.pformat(config))
         self.tc = config
+        self.pre_setup_hook()
         fix_seeds()
         self.trainer = self.get_trainer()
+        self.post_setup_hook()
+
+    def pre_setup_hook(self):
+        pass
+
+    def post_setup_hook(self):
+        pass
 
     def get_model(self) -> nn.Module:
         return GraphTCN(

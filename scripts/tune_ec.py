@@ -4,6 +4,7 @@ model.
 
 from __future__ import annotations
 
+import subprocess
 from argparse import ArgumentParser
 from typing import Any
 
@@ -16,6 +17,7 @@ from torch import nn
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
+from gnn_tracking_hpo.util.log import logger
 
 
 class SignatureAdaptedECForGraphTCN(ECForGraphTCN):
@@ -28,6 +30,12 @@ class SignatureAdaptedECForGraphTCN(ECForGraphTCN):
 
 
 class ECTrainable(TCNTrainable):
+    def pre_setup_hook(self):
+        result = subprocess.run(
+            ["hostname", "--ip-address"], capture_output=True, text=True
+        )
+        logger.info(result)
+
     def get_loss_functions(self) -> dict[str, Any]:
         return {
             "edge": self.get_edge_loss_function(),
