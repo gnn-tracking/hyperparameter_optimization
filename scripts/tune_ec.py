@@ -34,9 +34,12 @@ class ECTrainable(TCNTrainable):
         result = subprocess.run(
             ["hostname", "--ip-address"], capture_output=True, text=True
         )
+        print(result)
+        print(">>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<")
         logger.info(result)
 
     def get_loss_functions(self) -> dict[str, Any]:
+        self.pre_setup_hook()
         return {
             "edge": self.get_edge_loss_function(),
         }
