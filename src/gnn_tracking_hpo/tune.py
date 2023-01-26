@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 from argparse import ArgumentParser
 from functools import cached_property, partial
 from pathlib import Path
@@ -180,6 +181,8 @@ class Dispatcher:
             self.additional_stoppers = []
         else:
             self.additional_stoppers = additional_stoppers
+        self.id = random.randint(1, int(1e4))
+        logger.info("Dispatcher ID: %s", self.id)
 
     def __call__(
         self,
@@ -194,6 +197,8 @@ class Dispatcher:
         Returns:
 
         """
+        trainable._dispatcher_id = self.id
+
         if self.no_tune:
             assert self.test
             simple_run_without_tune(trainable, suggest_config)
