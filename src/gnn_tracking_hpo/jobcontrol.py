@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import os
 import subprocess
 import time
@@ -7,6 +8,7 @@ from enum import Enum, auto
 from pathlib import Path
 
 import yaml
+from dateutil import parser
 
 from gnn_tracking_hpo.util.log import logger
 
@@ -18,6 +20,39 @@ class JobControlAction(Enum):
 
 def get_slurm_job_id() -> str:
     return os.environ.get("SLURM_JOB_ID", "")
+
+
+def get_slurm_remaining_minutes(job_id: str) -> int:
+    # yes, there's json output, but it doesn't show the required information
+    job_stats_text = subprocess.check_output(["jobstats", job_id], text=True)
+    run_time = None
+    time_limit = None
+    for line in job_stats_text.splitlines():
+        if "Run Time" in line:
+            time_str = (
+                line.replace("Run Time:", "").replace("(in progress)", "").strip()
+            )
+            _run_time = parser.parse(time_str)
+            run_time = datetime.timedelta(
+                hours=_run_time.hour, minutes=_run_time.minute, seconds=_run_time.second
+            )
+        if "Time Limit" in line:
+            time_str = line.replace("Time Limit:", "").strip()
+            days_str, _, time_str = time_str.rpartition("-")
+            time_limit = datetime.timedelta(0)
+            if days_str:
+                time_limit += datetime.timedelta(days=int(days_str))
+            _time_limit = parser.parse(time_str)
+            time_limit += datetime.timedelta(
+                hours=_time_limit.hour,
+                minutes=_time_limit.minute,
+                seconds=_time_limit.second,
+            )
+    if run_time is None:
+        raise ValueError("Couldn't find run time in jobstats output")
+    if time_limit is None:
+        raise ValueError("Couldn't find time limit in jobstats output")
+    return int((time_limit - run_time).total_seconds() / 60)
 
 
 def kill_slurm_job(
@@ -55,6 +90,10 @@ class JobControl:
                 c.get("dispatcher_id")
             ) != str(dispatcher_id):
                 continue
+            if c.get("remaining_minutes_leq") is not None:
+                job_remaining_minutes = get_slurm_remaining_minutes(get_slurm_job_id())
+                if job_remaining_minutes > c.get("remaining_minutes_leq"):
+                    continue
             actions.append(JobControlAction[c["action"].upper()])
         if actions:
             logger.debug("Got actions %s", actions)
