@@ -1,20 +1,12 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from http import client as httplib
 from pathlib import Path
 
 import ray
 from gnn_tracking.utils.log import logger
 from ray.util.joblib import register_ray
-
-
-def get_my_ip() -> str:
-    result = subprocess.run(
-        ["hostname", "--ip-address"], capture_output=True, text=True
-    )
-    return result.stdout.strip()
 
 
 def have_internet() -> bool:
