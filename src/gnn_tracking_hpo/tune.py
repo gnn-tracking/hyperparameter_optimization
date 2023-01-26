@@ -26,8 +26,10 @@ from gnn_tracking_hpo.cli import (
     add_test_option,
     add_wandb_options,
 )
-from gnn_tracking_hpo.config import get_points_to_evaluate, read_json
+from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+
+server = della
 
 
 def add_common_options(parser: ArgumentParser):
@@ -178,7 +180,6 @@ class Dispatcher:
             self.additional_stoppers = []
         else:
             self.additional_stoppers = additional_stoppers
-        self.cpus_per_gpu = 12
 
     def __call__(
         self,
@@ -210,7 +211,7 @@ class Dispatcher:
                 trainable,
                 {
                     "gpu": 1 if not self.cpu else 0,
-                    "cpu": self.cpus_per_gpu if not self.test else 1,
+                    "cpu": server.cpus_per_gpu if not self.test else 1,
                 },
             ),
             tune_config=self.get_tune_config(suggest_config),
