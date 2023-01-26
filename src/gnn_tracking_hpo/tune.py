@@ -156,9 +156,12 @@ class Dispatcher:
         self.grace_period = grace_period
         self.timeout = timeout
         self.tags = tags
-        self.group = group
         if not group:
-            raise ValueError("Group must be specified")
+            if test:
+                group = "test"
+            else:
+                raise ValueError("Group must be specified")
+        self.group = group
         self.note = note
         self.fail_fast = fail_fast
         if dname is None:
