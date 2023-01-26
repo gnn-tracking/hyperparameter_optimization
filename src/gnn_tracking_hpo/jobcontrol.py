@@ -17,7 +17,7 @@ class JobControlAction(Enum):
 
 
 def get_slurm_job_id() -> str:
-    return os.environ["SLURM_JOB_ID"]
+    return os.environ.get("SLURM_JOB_ID", "")
 
 
 def kill_slurm_job(
@@ -44,10 +44,12 @@ class JobControl:
                 logger.error("Could not load job control config: %s", e)
                 return
 
-    def _get_actions(self, ip: str, dispatcher_id: str) -> list[JobControlAction]:
+    def _get_actions(self, dispatcher_id: str) -> list[JobControlAction]:
         actions = []
         for c in self.config:
-            if c.get("ip") is not None and str(c.get("ip")) != str(ip):
+            if c.get("job_id") is not None and str(c.get("job_id")) != str(
+                get_slurm_job_id()
+            ):
                 continue
             if c.get("dispatcher_id") is not None and str(
                 c.get("dispatcher_id")
@@ -70,13 +72,13 @@ class JobControl:
             return False
         raise ValueError(f"Unknown action {action}")
 
-    def __call__(self, ip: str, dispatcher_id: str) -> None:
+    def __call__(self, *, dispatcher_id: str) -> None:
         repeat_requested = True
         while repeat_requested:
             self.refresh()
             repeat_requested = False
             try:
-                actions = self._get_actions(ip, dispatcher_id)
+                actions = self._get_actions(dispatcher_id)
             except KeyError as e:
                 logger.error("Could not get actions, please check your config: %s", e)
                 return

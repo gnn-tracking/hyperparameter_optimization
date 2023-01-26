@@ -24,9 +24,8 @@ from ray import tune
 from torch import nn
 from torch.optim import SGD, Adam, lr_scheduler
 
-from gnn_tracking_hpo.jobcontrol import JobControl
+from gnn_tracking_hpo.jobcontrol import JobControl, get_slurm_job_id
 from gnn_tracking_hpo.load import get_graphs, get_loaders
-from gnn_tracking_hpo.orchestrate import get_my_ip
 
 
 def fixed_dbscan_scan(
@@ -230,10 +229,12 @@ class TCNTrainable(tune.Trainable):
     # after setup when setting ``reuse_actor == True`` and overwriting your values
     # from set
     def setup(self, config: dict[str, Any]):
-        self.worker_ip = get_my_ip()
-        logger.info("I'm running on a node with IP=%s", self.worker_ip)
+        if sji := get_slurm_job_id():
+            logger.info("I'm running on a node with job ID=%s", sji)
+        else:
+            logger.info("I appear to be running locally.")
         logger.info("The ID of my dispatcher is %d", self.dispatcher_id)
-        JobControl()(self.worker_ip, str(self.dispatcher_id))
+        JobControl()(dispatcher_id=str(self.dispatcher_id))
         logger.debug("Got config\n%s", pprint.pformat(config))
         self.tc = config
         fix_seeds()
