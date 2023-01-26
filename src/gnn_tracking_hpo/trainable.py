@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pprint
-import time
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -25,6 +24,7 @@ from ray import tune
 from torch import nn
 from torch.optim import SGD, Adam, lr_scheduler
 
+from gnn_tracking_hpo.jobcontrol import JobControl
 from gnn_tracking_hpo.load import get_graphs, get_loaders
 from gnn_tracking_hpo.orchestrate import get_my_ip
 
@@ -233,38 +233,11 @@ class TCNTrainable(tune.Trainable):
         self.worker_ip = get_my_ip()
         logger.info("I'm running on a node with IP=%s", self.worker_ip)
         logger.info("The ID of my dispatcher is %d", self.dispatcher_id)
-        self.block_while_blocklisted()
+        JobControl()(self.worker_ip, str(self.dispatcher_id))
         logger.debug("Got config\n%s", pprint.pformat(config))
         self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
-
-    def blocklisted(self) -> bool:
-        def get_blocklist(path: Path) -> list[str]:
-            if not path.exists():
-                return []
-            return [
-                line.strip() for line in path.read_text().splitlines() if line.strip()
-            ]
-
-        blocklisted_ips = get_blocklist(Path.home() / "tune_blocklisted_worker_ips.txt")
-        blocklisted_dispatchers = get_blocklist(
-            Path.home() / "tune_blocklisted_dispatcher_ids.txt"
-        )
-        logger.debug("Blocklisted IPs: %s", blocklisted_ips)
-        if self.worker_ip in blocklisted_ips:
-            logger.warning("My IP %s is blocklisted.", self.worker_ip)
-            return True
-        logger.debug("blocklisted dispatchers: %s", blocklisted_dispatchers)
-        if str(self.dispatcher_id) in blocklisted_dispatchers:
-            logger.warning("My dispatcher is blocklisted.")
-            return True
-        return False
-
-    def block_while_blocklisted(self):
-        while self.blocklisted():
-            logger.warning("I'm blocked, waiting for 30s before checking again.")
-            time.sleep(30)
 
     def get_model(self) -> nn.Module:
         return GraphTCN(
