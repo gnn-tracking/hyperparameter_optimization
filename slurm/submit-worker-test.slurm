@@ -9,10 +9,10 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=70G
 
-ip_head=$(cat "${HOME}/.ray_head_ip_address")
+ip_head="172.17.2.18:6380"
 echo "Using head node at '${ip_head}'"
 
-redis_password=$(cat "${HOME}/.ray_head_redis_password")
+redis_password="279b2a0a-7538-499c-9ea1-bbb003b09c9b"
 echo "Redis password '${redis_password}'"
 
 ray start \
