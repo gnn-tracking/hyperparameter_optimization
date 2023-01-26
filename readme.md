@@ -25,9 +25,13 @@ Part of this are fully parameterized versions of the models.
 
 ## Setup
 
-1. Follow the instructions from [the main library](https://github.com/gnn-tracking/gnn_tracking)
-   to set up the conda environment and install the package
-2. `pip install .` this package.
+First, follow the instructions from [the main library](https://github.com/gnn-tracking/gnn_tracking)
+to set up the conda environment and install the package
+
+```bash
+pip install -e .
+git submodule update --init --recursive
+```
 
 ## Get started
 
