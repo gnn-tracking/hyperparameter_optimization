@@ -197,7 +197,7 @@ class Dispatcher:
         Returns:
 
         """
-        trainable._dispatcher_id = self.id
+        trainable.dispatcher_id = self.id
 
         if self.no_tune:
             assert self.test

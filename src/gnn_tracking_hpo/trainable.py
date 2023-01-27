@@ -233,6 +233,11 @@ class TCNTrainable(tune.Trainable):
             logger.info("I'm running on a node with job ID=%s", sji)
         else:
             logger.info("I appear to be running locally.")
+        if self.dispatcher_id == 0:
+            logger.warning(
+                "Dispatcher ID was not set. This should be set by the dispatcher "
+                "as a class attribute to the trainable."
+            )
         logger.info("The ID of my dispatcher is %d", self.dispatcher_id)
         JobControl()(dispatcher_id=str(self.dispatcher_id))
         logger.debug("Got config\n%s", pprint.pformat(config))
