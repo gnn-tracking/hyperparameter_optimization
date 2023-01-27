@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 
+# Usage: start-head.sh [main port [dashboard port]]
+
 function cleanup() {
   rm -f "${HOME}/.ray_head_ip_address"
 }
 trap cleanup EXIT
 
-port=6379
-dashboard_port=8841
+port=${1:-6379}
+dashboard_port=${2:-8841}
 
-echo "Using port ${port} for the ray head node. Make sure this is unique"
-echo "Using port ${dashboard_port} for the ray dashboard. Make sure this is unique"
+echo "Using port '${port}' for the ray head node. Make sure this is unique"
+echo "Using port '${dashboard_port}' for the ray dashboard. Make sure this is unique"
 
 
 head_node_ip=$(hostname --ip-address)
@@ -20,10 +22,10 @@ ray start \
   -vvv  \
   --head \
   --node-ip-address="$head_node_ip" \
-  --port=$port \
+  --port="${port}" \
   --num-cpus 1 \
   --num-gpus 0 \
   --block \
   --dashboard-host=0.0.0.0  \
-  --dashboard-port=${dashboard_port} \
+  --dashboard-port="${dashboard_port}" \
   --include-dashboard=true
