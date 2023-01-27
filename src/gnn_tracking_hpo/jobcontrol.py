@@ -14,17 +14,26 @@ from gnn_tracking_hpo.util.log import logger
 
 
 class JobControlAction(Enum):
+    """Actions for job control to take"""
+
     KILL_NODE = auto()
     WAIT = auto()
 
 
 def get_slurm_job_id() -> str:
+    """Get SLURM job ID from environment variables. An empty string is
+    returned if the job is not running on SLURM."""
     return os.environ.get("SLURM_JOB_ID", "")
 
 
 def get_slurm_remaining_minutes(job_id: str) -> int:
+    """How many more minutes does the SLURM job have to run?"""
     # yes, there's json output, but it doesn't show the required information
-    job_stats_text = subprocess.check_output(["jobstats", job_id], text=True)
+    job_stats_text = subprocess.check_output(
+        ["jobstats", job_id],
+        text=True,
+        timeout=60,
+    )
     run_time = None
     time_limit = None
     for line in job_stats_text.splitlines():
@@ -58,8 +67,9 @@ def get_slurm_remaining_minutes(job_id: str) -> int:
 def kill_slurm_job(
     job_id: str,
 ):
+    """Kill a SLURM job. No error is raised should the killing fail."""
     logger.info("Killing slurm job %s", job_id)
-    subprocess.run(f"scancel {job_id}")
+    subprocess.run(["scancel", job_id], timeout=60)
 
 
 class JobControl:
@@ -68,6 +78,7 @@ class JobControl:
         self.config = []
 
     def refresh(self):
+        """Reload the config."""
         if not self.job_control_path.exists():
             logger.warning("Job control file %s does not exist", self.job_control_path)
             return
@@ -82,19 +93,43 @@ class JobControl:
     def _get_actions(self, dispatcher_id: str) -> list[JobControlAction]:
         actions = []
         for c in self.config:
-            if c.get("job_id") is not None and str(c.get("job_id")) != str(
-                get_slurm_job_id()
-            ):
-                continue
-            if c.get("dispatcher_id") is not None and str(
-                c.get("dispatcher_id")
-            ) != str(dispatcher_id):
-                continue
-            if c.get("remaining_minutes_leq") is not None:
-                job_remaining_minutes = get_slurm_remaining_minutes(get_slurm_job_id())
-                if job_remaining_minutes > c.get("remaining_minutes_leq"):
+            logger.debug("Looking at JobControl option %s", c)
+            if selected_job_id := str(c.get("job_id", "")):
+                if selected_job_id != str(get_slurm_job_id()):
+                    logger.debug(
+                        "Job ID %s does not match %s. Skip.",
+                        get_slurm_job_id(),
+                        selected_job_id,
+                    )
                     continue
-            actions.append(JobControlAction[c["action"].upper()])
+            if selected_d_id := str(c.get("dispatcher_id", "")):
+                if selected_d_id != dispatcher_id:
+                    logger.debug(
+                        "Dispatcher ID %s does not match %s. Skip.",
+                        dispatcher_id,
+                        selected_d_id,
+                    )
+                    continue
+            if remaining_minutes_leq := int(c.get("remaining_minutes_leq", 0)):
+                try:
+                    remaining_minutes = get_slurm_remaining_minutes(get_slurm_job_id())
+                except Exception as e:
+                    logger.error(
+                        "Could not get remaining minutes from slurm because of %s. "
+                        "Not taking action.",
+                        e,
+                    )
+                    continue
+                if remaining_minutes > remaining_minutes_leq:
+                    logger.debug(
+                        "Remaining minutes %s > %s. Skip.",
+                        remaining_minutes,
+                        remaining_minutes_leq,
+                    )
+                    continue
+            action = JobControlAction[c["action"].upper()]
+            logger.info("Queued action %s", action)
+            actions.append(action)
         if actions:
             logger.debug("Got actions %s", actions)
         return actions
