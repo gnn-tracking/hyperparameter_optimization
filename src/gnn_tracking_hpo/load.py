@@ -6,8 +6,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import sklearn.model_selection
 from gnn_tracking.graph_construction.graph_builder import load_graphs
+from gnn_tracking.utils.loading import get_loaders as _get_loaders
+from gnn_tracking.utils.loading import train_test_val_split
 from gnn_tracking.utils.log import logger
 from torch_geometric.loader import DataLoader
 
@@ -63,17 +64,11 @@ def get_graphs(
 
     logger.info("Loading data to cpu memory")
     graphs = load_graphs(str(Path(input_dir)), stop=n_graphs, sector=sector)
-    rest, test_graphs = sklearn.model_selection.train_test_split(
-        graphs, test_size=test_frac
+    return train_test_val_split(
+        graphs,
+        test_frac=test_frac,
+        val_frac=val_frac,
     )
-    train_graphs, val_graphs = sklearn.model_selection.train_test_split(
-        rest, test_size=val_frac / (1 - test_frac)
-    )
-    return {
-        "train": train_graphs,
-        "val": val_graphs,
-        "test": test_graphs,
-    }
 
 
 def get_loaders(
@@ -89,15 +84,8 @@ def get_loaders(
     Returns:
         Dictionary of data loaders
     """
-    # build graph loaders
-    params = {
-        "batch_size": batch_size,
-        "num_workers": server.cpus_per_gpu if not test else 1,
-    }
-    logger.debug("Parameters for data loaders: %s", params)
-    loaders = {
-        "train": DataLoader(list(graph_dct["train"]), **params, shuffle=True),
-        "test": DataLoader(list(graph_dct["test"]), **params),
-        "val": DataLoader(list(graph_dct["val"]), **params),
-    }
-    return loaders
+    return _get_loaders(
+        graph_dct,
+        batch_size=batch_size,
+        cpus=server.cpus if not test else 1,
+    )
