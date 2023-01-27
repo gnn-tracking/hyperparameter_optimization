@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# Usage: start-head.sh [ray head IP]
+# If ray head is not provided, it is read from ~/.ray_head_ip_address
 
 #SBATCH --job-name=ray-worker
 #SBATCH --output=logs/ray-worker-%j.log
@@ -9,8 +12,15 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=70G
 
-ip_head=$(cat "${HOME}/.ray_head_ip_address")
-echo "Using head node at '${ip_head}'"
+ip_head=$1
+if [ -z "$ip_head" ]; then
+  ip_head=$(cat "${HOME}/.ray_head_ip_address")
+fi
+if [ -z "${ip_head}" ]; then
+  >&2 echo "No ray head IP configured"
+  exit 234
+fi
+echo "Using head node at ${ip_head}"
 
 ray start \
   --address "$ip_head" \

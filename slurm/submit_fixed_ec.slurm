@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #SBATCH --job-name=fixed-ec
 #SBATCH --output=logs/fixed-ec-%j.log
@@ -14,7 +14,6 @@ python3 ../scripts/tune_ec.py \
   --gpu \
   --dname ec \
   --group ec \
-  --timeout 1h50min \
   --only-enqueued \
   --enqueue "${1}" \
   --no-scheduler
