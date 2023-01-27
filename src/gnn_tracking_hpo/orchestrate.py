@@ -61,22 +61,16 @@ def maybe_run_distributed(local=False) -> None:
         logger.debug("Got %s = %s from file '%s'", name, from_file, path)
         return from_file
 
-    redis_password = get_from_file_or_environ(
-        "Redis password", Path.home() / ".ray_head_redis_password", "redis_password"
-    )
     head_ip = get_from_file_or_environ(
         "Head IP", Path.home() / ".ray_head_ip_address", "head_ip"
     )
 
-    if redis_password and head_ip:
-        logger.info(
-            f"Connecting to ray head at {head_ip} with password {redis_password}"
-        )
+    if head_ip:
+        logger.info(f"Connecting to ray head at {head_ip}")
         ray.init(
-            address="auto",
-            _redis_password=redis_password,
+            address=head_ip,
             _node_ip_address=head_ip.split(":")[0],
         )
         register_ray()
     else:
-        logger.info("Not connecting to ray head because redis pwd or head ip not found")
+        logger.info("Not connecting to ray head because head ip not found")
