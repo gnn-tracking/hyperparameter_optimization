@@ -19,10 +19,6 @@ from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoints, get_
 add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
 
-# hacky global variable, but it's hard to pass this on to the Trainable because
-# we don't initialize it ourselves
-DEVICE = "cuda"
-
 
 class UnPackDictionaryForward(nn.Module):
     def __init__(self, ec: nn.Module):
@@ -37,7 +33,9 @@ class UnPackDictionaryForward(nn.Module):
         return self.ec(*args, **kwargs)["W"]
 
 
-def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn.Module:
+def load_ec(
+    project: str, hash: str, *, config_update: dict | None = None, device="cuda"
+) -> nn.Module:
     """Load pre-trained edge classifier
 
     Args:
@@ -54,7 +52,7 @@ def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn
     if config_update is not None:
         config.update(config_update)
     trainable = ECTrainable(config)
-    trainable.load_checkpoint(checkpoint_path, device=DEVICE)
+    trainable.load_checkpoint(checkpoint_path, device=device)
     ec = trainable.trainer.model
     for param in ec.parameters():
         param.requires_grad = False
@@ -63,8 +61,10 @@ def load_ec(project: str, hash: str, *, config_update: dict | None = None) -> nn
 
 
 class PretrainedECTrainable(TCNTrainable):
+    _device = "cuda"
+
     def __init__(self, config: dict[str, Any], **kwargs):
-        self.ec = load_ec(config["ec_project"], config["ec_hash"])
+        self.ec = load_ec(config["ec_project"], config["ec_hash"], device=self._device)
         super().__init__(config=config, **kwargs)
 
     def get_loss_functions(self) -> dict[str, Any]:
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
     if kwargs["cpu"]:
-        DEVICE = "cpu"
+        PretrainedECTrainable._device = "cpu"
     this_suggest_config = partial(
         suggest_config,
         ec_hash=kwargs.pop("ec_hash"),
