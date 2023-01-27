@@ -41,7 +41,7 @@ jobs:
           python -m pip install --upgrade pip
       # Is already in the conda env, so lets be careful
       - name: Pip update gnn_tracking
-        run: python -m pip install --upgrade gnn_tracking
+        run: python -m pip install --upgrade  'gnn_tracking@git+https://github.com/gnn-tracking/gnn_tracking.git#egg=gnn_tracking'
       - name: Pip install package
         run: pip install .[testing]
       - name: Test with pytest
