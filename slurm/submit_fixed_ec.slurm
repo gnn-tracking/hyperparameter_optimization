@@ -11,8 +11,6 @@
 
 python3 ../scripts/tune_ec.py \
   --local \
-  --gpu \
-  --dname ec \
   --group ec \
   --only-enqueued \
   --enqueue "${1}" \
