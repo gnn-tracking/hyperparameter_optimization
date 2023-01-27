@@ -10,7 +10,7 @@ from pathlib import Path
 import yaml
 from dateutil import parser
 
-from gnn_tracking_hpo.util.log import logger
+from gnn_tracking_hpo.util.log import get_logger
 
 
 class JobControlAction(Enum):
@@ -68,35 +68,39 @@ def kill_slurm_job(
     job_id: str,
 ):
     """Kill a SLURM job. No error is raised should the killing fail."""
-    logger.info("Killing slurm job %s", job_id)
     subprocess.run(["scancel", job_id], timeout=60)
 
 
 class JobControl:
     def __init__(self):
         self.job_control_path = Path.home() / "ray_job_control.yaml"
-        self.config = []
+        self._config = []
+        self.logger = get_logger("JobControl")
 
-    def refresh(self):
+    def _refresh(self):
         """Reload the config."""
         if not self.job_control_path.exists():
-            logger.warning("Job control file %s does not exist", self.job_control_path)
+            self.logger.warning(
+                "Job control file %s does not exist", self.job_control_path
+            )
             return
-        logger.debug("Refreshing job control config from %s", self.job_control_path)
+        self.logger.debug(
+            "Refreshing job control config from %s", self.job_control_path
+        )
         with open(self.job_control_path) as f:
             try:
-                self.config = yaml.safe_load(f)
+                self._config = yaml.safe_load(f)
             except yaml.YAMLError as e:
-                logger.error("Could not load job control config: %s", e)
+                self.logger.error("Could not load job control config: %s", e)
                 return
 
     def _get_actions(self, dispatcher_id: str) -> list[JobControlAction]:
         actions = []
-        for c in self.config:
-            logger.debug("Looking at JobControl option %s", c)
+        for c in self._config:
+            self.logger.debug("Looking at JobControl option %s", c)
             if selected_job_id := str(c.get("job_id", "")):
                 if selected_job_id != str(get_slurm_job_id()):
-                    logger.debug(
+                    self.logger.debug(
                         "Job ID %s does not match %s. Skip.",
                         get_slurm_job_id(),
                         selected_job_id,
@@ -104,7 +108,7 @@ class JobControl:
                     continue
             if selected_d_id := str(c.get("dispatcher_id", "")):
                 if selected_d_id != dispatcher_id:
-                    logger.debug(
+                    self.logger.debug(
                         "Dispatcher ID %s does not match %s. Skip.",
                         dispatcher_id,
                         selected_d_id,
@@ -114,34 +118,34 @@ class JobControl:
                 try:
                     remaining_minutes = get_slurm_remaining_minutes(get_slurm_job_id())
                 except Exception as e:
-                    logger.error(
+                    self.logger.error(
                         "Could not get remaining minutes from slurm because of %s. "
                         "Not taking action.",
                         e,
                     )
                     continue
                 if remaining_minutes > remaining_minutes_leq:
-                    logger.debug(
+                    self.logger.debug(
                         "Remaining minutes %s > %s. Skip.",
                         remaining_minutes,
                         remaining_minutes_leq,
                     )
                     continue
             action = JobControlAction[c["action"].upper()]
-            logger.info("Queued action %s", action)
+            self.logger.info("Queued action %s", action)
             actions.append(action)
         if actions:
-            logger.debug("Got actions %s", actions)
+            self.logger.debug("Got actions %s", actions)
         return actions
 
-    @staticmethod
-    def _handle_action(action: JobControlAction) -> bool:
+    def _handle_action(self, action: JobControlAction) -> bool:
         if action == JobControlAction.WAIT:
-            logger.info("Sleeping for 30s")
+            self.logger.info("Sleeping for 30s")
             time.sleep(30)
             return False
         if action == JobControlAction.KILL_NODE:
             job_id = get_slurm_job_id()
+            self.logger.warning("Killing slurm job %s", job_id)
             kill_slurm_job(job_id)
             return False
         raise ValueError(f"Unknown action {action}")
@@ -149,12 +153,14 @@ class JobControl:
     def __call__(self, *, dispatcher_id: str) -> None:
         repeat_requested = True
         while repeat_requested:
-            self.refresh()
+            self._refresh()
             repeat_requested = False
             try:
                 actions = self._get_actions(dispatcher_id)
             except KeyError as e:
-                logger.error("Could not get actions, please check your config: %s", e)
+                self.logger.error(
+                    "Could not get actions, please check your config: %s", e
+                )
                 return
             for action in actions:
                 repeat_requested |= self._handle_action(action)

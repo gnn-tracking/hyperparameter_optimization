@@ -8,9 +8,9 @@ import colorlog
 LOG_DEFAULT_LEVEL = logging.DEBUG
 
 
-def get_logger():
+def get_logger(name="gnn_tracking_hpo"):
     """Sets up global logger."""
-    _log = colorlog.getLogger("gnn_tracking_hpo")
+    _log = colorlog.getLogger(name)
 
     if _log.handlers:
         # the logger already has handlers attached to it, even though
