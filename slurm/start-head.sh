@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+function cleanup() {
+  rm -f "${HOME}/.ray_head_ip_address"
+}
+trap cleanup EXIT
+
 port=6379
 dashboard_port=8841
 
@@ -22,5 +27,3 @@ ray start \
   --dashboard-host=0.0.0.0  \
   --dashboard-port=${dashboard_port} \
   --include-dashboard=true
-
-rm -f "${HOME}/.ray_head_ip_address"
