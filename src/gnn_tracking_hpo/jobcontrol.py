@@ -139,15 +139,18 @@ class JobControl:
         return actions
 
     def _handle_action(self, action: JobControlAction) -> bool:
+        """Handles action. Returns True if we should refresh the config and check
+        if everything has been resolved afterwards.
+        """
         if action == JobControlAction.WAIT:
             self.logger.info("Sleeping for 30s")
             time.sleep(30)
-            return False
+            return True
         if action == JobControlAction.KILL_NODE:
             job_id = get_slurm_job_id()
             self.logger.warning("Killing slurm job %s", job_id)
             kill_slurm_job(job_id)
-            return False
+            return True
         raise ValueError(f"Unknown action {action}")
 
     def __call__(self, *, dispatcher_id: str) -> None:
