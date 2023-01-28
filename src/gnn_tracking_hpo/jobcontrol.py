@@ -25,14 +25,13 @@ def get_slurm_job_id() -> str:
     return os.environ.get("SLURM_JOB_ID", "")
 
 
-def get_slurm_remaining_minutes(job_id: str) -> int:
-    """How many more minutes does the SLURM job have to run?"""
-    remaining_time_str = subprocess.check_output(
-        ["squeue", "-h", "-j", job_id, "-o", "%L"],
-        text=True,
-        timeout=60,
-    )
-    days_str, _, time_str = remaining_time_str.rpartition("-")
+def _parse_slurm_time_str(time_str: str) -> datetime.timedelta:
+    days_str, _, time_str = time_str.rpartition("-")
+    if days_str:
+        days = int(days_str)
+    else:
+        days = 0
+    time_str = time_str.strip()
     if time_str.count(":") == 2:
         _remaining_time = datetime.datetime.strptime(time_str, "%H:%M:%S")
     elif time_str.count(":") == 1:
@@ -44,7 +43,28 @@ def get_slurm_remaining_minutes(job_id: str) -> int:
         minutes=_remaining_time.minute,
         seconds=_remaining_time.second,
     )
-    remaining_time += datetime.timedelta(days=int(days_str))
+    remaining_time += datetime.timedelta(days=days)
+    return remaining_time
+
+
+def parse_slurm_time_str(time_str: str) -> datetime.timedelta:
+    """Parse a time string from SLURM into a timedelta"""
+    try:
+        return _parse_slurm_time_str(time_str)
+    except Exception as e:
+        raise ValueError(f"Could not parse time string {time_str}") from e
+
+
+def get_slurm_remaining_minutes(job_id: str) -> int:
+    """How many more minutes does the SLURM job have to run?"""
+    if not job_id.strip():
+        raise ValueError("Jot ID needs to be non-empty")
+    remaining_time_str = subprocess.check_output(
+        ["squeue", "-h", "-j", job_id, "-o", "%L"],
+        text=True,
+        timeout=60,
+    )
+    remaining_time = parse_slurm_time_str(remaining_time_str)
     return int(remaining_time.total_seconds() / 60)
 
 
@@ -82,15 +102,17 @@ class JobControl:
         actions = []
         for c in self._config:
             self.logger.debug("Looking at JobControl option %s", c)
-            if selected_job_id := str(c.get("job_id", "")):
-                if selected_job_id != str(get_slurm_job_id()):
-                    self.logger.debug(
-                        "Job ID %s does not match %s. Skip.",
-                        get_slurm_job_id(),
-                        selected_job_id,
-                    )
-                    continue
-                self.logger.debug("Job ID matches %s", selected_job_id)
+            slurm_job_id = str(get_slurm_job_id()).strip()
+            if (
+                selected_job_id := str(c.get("job_id", ""))
+            ) and selected_job_id != slurm_job_id:
+                self.logger.debug(
+                    "Job ID %s does not match %s. Skip.",
+                    get_slurm_job_id(),
+                    selected_job_id,
+                )
+                continue
+            self.logger.debug("Job ID matches %s", selected_job_id)
             if selected_d_id := str(c.get("dispatcher_id", "")):
                 if selected_d_id != dispatcher_id:
                     self.logger.debug(
@@ -100,7 +122,9 @@ class JobControl:
                     )
                     continue
                 self.logger.debug("Dispatcher ID matches %s", selected_d_id)
-            if remaining_minutes_leq := int(c.get("remaining_minutes_leq", 0)):
+            if (
+                remaining_minutes_leq := int(c.get("remaining_minutes_leq", 0))
+            ) and slurm_job_id:
                 try:
                     remaining_minutes = get_slurm_remaining_minutes(get_slurm_job_id())
                 except Exception as e:
@@ -112,13 +136,13 @@ class JobControl:
                     continue
                 if remaining_minutes > remaining_minutes_leq:
                     self.logger.debug(
-                        "Remaining minutes %s > %s. Skip.",
+                        "Remaining minutes %d > %d. Skip.",
                         remaining_minutes,
                         remaining_minutes_leq,
                     )
                     continue
                 self.logger.debug(
-                    "Remaining minutes %s <= %s",
+                    "Remaining minutes %d <= %d",
                     remaining_minutes,
                     remaining_minutes_leq,
                 )
