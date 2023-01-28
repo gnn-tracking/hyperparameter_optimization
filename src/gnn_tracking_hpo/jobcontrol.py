@@ -8,7 +8,6 @@ from enum import Enum, auto
 from pathlib import Path
 
 import yaml
-from dateutil import parser
 
 from gnn_tracking_hpo.util.log import get_logger
 
@@ -28,40 +27,25 @@ def get_slurm_job_id() -> str:
 
 def get_slurm_remaining_minutes(job_id: str) -> int:
     """How many more minutes does the SLURM job have to run?"""
-    # yes, there's json output, but it doesn't show the required information
-    job_stats_text = subprocess.check_output(
-        ["jobstats", job_id],
+    remaining_time_str = subprocess.check_output(
+        ["squeue", "-h", "-j", job_id, "-o", "%L"],
         text=True,
         timeout=60,
     )
-    run_time = None
-    time_limit = None
-    for line in job_stats_text.splitlines():
-        if "Run Time" in line:
-            time_str = (
-                line.replace("Run Time:", "").replace("(in progress)", "").strip()
-            )
-            _run_time = parser.parse(time_str)
-            run_time = datetime.timedelta(
-                hours=_run_time.hour, minutes=_run_time.minute, seconds=_run_time.second
-            )
-        if "Time Limit" in line:
-            time_str = line.replace("Time Limit:", "").strip()
-            days_str, _, time_str = time_str.rpartition("-")
-            time_limit = datetime.timedelta(0)
-            if days_str:
-                time_limit += datetime.timedelta(days=int(days_str))
-            _time_limit = parser.parse(time_str)
-            time_limit += datetime.timedelta(
-                hours=_time_limit.hour,
-                minutes=_time_limit.minute,
-                seconds=_time_limit.second,
-            )
-    if run_time is None:
-        raise ValueError("Couldn't find run time in jobstats output")
-    if time_limit is None:
-        raise ValueError("Couldn't find time limit in jobstats output")
-    return int((time_limit - run_time).total_seconds() / 60)
+    days_str, _, time_str = remaining_time_str.rpartition("-")
+    if time_str.count(":") == 2:
+        _remaining_time = datetime.datetime.strptime(time_str, "%H:%M:%S")
+    elif time_str.count(":") == 1:
+        _remaining_time = datetime.datetime.strptime(time_str, "%M:%S")
+    else:
+        raise ValueError(f"Could not parse time string {time_str}")
+    remaining_time = datetime.timedelta(
+        hours=_remaining_time.hour,
+        minutes=_remaining_time.minute,
+        seconds=_remaining_time.second,
+    )
+    remaining_time += datetime.timedelta(days=int(days_str))
+    return int(remaining_time.total_seconds() / 60)
 
 
 def kill_slurm_job(
@@ -106,6 +90,7 @@ class JobControl:
                         selected_job_id,
                     )
                     continue
+                self.logger.debug("Job ID matches %s", selected_job_id)
             if selected_d_id := str(c.get("dispatcher_id", "")):
                 if selected_d_id != dispatcher_id:
                     self.logger.debug(
@@ -114,6 +99,7 @@ class JobControl:
                         selected_d_id,
                     )
                     continue
+                self.logger.debug("Dispatcher ID matches %s", selected_d_id)
             if remaining_minutes_leq := int(c.get("remaining_minutes_leq", 0)):
                 try:
                     remaining_minutes = get_slurm_remaining_minutes(get_slurm_job_id())
@@ -131,6 +117,11 @@ class JobControl:
                         remaining_minutes_leq,
                     )
                     continue
+                self.logger.debug(
+                    "Remaining minutes %s <= %s",
+                    remaining_minutes,
+                    remaining_minutes_leq,
+                )
             action = JobControlAction[c["action"].upper()]
             self.logger.info("Queued action %s", action)
             actions.append(action)
