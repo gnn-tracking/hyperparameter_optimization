@@ -99,28 +99,24 @@ class SlurmControl:
         for c in self._config:
             self.logger.debug("Looking at SlurmControl option %s", c)
             slurm_job_id = str(get_slurm_job_id()).strip()
-            if (
-                selected_job_id := str(c.get("job_id", ""))
-            ) and selected_job_id != slurm_job_id:
+            selected_job_id = str(c.get("job_id", ""))
+            if selected_job_id and selected_job_id != slurm_job_id:
                 self.logger.debug(
                     "Job ID %s does not match %s. Skip.",
                     get_slurm_job_id(),
                     selected_job_id,
                 )
                 continue
-            self.logger.debug("Job ID matches %s", selected_job_id)
-            if selected_d_id := str(c.get("dispatcher_id", "")):
-                if selected_d_id != dispatcher_id:
-                    self.logger.debug(
-                        "Dispatcher ID %s does not match %s. Skip.",
-                        dispatcher_id,
-                        selected_d_id,
-                    )
-                    continue
-                self.logger.debug("Dispatcher ID matches %s", selected_d_id)
-            if (
-                remaining_minutes_leq := int(c.get("remaining_minutes_leq", 0))
-            ) and slurm_job_id:
+            selected_d_id = str(c.get("dispatcher_id", ""))
+            if selected_d_id and selected_d_id != dispatcher_id:
+                self.logger.debug(
+                    "Dispatcher ID %s does not match %s. Skip.",
+                    dispatcher_id,
+                    selected_d_id,
+                )
+                continue
+            remaining_minutes_leq = int(c.get("remaining_minutes_leq", 0))
+            if slurm_job_id and remaining_minutes_leq:
                 try:
                     remaining_minutes = get_slurm_remaining_minutes(get_slurm_job_id())
                 except Exception as e:
@@ -137,12 +133,12 @@ class SlurmControl:
                         remaining_minutes_leq,
                     )
                     continue
-                self.logger.debug(
-                    "Remaining minutes %d <= %d",
-                    remaining_minutes,
-                    remaining_minutes_leq,
-                )
             action = SlurmControlAction[c["action"].upper()]
+            if action == SlurmControlAction.KILL_NODE and not slurm_job_id:
+                self.logger.debug(
+                    "Don't appear to be running on SLURM. Skip killing node action."
+                )
+                continue
             self.logger.info("Queued action %s", action)
             actions.append(action)
         if actions:
