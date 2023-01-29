@@ -11,7 +11,6 @@ from gnn_tracking.utils.loading import get_loaders as _get_loaders
 from gnn_tracking.utils.loading import train_test_val_split
 from torch_geometric.loader import DataLoader
 
-from gnn_tracking_hpo.config import server
 from gnn_tracking_hpo.util.log import logger
 
 
@@ -87,5 +86,5 @@ def get_loaders(
     return _get_loaders(
         graph_dct,
         batch_size=batch_size,
-        cpus=server.cpus if not test else 1,
+        cpus=12 if not test else 1,
     )
