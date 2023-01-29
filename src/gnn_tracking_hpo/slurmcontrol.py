@@ -95,6 +95,8 @@ class SlurmControl:
                 return
 
     def _get_actions(self, dispatcher_id: str) -> list[SlurmControlAction]:
+        if not self._config:
+            return []
         actions = []
         for c in self._config:
             self.logger.debug("Looking at SlurmControl option %s", c)
