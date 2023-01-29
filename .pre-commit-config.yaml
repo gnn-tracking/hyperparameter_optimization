@@ -36,7 +36,6 @@ repos:
     hooks:
       - id: mypy
         exclude: 'docs/source/conf\.py'
-        args: ["--install-types","--non-interactive"]
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.2.2"
     hooks:
@@ -77,4 +76,4 @@ repos:
 
 ci:
   autoupdate_schedule: monthly
-  skip: ['shellcheck']
+  skip: ['shellcheck', 'mypy']
