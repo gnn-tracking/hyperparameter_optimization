@@ -8,7 +8,7 @@ import colorlog
 LOG_DEFAULT_LEVEL = logging.DEBUG
 
 
-def get_logger(name="gnn_tracking_hpo"):
+def get_logger(name="gnnt_hpo"):
     """Sets up global logger."""
     _log = colorlog.getLogger(name)
 
@@ -29,7 +29,9 @@ def get_logger(name="gnn_tracking_hpo"):
         "CRITICAL": "red",
     }
     formatter = colorlog.ColoredFormatter(
-        "%(log_color)s%(levelname)s: %(message)s", log_colors=log_colors
+        "%(log_color)s[%(asctime)s %(name)s] %(levelname)s: %(message)s",
+        log_colors=log_colors,
+        datefmt="%H:%M:%S",
     )
     sh.setFormatter(formatter)
     # Controlled by overall logger level

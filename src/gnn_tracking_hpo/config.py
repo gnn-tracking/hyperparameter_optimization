@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import Any
 
 import gnn_tracking
-from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.versioning import get_commit_hash
+
+from gnn_tracking_hpo.util.log import logger
 
 
 def auto_suggest_if_not_fixed(

@@ -18,7 +18,6 @@ from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
 from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
 from gnn_tracking.training.tcn_trainer import TCNTrainer, TrainingTruthCutConfig
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from gnn_tracking.utils.log import logger
 from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
 from torch import nn
@@ -26,6 +25,7 @@ from torch.optim import SGD, Adam, lr_scheduler
 
 from gnn_tracking_hpo.jobcontrol import JobControl, get_slurm_job_id
 from gnn_tracking_hpo.load import get_graphs, get_loaders
+from gnn_tracking_hpo.util.log import logger
 
 
 def fixed_dbscan_scan(

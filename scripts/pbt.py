@@ -10,7 +10,6 @@ from typing import Any
 
 import ray
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from gnn_tracking.utils.log import logger
 from ray import air
 from ray.air.callbacks.wandb import WandbLoggerCallback
 from ray.tune import SyncConfig
@@ -22,6 +21,7 @@ from gnn_tracking_hpo.cli import add_cpu_option, add_enqueue_option, add_test_op
 from gnn_tracking_hpo.config import della, get_metadata, get_points_to_evaluate
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
 from gnn_tracking_hpo.trainable import TCNTrainable
+from gnn_tracking_hpo.util.log import logger
 
 server = della
 
