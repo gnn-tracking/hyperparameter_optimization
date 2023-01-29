@@ -9,10 +9,10 @@ from pathlib import Path
 from gnn_tracking.graph_construction.graph_builder import load_graphs
 from gnn_tracking.utils.loading import get_loaders as _get_loaders
 from gnn_tracking.utils.loading import train_test_val_split
-from gnn_tracking.utils.log import logger
 from torch_geometric.loader import DataLoader
 
 from gnn_tracking_hpo.config import server
+from gnn_tracking_hpo.util.log import logger
 
 
 def get_graphs(

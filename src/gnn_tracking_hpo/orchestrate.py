@@ -5,8 +5,9 @@ from http import client as httplib
 from pathlib import Path
 
 import ray
-from gnn_tracking.utils.log import logger
 from ray.util.joblib import register_ray
+
+from gnn_tracking_hpo.util.log import logger
 
 
 def have_internet() -> bool:
