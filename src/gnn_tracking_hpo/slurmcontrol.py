@@ -12,8 +12,8 @@ import yaml
 from gnn_tracking_hpo.util.log import get_logger
 
 
-class JobControlAction(Enum):
-    """Actions for job control to take"""
+class SlurmControlAction(Enum):
+    """Actions for slurm control to take"""
 
     KILL_NODE = auto()
     WAIT = auto()
@@ -75,33 +75,29 @@ def kill_slurm_job(
     subprocess.run(["scancel", job_id], timeout=60)
 
 
-class JobControl:
+class SlurmControl:
     def __init__(self):
-        self.job_control_path = Path.home() / "ray_job_control.yaml"
+        self.job_control_path = Path.home() / "ray_slurm_control.yaml"
         self._config = []
-        self.logger = get_logger("JobControl")
+        self.logger = get_logger("SlurmControl")
 
     def _refresh(self):
         """Reload the config."""
         if not self.job_control_path.exists():
-            self.logger.warning(
-                "Job control file %s does not exist", self.job_control_path
-            )
+            self.logger.warning("Control file %s does not exist", self.job_control_path)
             return
-        self.logger.debug(
-            "Refreshing job control config from %s", self.job_control_path
-        )
+        self.logger.debug("Refreshing control config from %s", self.job_control_path)
         with open(self.job_control_path) as f:
             try:
                 self._config = yaml.safe_load(f)
             except yaml.YAMLError as e:
-                self.logger.error("Could not load job control config: %s", e)
+                self.logger.error("Could not load control config: %s", e)
                 return
 
-    def _get_actions(self, dispatcher_id: str) -> list[JobControlAction]:
+    def _get_actions(self, dispatcher_id: str) -> list[SlurmControlAction]:
         actions = []
         for c in self._config:
-            self.logger.debug("Looking at JobControl option %s", c)
+            self.logger.debug("Looking at SlurmControl option %s", c)
             slurm_job_id = str(get_slurm_job_id()).strip()
             if (
                 selected_job_id := str(c.get("job_id", ""))
@@ -146,22 +142,22 @@ class JobControl:
                     remaining_minutes,
                     remaining_minutes_leq,
                 )
-            action = JobControlAction[c["action"].upper()]
+            action = SlurmControlAction[c["action"].upper()]
             self.logger.info("Queued action %s", action)
             actions.append(action)
         if actions:
             self.logger.debug("Got actions %s", actions)
         return actions
 
-    def _handle_action(self, action: JobControlAction) -> bool:
+    def _handle_action(self, action: SlurmControlAction) -> bool:
         """Handles action. Returns True if we should refresh the config and check
         if everything has been resolved afterwards.
         """
-        if action == JobControlAction.WAIT:
+        if action == SlurmControlAction.WAIT:
             self.logger.info("Sleeping for 30s")
             time.sleep(30)
             return True
-        if action == JobControlAction.KILL_NODE:
+        if action == SlurmControlAction.KILL_NODE:
             job_id = get_slurm_job_id()
             self.logger.warning("Killing slurm job %s", job_id)
             kill_slurm_job(job_id)

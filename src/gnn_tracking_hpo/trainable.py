@@ -23,8 +23,8 @@ from ray import tune
 from torch import nn
 from torch.optim import SGD, Adam, lr_scheduler
 
-from gnn_tracking_hpo.jobcontrol import JobControl, get_slurm_job_id
 from gnn_tracking_hpo.load import get_graphs, get_loaders
+from gnn_tracking_hpo.slurmcontrol import SlurmControl, get_slurm_job_id
 from gnn_tracking_hpo.util.log import logger
 
 
@@ -239,7 +239,7 @@ class TCNTrainable(tune.Trainable):
                 "as a class attribute to the trainable."
             )
         logger.info("The ID of my dispatcher is %d", self.dispatcher_id)
-        JobControl()(dispatcher_id=str(self.dispatcher_id))
+        SlurmControl()(dispatcher_id=str(self.dispatcher_id))
         logger.debug("Got config\n%s", pprint.pformat(config))
         self.tc = config
         fix_seeds()
