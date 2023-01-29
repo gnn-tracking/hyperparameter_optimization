@@ -110,7 +110,7 @@ def suggest_config(
     d("n_graphs_val", 299)
     d("n_graphs_test", 1)
 
-    # d("m_mask_nodes_with_leq_connections", 2)
+    d("m_mask_orphan_nodes", True)
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
