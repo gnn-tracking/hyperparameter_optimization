@@ -41,7 +41,7 @@ git submodule update --init --recursive
 
 ## Other links
 
-* [ray-tune-slurm-test](https://github.com/klieret/ray-tune-slurm-test/):
+* [ray-tune-slurm-demo](https://github.com/klieret/ray-tune-slurm-demo/):
   Simple project to try out some of the capabilities of ray tune and wandb,
   especially with batch submission
 * [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/): package to trigger
