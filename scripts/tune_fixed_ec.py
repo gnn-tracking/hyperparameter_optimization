@@ -166,8 +166,8 @@ if __name__ == "__main__":
         ec_project=kwargs.pop("ec_project"),
     )
     dispatcher = Dispatcher(
-        grace_period=2,
-        no_improvement_patience=4,
+        grace_period=3,
+        no_improvement_patience=7,
         metric="trk.double_majority_pt0.9",
         **kwargs,
     )
