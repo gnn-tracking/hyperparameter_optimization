@@ -68,7 +68,7 @@ def reduced_dbscan_scan(
     pts: list[np.ndarray],
     reconstructable: list[np.ndarray],
     *,
-    guide="trk.double_majority_pt1.5",
+    guide="trk.double_majority_pt0.9",
     epoch=None,
     start_params: dict[str, Any] | None = None,
     node_mask: list[np.ndarray] | None = None,
@@ -79,9 +79,7 @@ def reduced_dbscan_scan(
     """
     version_dependent_kwargs = {}
     if node_mask is not None:
-        logger.warning(
-            "Running on a gnn_tracking version without post-EC node pruning."
-        )
+        logger.warning("Running on a gnn_tracking version with post-EC node pruning.")
         version_dependent_kwargs["node_mask"] = node_mask
     dbss = DBSCANHyperParamScanner(
         data=graphs,
