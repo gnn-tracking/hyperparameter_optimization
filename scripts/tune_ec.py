@@ -104,7 +104,7 @@ if __name__ == "__main__":
         **kwargs,
         metric="max_mcc_pt0.9",
         grace_period=2,
-        no_improvement_patience=2,
+        no_improvement_patience=7,
     )
     dispatcher(
         ECTrainable,
