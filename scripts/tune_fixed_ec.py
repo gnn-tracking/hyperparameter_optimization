@@ -5,9 +5,11 @@ from functools import partial
 from typing import Any
 
 import optuna
+from build.lib.rt_stoppers_contrib.threshold_by_epoch import ThresholdTrialStopper
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
+from ray.tune.schedulers import ASHAScheduler
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -115,7 +117,7 @@ def suggest_config(
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
     # >>>>>>>>>>>>> IMPORTANT, adjust that based on the EC <<<<<<<
-    d("m_ec_threshold", 0.1, 0.4)
+    d("m_ec_threshold", 0.1, 0.5)
 
     d("batch_size", 5)
 
@@ -126,7 +128,7 @@ def suggest_config(
     # ---------------------
 
     d("attr_pt_thld", 0.0, 0.9)
-    d("m_h_outdim", 4, 7)
+    d("m_h_outdim", 4, 30)
     d("q_min", 0.3, 0.5)
     d("sb", 0.05, 0.12)
     d("lr", 0.0001, 0.0006)
@@ -143,6 +145,20 @@ def suggest_config(
 
     suggest_default_values(config, trial, ec="fixed")
     return config
+
+
+class ThisDispatcher(Dispatcher):
+    def get_scheduler(self) -> None | ASHAScheduler:
+        if self.no_scheduler:
+            # FIFO scheduler
+            return None
+        return ASHAScheduler(
+            metric=self.metric,
+            mode="max",
+            grace_period=self.grace_period,
+            reduction_factor=2,
+            max_t=10,
+        )
 
 
 if __name__ == "__main__":
@@ -165,10 +181,15 @@ if __name__ == "__main__":
         ec_hash=kwargs.pop("ec_hash"),
         ec_project=kwargs.pop("ec_project"),
     )
-    dispatcher = Dispatcher(
-        grace_period=3,
-        no_improvement_patience=7,
+    dispatcher = ThisDispatcher(
+        grace_period=2,
+        no_improvement_patience=6,
         metric="trk.double_majority_pt0.9",
+        additional_stoppers=[
+            ThresholdTrialStopper(
+                "trk.double_majority_pt0.9", {5: 0.5, 10: 0.63, 15: 0.65}
+            )
+        ],
         **kwargs,
     )
     dispatcher(
