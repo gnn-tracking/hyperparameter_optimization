@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import random
+import sys
 from argparse import ArgumentParser
+from datetime import datetime
 from functools import cached_property, partial
 from pathlib import Path
 from typing import Any, Callable
@@ -183,6 +185,13 @@ class Dispatcher:
             self.additional_stoppers = additional_stoppers
         self.id = random.randint(1, int(1e4))
         logger.info("Dispatcher ID: %s", self.id)
+        # The above message will probably be lost in the Ray output, so we also
+        # put it in a file
+        id_file_path = Path.home() / ".tune_dispatcher_ids.txt"
+        if not test or test:
+            with open(id_file_path, "a") as f:
+                f.write(f"{datetime.now()} {self.id} {sys.argv}")
+            logger.debug("Wrote dispatcher ID to %s", id_file_path)
 
     def __call__(
         self,
