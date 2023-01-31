@@ -19,7 +19,7 @@ from ray.tune import Callback, ResultGrid, Stopper, SyncConfig, Trainable
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.tune.stopper import CombinedStopper, MaximumIterationStopper, TimeoutStopper
-from rt_stoppers_contrib.no_improvement import NoImprovementTrialStopper
+from rt_stoppers_contrib import LoggedStopper, NoImprovementTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
 from gnn_tracking_hpo.cli import (
@@ -90,7 +90,7 @@ def add_common_options(parser: ArgumentParser):
     add_wandb_options(parser)
 
 
-def get_timeout_stopper(timeout: str | None = None) -> TimeoutStopper | None:
+def get_timeout_stopper(timeout: str | None = None) -> Stopper | None:
     """Interpret timeout string as seconds."""
     if timeout is None:
         return None
@@ -100,7 +100,7 @@ def get_timeout_stopper(timeout: str | None = None) -> TimeoutStopper | None:
             raise ValueError(
                 "Could not parse timeout. Try specifying a unit, " "e.g., 1h13m"
             )
-        return TimeoutStopper(timeout_seconds)
+        return LoggedStopper(TimeoutStopper(timeout_seconds))
 
 
 def simple_run_without_tune(trainable, suggest_config: Callable) -> None:
@@ -250,7 +250,7 @@ class Dispatcher:
         if timeout_stopper := get_timeout_stopper(self.timeout):
             stoppers.append(timeout_stopper)
         if self.test:
-            stoppers.append(MaximumIterationStopper(1))
+            stoppers.append(LoggedStopper(MaximumIterationStopper(1)))
         return [stopper for stopper in stoppers if stopper is not None]
 
     def get_wandb_callbacks(self) -> list[Callback]:
