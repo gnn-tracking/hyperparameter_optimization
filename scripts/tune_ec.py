@@ -63,8 +63,8 @@ def suggest_config(
     d("sector", sector)
     d("lw_edge", 1.0)
 
-    d("n_graphs_train", 12180)
-    d("n_graphs_val", 299)
+    d("n_graphs_train", 12180 + 199)
+    d("n_graphs_val", 100)
     d("n_graphs_val", 1)
     d("batch_size", 5)
 
