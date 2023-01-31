@@ -142,7 +142,7 @@ def suggest_config(
     # ---------------------
 
     d("attr_pt_thld", 0.0, 0.9)
-    d("m_h_outdim", 8, 30)
+    d("m_h_outdim", 2, 8)
     d("q_min", 0.3, 0.5)
     d("sb", 0.05, 0.12)
     d("lr", 0.0001, 0.0006)
