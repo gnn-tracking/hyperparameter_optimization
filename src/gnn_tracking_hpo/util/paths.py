@@ -36,26 +36,40 @@ def find_result_dir(project: str, part: str, *, base_path=_default_base_path) ->
     return result_dir
 
 
-def find_checkpoints(
-    project: str, part: str, *, base_path=_default_base_path
-) -> list[Path]:
+def find_checkpoint(
+    project: str, part: str, epoch: int = -1, *, base_path=_default_base_path
+) -> Path:
     """Find checkpoints
 
     Args:
         project: Ray project name/folder
         part: Part of filename of trial (part of the hash)
+        epoch: Epoch to which the checkpoint should belong. If -1, the last
+            epoch will be taken
         base_path: Path to ray folder
 
     Returns:
-        List of paths to ``checkpoint.pt`` files (most recent last)
+        Path to `checkpoint.pt` file
     """
     result_dir = find_result_dir(project, part, base_path=base_path)
-    checkpoints = sorted(result_dir.glob("checkpoint_*"))
-    if not checkpoints:
-        raise ValueError(f"No checkpoints at {result_dir}")
-    checkpoint_files = [cp / "checkpoint.pt" for cp in checkpoints]
-    assert all(cpf for cpf in checkpoint_files)
-    return checkpoint_files
+    if epoch == -1:
+        glob_str = "checkpoint_*"
+        try:
+            checkpoint_dir = sorted(result_dir.glob(glob_str))[-1]
+        except IndexError as e:
+            raise ValueError(
+                f"No checkpoint found in {result_dir} matching {glob_str}"
+            ) from e
+    else:
+        checkpoint_dir = result_dir / f"checkpoint_{epoch:06}"
+        if not checkpoint_dir.exists():
+            raise ValueError(f"No checkpoint found at {checkpoint_dir}")
+    checkpoint = checkpoint_dir / "checkpoint.pt"
+    if not checkpoint.exists():
+        raise FileNotFoundError(
+            f"No checkpoint found at {checkpoint}, even though directory exists"
+        )
+    return checkpoint
 
 
 def get_config(

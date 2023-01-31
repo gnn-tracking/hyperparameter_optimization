@@ -16,7 +16,7 @@ from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.log import logger
-from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoints, get_config
+from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoint, get_config
 
 add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
@@ -36,18 +36,24 @@ class UnPackDictionaryForward(nn.Module):
 
 
 def load_ec(
-    project: str, hash: str, *, config_update: dict | None = None, device="cuda"
+    tune_dir: str,
+    run_hash: str,
+    epoch: int = -1,
+    *,
+    config_update: dict | None = None,
+    device="cuda",
 ) -> nn.Module:
     """Load pre-trained edge classifier
 
     Args:
-        project (str): Project name (probably ``gnn_tracking``)
-        hash (str): Hash of the run
+        tune_dir (str): Name of ray tune outptu directory
+        run_hash (str): Hash of the run
+        epoch (int, optional): Epoch to load. Defaults to -1 (last epoch).
         config_update (dict, optional): Update the config with this dict.
     """
     logger.info("Initializing pre-trained EC")
-    checkpoint_path = find_checkpoints(project, hash)[-1]
-    config = get_config(project, hash)
+    checkpoint_path = find_checkpoint(tune_dir, run_hash, epoch)
+    config = get_config(tune_dir, run_hash)
     # In case any new values were added, we need to suggest this again
     suggest_default_values(config, None, ec="default", hc="none")
     config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
@@ -66,7 +72,12 @@ class PretrainedECTrainable(TCNTrainable):
     _device = "cuda"
 
     def __init__(self, config: dict[str, Any], **kwargs):
-        self.ec = load_ec(config["ec_project"], config["ec_hash"], device=self._device)
+        self.ec = load_ec(
+            config["ec_project"],
+            config["ec_hash"],
+            config["ec_epoch"],
+            device=self._device,
+        )
         super().__init__(config=config, **kwargs)
 
     def get_loss_functions(self) -> dict[str, Any]:
@@ -95,6 +106,7 @@ def suggest_config(
     sector: int | None = None,
     ec_project: str,
     ec_hash: str,
+    ec_epoch: int = -1,
     test=False,
     fixed: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -116,6 +128,8 @@ def suggest_config(
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
+    d("ec_epoch", ec_epoch)
+
     # >>>>>>>>>>>>> IMPORTANT, adjust that based on the EC <<<<<<<
     d("m_ec_threshold", 0.1, 0.5)
 
@@ -172,6 +186,12 @@ if __name__ == "__main__":
         type=str,
         help="Name of the folder that the edge classifier to load belongs to",
     )
+    parser.add_argument(
+        "--ec-epoch",
+        type=int,
+        default=-1,
+        help="Epoch of the edge classifier to load. Defaults to -1 (last epoch).",
+    )
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
     if kwargs["cpu"]:
@@ -180,6 +200,7 @@ if __name__ == "__main__":
         suggest_config,
         ec_hash=kwargs.pop("ec_hash"),
         ec_project=kwargs.pop("ec_project"),
+        ec_epoch=kwargs.pop("ec_epoch"),
     )
     dispatcher = ThisDispatcher(
         grace_period=2,
