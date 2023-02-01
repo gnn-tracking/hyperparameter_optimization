@@ -99,6 +99,18 @@ class SlurmControl:
             return []
         actions = []
         for c in self._config:
+            keys = set(c.keys())
+            invalid_keys = keys - {
+                "action",
+                "job_id",
+                "dispatcher_id",
+                "remaining_minutes_leq",
+            }
+            if invalid_keys:
+                self.logger.warning(
+                    "Invalid keys in config %s: %s. Skipping", c, invalid_keys
+                )
+                continue
             self.logger.debug("Looking at SlurmControl option %s", c)
             slurm_job_id = str(get_slurm_job_id()).strip()
             selected_job_id = str(c.get("job_id", ""))
