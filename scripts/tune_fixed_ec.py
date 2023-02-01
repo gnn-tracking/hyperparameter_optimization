@@ -171,7 +171,7 @@ class ThisDispatcher(Dispatcher):
             mode="max",
             grace_period=self.grace_period,
             reduction_factor=2,
-            max_t=10,
+            stop_last_trials=False,
         )
 
 
