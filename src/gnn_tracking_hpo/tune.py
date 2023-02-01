@@ -188,9 +188,9 @@ class Dispatcher:
         # The above message will probably be lost in the Ray output, so we also
         # put it in a file
         id_file_path = Path.home() / ".tune_dispatcher_ids.txt"
-        if not test or test:
+        if not test:
             with open(id_file_path, "a") as f:
-                f.write(f"{datetime.now()} {self.id} {sys.argv}")
+                f.write(f"{self.id} {datetime.now()} {sys.argv}\n")
             logger.debug("Wrote dispatcher ID to %s", id_file_path)
 
     def __call__(
