@@ -11,6 +11,7 @@ from gnn_tracking.metrics.cluster_metrics import common_metrics
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
     EdgeWeightFocalLoss,
+    HaughtyFocalLoss,
     PotentialLoss,
 )
 from gnn_tracking.models.track_condensation_networks import GraphTCN
@@ -173,7 +174,7 @@ def suggest_default_values(
         d("q_min", 0.01)
         d("attr_pt_thld", 0.9)
         d("sb", 0.1)
-    if ec in ["default"]:
+    if ec in ["default"] and c["ec_loss"] in ["focal", "haughty_focal"]:
         d("focal_alpha", 0.25)
         d("focal_gamma", 2.0)
 
@@ -249,11 +250,20 @@ class TCNTrainable(tune.Trainable):
         )
 
     def get_edge_loss_function(self):
-        return EdgeWeightFocalLoss(
-            pt_thld=self.tc["ec_pt_thld"],
-            alpha=self.tc["focal_alpha"],
-            gamma=self.tc["focal_gamma"],
-        )
+        if self.tc["edge_loss"] == "focal":
+            return EdgeWeightFocalLoss(
+                pt_thld=self.tc["ec_pt_thld"],
+                alpha=self.tc["focal_alpha"],
+                gamma=self.tc["focal_gamma"],
+            )
+        elif self.tc["edge_loss"] == "haughty_focal":
+            return HaughtyFocalLoss(
+                pt_thld=self.tc["ec_pt_thld"],
+                alpha=self.tc["focal_alpha"],
+                gamma=self.tc["focal_gamma"],
+            )
+        else:
+            raise ValueError(f"Unknown edge loss: {self.tc['edge_loss']}")
 
     def get_potential_loss_function(self):
         return PotentialLoss(
