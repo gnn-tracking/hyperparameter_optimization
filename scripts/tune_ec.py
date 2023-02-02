@@ -74,9 +74,10 @@ def suggest_config(
         d("n_graphs_val", 69)
         d("n_graphs_test", 1)
 
-    d("training_pt_thld", 0.0, 0.9)
-    d("training_without_noise", [True, False])
-    d("training_without_non_reconstructable", [True, False])
+    # d("training_pt_thld", 0.0, 0.9)
+    # d("training_without_noise", [True, False])
+    # d("training_without_non_reconstructable", [True, False])
+    d("ec_loss", "haughty_focal")
 
     # Tuned parameters
     # ----------------

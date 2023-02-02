@@ -174,6 +174,8 @@ def suggest_default_values(
         d("q_min", 0.01)
         d("attr_pt_thld", 0.9)
         d("sb", 0.1)
+
+    d("ec_loss", "focal")
     if ec in ["default"] and c["ec_loss"] in ["focal", "haughty_focal"]:
         d("focal_alpha", 0.25)
         d("focal_gamma", 2.0)
