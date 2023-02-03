@@ -252,13 +252,13 @@ class TCNTrainable(tune.Trainable):
         )
 
     def get_edge_loss_function(self):
-        if self.tc["edge_loss"] == "focal":
+        if self.tc["ec_loss"] == "focal":
             return EdgeWeightFocalLoss(
                 pt_thld=self.tc["ec_pt_thld"],
                 alpha=self.tc["focal_alpha"],
                 gamma=self.tc["focal_gamma"],
             )
-        elif self.tc["edge_loss"] == "haughty_focal":
+        elif self.tc["ec_loss"] == "haughty_focal":
             return HaughtyFocalLoss(
                 pt_thld=self.tc["ec_pt_thld"],
                 alpha=self.tc["focal_alpha"],
