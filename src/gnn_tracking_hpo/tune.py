@@ -209,7 +209,6 @@ class Dispatcher:
         trainable.dispatcher_id = self.id
 
         if self.no_tune:
-            assert self.test
             simple_run_without_tune(trainable, suggest_config)
 
         maybe_run_wandb_offline()
