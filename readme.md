@@ -21,7 +21,6 @@ Part of this are fully parameterized versions of the models.
   framework
 * [Optuna](https://optuna.readthedocs.io/) is used to power the search
 * Results are reported to [wandb/weights & biases](https://wandb.ai/)
-* For synchronization with `wandb`, [wandb-osh](https://github.com/klieret/wandb-offline-sync-hook/) is used (the hooks are already included in the tuning script, you only need to start `wandb-osh` on the head node)
 
 ## Setup
 
