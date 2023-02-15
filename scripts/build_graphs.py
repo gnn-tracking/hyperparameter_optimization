@@ -10,5 +10,6 @@ graph_builder = GraphBuilder(
     str(Path("~/data/gnn_tracking/point_clouds").expanduser()),
     str(Path("~/data/gnn_tracking/graphs").expanduser()),
     redo=False,
+    collect_data=False,
 )
 graph_builder.process(stop=None)
