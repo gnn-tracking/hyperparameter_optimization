@@ -41,7 +41,7 @@ def load_ec(
     epoch: int = -1,
     *,
     config_update: dict | None = None,
-    device="cuda",
+    device=None,
 ) -> nn.Module:
     """Load pre-trained edge classifier
 
@@ -60,7 +60,7 @@ def load_ec(
     if config_update is not None:
         config.update(config_update)
     trainable = ECTrainable(config)
-    trainable.load_checkpoint(checkpoint_path, device=device)
+    trainable.load_checkpoint(checkpoint_path)
     ec = trainable.trainer.model
     for param in ec.parameters():
         param.requires_grad = False
@@ -69,14 +69,11 @@ def load_ec(
 
 
 class PretrainedECTrainable(TCNTrainable):
-    _device = "cuda"
-
     def __init__(self, config: dict[str, Any], **kwargs):
         self.ec = load_ec(
             config["ec_project"],
             config["ec_hash"],
             config["ec_epoch"],
-            device=self._device,
         )
         super().__init__(config=config, **kwargs)
 
