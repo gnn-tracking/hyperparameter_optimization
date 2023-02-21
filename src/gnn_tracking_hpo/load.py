@@ -62,7 +62,12 @@ def get_graphs(
         )
 
     logger.info("Loading data to cpu memory")
-    graphs = load_graphs(str(Path(input_dir)), stop=n_graphs, sector=sector)
+    graphs = load_graphs(
+        str(Path(input_dir)),
+        stop=n_graphs,
+        sector=sector,
+        n_processes=12 if not test else 1,
+    )
     return train_test_val_split(
         graphs,
         test_frac=test_frac,
