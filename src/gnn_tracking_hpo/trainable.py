@@ -269,6 +269,7 @@ class HPOTrainable(tune.Trainable, ABC):
         trainable = cls(config)
         if epoch != 0:
             trainable.load_checkpoint(str(find_checkpoint(project, hash, epoch)))
+        return trainable
 
 
 class TCNTrainable(HPOTrainable):
