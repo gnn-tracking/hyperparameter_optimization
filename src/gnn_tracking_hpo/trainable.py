@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pprint
 from abc import ABC
 from functools import partial
 from pathlib import Path
@@ -8,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import optuna
+import tabulate
 from gnn_tracking.metrics.cluster_metrics import common_metrics
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
@@ -292,7 +292,10 @@ class TCNTrainable(HPOTrainable):
             )
         logger.info("The ID of my dispatcher is %d", self.dispatcher_id)
         SlurmControl()(dispatcher_id=str(self.dispatcher_id))
-        logger.debug("Got config\n%s", pprint.pformat(config))
+        config_table = tabulate.tabulate(
+            config, headers="keys", tablefmt="simple_outline"
+        )
+        logger.debug("Got config\n%s", config_table)
         self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
