@@ -293,7 +293,7 @@ class TCNTrainable(HPOTrainable):
         logger.info("The ID of my dispatcher is %d", self.dispatcher_id)
         SlurmControl()(dispatcher_id=str(self.dispatcher_id))
         config_table = tabulate.tabulate(
-            config, headers="keys", tablefmt="simple_outline"
+            sorted(config.items()), tablefmt="simple_outline"
         )
         logger.debug("Got config\n%s", config_table)
         self.tc = config
