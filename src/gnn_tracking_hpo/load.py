@@ -52,10 +52,6 @@ def get_graphs(
             "val": [graph],
         }
 
-    assert 0 <= test_frac <= 1
-    assert 0 <= val_frac <= 1
-    assert test_frac + val_frac <= 1
-
     if n_graphs is None:
         raise ValueError(
             "Please explicitly set n_graphs to track it as a hyperparameter"

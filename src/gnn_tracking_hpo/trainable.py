@@ -374,8 +374,12 @@ class TCNTrainable(HPOTrainable):
             + self.tc["n_graphs_test"]
             + self.tc["n_graphs_val"]
         )
-        test_frac = self.tc["n_graphs_test"] / n_graphs
-        val_frac = self.tc["n_graphs_val"] / n_graphs
+        if n_graphs == 0:
+            test_frac = 0
+            val_frac = 0
+        else:
+            test_frac = self.tc["n_graphs_test"] / n_graphs
+            val_frac = self.tc["n_graphs_val"] / n_graphs
         return get_loaders(
             get_graphs(
                 n_graphs=n_graphs,
