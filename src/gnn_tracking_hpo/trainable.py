@@ -263,7 +263,7 @@ class HPOTrainable(tune.Trainable, ABC):
                     "`config_override` to set graph numbers manually."
                 )
             for key in ["n_graphs_train", "n_graphs_val", "n_graphs_test"]:
-                config[key] *= n_graphs / previous_n_graphs
+                config[key] = int(config[key] * n_graphs / previous_n_graphs)
         if config_override is not None:
             config.update(config_override)
         trainable = cls(config)
