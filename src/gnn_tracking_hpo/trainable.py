@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pprint
+from abc import ABC
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,7 @@ from torch.optim import SGD, Adam, lr_scheduler
 from gnn_tracking_hpo.load import get_graphs, get_loaders
 from gnn_tracking_hpo.slurmcontrol import SlurmControl, get_slurm_job_id
 from gnn_tracking_hpo.util.log import logger
+from gnn_tracking_hpo.util.paths import find_checkpoint, get_config
 
 
 def fixed_dbscan_scan(
@@ -220,7 +222,56 @@ def suggest_default_values(
         d("m_feed_edge_weights", False)
 
 
-class TCNTrainable(tune.Trainable):
+class HPOTrainable(tune.Trainable, ABC):
+    """Add additional 'restore' capabilities to tune.Trainable."""
+
+    @classmethod
+    def reinstate(
+        cls,
+        project: str,
+        hash: str,
+        *,
+        epoch=-1,
+        n_graphs: int | None = None,
+        config_override: dict[str, Any] | None = None,
+    ):
+        """Load config from wandb and restore on-disk checkpoint.
+
+        This is differet from `tune.Trainable.restore` which is called from an instance,
+        i.e., already needs to be initialized with a config.
+
+        Args:
+            project: The wandb project name that should also correspond to the local
+                folder with the checkpoints
+            hash: The wandb run hash.
+            epoch: The epoch to restore. If -1, restore the last epoch. If 0, do not
+                restore any checkpoint.
+            n_graphs: Total number of samples to load. ``None`` uses the values from
+                training.
+            config_override: Update the config with these values.
+        """
+        config = get_config(project, hash)
+        if n_graphs is not None:
+            previous_n_graphs = (
+                config["n_graphs_train"]
+                + config["n_graphs_val"]
+                + config["n_graphs_test"]
+            )
+            if previous_n_graphs == 0:
+                raise ValueError(
+                    "Cannot rescale n_graphs when previous_n_graphs == 0. Use "
+                    "`config_override` to set graph numbers manually."
+                )
+            for key in ["n_graphs_train", "n_graphs_val", "n_graphs_test"]:
+                config[key] *= n_graphs / previous_n_graphs
+        if config_override is not None:
+            config.update(config_override)
+        trainable = cls(config)
+        if epoch != 0:
+            trainable.load_checkpoint(str(find_checkpoint(project, hash, epoch)))
+
+
+class TCNTrainable(HPOTrainable):
     """A wrapper around `TCNTrainer` for use with Ray Tune."""
 
     # This is set explicitly by the Dispatcher class
