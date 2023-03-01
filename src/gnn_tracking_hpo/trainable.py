@@ -185,7 +185,13 @@ def suggest_default_values(
     # Optimizers
     d("lr", 5e-4)
     d("optimizer", "adam")
-    if c["optimizer"] == "sgd":
+    if c["optimizer"] == "adam":
+        d("adam_beta1", 0.9)
+        d("adam_beta2", 0.999)
+        d("adam_eps", 1e-8)
+        d("adam_weight_decay", 0.0)
+        d("adam_amsgrad", False)
+    elif c["optimizer"] == "sgd":
         d("sgd_momentum", 0.0)
         d("sgd_weight_decay", 0.0)
         d("sgd_nesterov", False)
@@ -359,7 +365,13 @@ class TCNTrainable(HPOTrainable):
 
     def get_optimizer(self):
         if self.tc["optimizer"] == "adam":
-            return Adam
+            return partial(
+                Adam,
+                beta=(self.tc["adam_beta1"], self.tc["adam_beta2"]),
+                eps=self.tc["adam_eps"],
+                weight_decay=self.tc["adam_weight_decay"],
+                amsgrad=self.tc["adam_amsgrad"],
+            )
         elif self.tc["optimizer"] == "sgd":
             return partial(SGD, **subdict_with_prefix_stripped(self.tc, "sgd_"))
         else:
