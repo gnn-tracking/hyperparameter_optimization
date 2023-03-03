@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 from gnn_tracking.graph_construction.graph_builder import load_graphs
 from gnn_tracking.utils.loading import get_loaders as _get_loaders
@@ -14,38 +13,34 @@ from torch_geometric.loader import DataLoader
 from gnn_tracking_hpo.util.log import logger
 
 
-def get_graphs(
+def get_graphs_split(
     *,
     n_graphs,
     test_frac=0.2,
     val_frac=0.12,
-    input_dir: os.PathLike | str | None = None,
+    input_dirs: list[os.PathLike] | list[str],
     sector: int | None = None,
     test=False,
 ) -> dict[str, list]:
-    """Load graphs for training, testing, and validation.
+    """Load graphs for training, testing, and validation from one directory.
 
     Args:
         n_graphs: Total number of graphs
         test_frac: Fraction of graphs used for testing
         val_frac: Fraction of graphs for validation
-        input_dir: Directory containing the graphs
+        input_dirs: Directory containing the graphs
         sector: Only load specific sector
+        test:
 
     Returns:
 
     """
-    if input_dir is None:
-        input_dir = os.environ.get(
-            "DATA_DIR", "/tigress/jdezoort/object_condensation/graphs"
-        )
-    assert input_dir is not None
-    logger.debug("Loading graphs from %s", input_dir)
+    logger.debug("Loading graphs from %s", input_dirs)
 
     if test:
         # Let's cheat and only load one graph that we use for
         # train/val/test
-        graph = load_graphs(Path(input_dir), stop=1, sector=sector)[0]
+        graph = load_graphs(input_dirs, stop=1, sector=sector)[0]
         return {
             "train": [graph],
             "test": [graph],
@@ -59,7 +54,7 @@ def get_graphs(
 
     logger.info("Loading data to cpu memory")
     graphs = load_graphs(
-        str(Path(input_dir)),
+        input_dirs,
         stop=n_graphs,
         sector=sector,
         n_processes=12 if not test else 1,

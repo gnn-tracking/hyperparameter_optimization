@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from abc import ABC
 from functools import partial
 from pathlib import Path
@@ -25,7 +26,7 @@ from ray import tune
 from torch import nn
 from torch.optim import SGD, Adam, lr_scheduler
 
-from gnn_tracking_hpo.load import get_graphs, get_loaders
+from gnn_tracking_hpo.load import get_graphs_split, get_loaders
 from gnn_tracking_hpo.slurmcontrol import SlurmControl, get_slurm_job_id
 from gnn_tracking_hpo.util.log import logger
 from gnn_tracking_hpo.util.paths import find_checkpoint, get_config
@@ -138,6 +139,13 @@ def suggest_default_values(
             return
         config[k] = v
         c[k] = v
+
+    if test_data_dir := os.environ.get("TEST_TRAIN_DATA_DIR"):
+        d("train_data_dir", test_data_dir)
+    else:
+        d("train_data_dir", ["/tigress/jdezoort/object_condensation/graphs"])
+
+    d("val_data_dir", None)
 
     if c["test"]:
         config["n_graphs_train"] = 1
@@ -367,7 +375,7 @@ class TCNTrainable(HPOTrainable):
         if self.tc["optimizer"] == "adam":
             return partial(
                 Adam,
-                beta=(self.tc["adam_beta1"], self.tc["adam_beta2"]),
+                betas=(self.tc["adam_beta1"], self.tc["adam_beta2"]),
                 eps=self.tc["adam_eps"],
                 weight_decay=self.tc["adam_weight_decay"],
                 amsgrad=self.tc["adam_amsgrad"],
@@ -393,14 +401,17 @@ class TCNTrainable(HPOTrainable):
         else:
             test_frac = self.tc["n_graphs_test"] / n_graphs
             val_frac = self.tc["n_graphs_val"] / n_graphs
+
+        graph_dict = get_graphs_split(
+            n_graphs=n_graphs,
+            test_frac=test_frac,
+            val_frac=val_frac,
+            sector=self.tc["sector"],
+            test=self.tc["test"],
+            input_dirs=self.tc["train_data_dir"],
+        )
         return get_loaders(
-            get_graphs(
-                n_graphs=n_graphs,
-                test_frac=test_frac,
-                val_frac=val_frac,
-                sector=self.tc["sector"],
-                test=self.tc["test"],
-            ),
+            graph_dict,
             test=self.tc["test"],
             batch_size=self.tc["batch_size"],
         )

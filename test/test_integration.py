@@ -20,7 +20,7 @@ def suggest_config(trial: optuna.Trial, *args, **kwargs) -> dict[str, Any]:
 
 
 def test_tune():
-    os.environ["DATA_DIR"] = str(DATA_DIR)
+    os.environ["TEST_TRAIN_DATA_DIR"] = str(DATA_DIR)
     dispatcher = Dispatcher(test=True, local=True, cpu=True)
     result = dispatcher(
         TCNTrainable,
