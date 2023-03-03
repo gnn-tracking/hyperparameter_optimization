@@ -26,7 +26,7 @@ from ray import tune
 from torch import nn
 from torch.optim import SGD, Adam, lr_scheduler
 
-from gnn_tracking_hpo.load import get_graphs_split, get_loaders
+from gnn_tracking_hpo.load import get_graphs_separate, get_graphs_split, get_loaders
 from gnn_tracking_hpo.slurmcontrol import SlurmControl, get_slurm_job_id
 from gnn_tracking_hpo.util.log import logger
 from gnn_tracking_hpo.util.paths import find_checkpoint, get_config
@@ -388,13 +388,23 @@ class TCNTrainable(HPOTrainable):
 
     def get_loaders(self):
         logger.debug("Getting loaders")
-        graph_dict = get_graphs_split(
-            train_size=self.tc["n_graphs_train"],
-            val_size=self.tc["n_graphs_val"],
-            sector=self.tc["sector"],
-            test=self.tc["test"],
-            input_dirs=self.tc["train_data_dir"],
-        )
+        if self.tc["val_data_dir"]:
+            graph_dict = get_graphs_separate(
+                train_size=self.tc["n_graphs_train"],
+                val_size=self.tc["n_graphs_val"],
+                sector=self.tc["sector"],
+                test=self.tc["test"],
+                train_dirs=self.tc["train_data_dir"],
+                val_dirs=self.tc["val_data_dir"],
+            )
+        else:
+            graph_dict = get_graphs_split(
+                train_size=self.tc["n_graphs_train"],
+                val_size=self.tc["n_graphs_val"],
+                sector=self.tc["sector"],
+                test=self.tc["test"],
+                input_dirs=self.tc["train_data_dir"],
+            )
         return get_loaders(
             graph_dict,
             test=self.tc["test"],

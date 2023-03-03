@@ -71,6 +71,52 @@ def get_graphs_split(
     }
 
 
+def get_graphs_separate(
+    *,
+    train_size: int,
+    val_size: int,
+    train_dirs: list[str],
+    val_dirs: list[str],
+    sector: int | None = None,
+    test=False,
+) -> dict[str, list]:
+    """Load graphs for training and validation from separate directories.
+
+    Args:
+        train_size: Number of graphs to use for training
+        val_size: Number of graphs to use for validation
+        train_dirs: Directory containing the training graphs
+        val_dirs: Directory containing the test graphs
+        sector: Only load specific sector
+        test:
+
+    Returns:
+        Training and validation graphs as dictionary
+
+    """
+    assert train_size >= 1 or train_size == 0
+    assert val_size >= 1 or val_size == 0
+
+    logger.debug("Loading graphs from %s", train_dirs)
+
+    n_processes = 12 if not test else 1
+    logger.info("Loading training data to cpu memory")
+    train_graphs = load_graphs(
+        train_dirs,
+        stop=train_size,
+        sector=sector,
+        n_processes=n_processes,
+    )
+    logger.info("Loading validation data to cpu memory")
+    val_graphs = load_graphs(
+        val_dirs,
+        stop=val_size,
+        sector=sector,
+        n_processes=n_processes,
+    )
+    return {"train": train_graphs, "val": val_graphs, "test": []}
+
+
 def get_loaders(
     graph_dct: dict[str, list], batch_size=1, test=False
 ) -> dict[str, DataLoader]:
