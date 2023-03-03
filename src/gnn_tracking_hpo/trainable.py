@@ -149,13 +149,11 @@ def suggest_default_values(
 
     if c["test"]:
         config["n_graphs_train"] = 1
-        config["n_graphs_test"] = 1
         config["n_graphs_val"] = 1
     else:
         n_graphs_default = 5_000
         n_graphs_val = c.get("n_graphs_val", min(400, int(0.1 * n_graphs_default)))
         d("n_graphs_train", n_graphs_default - 1 - n_graphs_val)
-        d("n_graphs_test", 1)
         d("n_graphs_val", n_graphs_val)
 
     d("training_pt_thld", 0.0)
@@ -390,22 +388,9 @@ class TCNTrainable(HPOTrainable):
 
     def get_loaders(self):
         logger.debug("Getting loaders")
-        n_graphs = (
-            self.tc["n_graphs_train"]
-            + self.tc["n_graphs_test"]
-            + self.tc["n_graphs_val"]
-        )
-        if n_graphs == 0:
-            test_frac = 0
-            val_frac = 0
-        else:
-            test_frac = self.tc["n_graphs_test"] / n_graphs
-            val_frac = self.tc["n_graphs_val"] / n_graphs
-
         graph_dict = get_graphs_split(
-            n_graphs=n_graphs,
-            test_frac=test_frac,
-            val_frac=val_frac,
+            train_size=self.tc["n_graphs_train"],
+            val_size=self.tc["n_graphs_val"],
             sector=self.tc["sector"],
             test=self.tc["test"],
             input_dirs=self.tc["train_data_dir"],

@@ -5,9 +5,9 @@ from __future__ import annotations
 
 import os
 
+import sklearn.model_selection
 from gnn_tracking.graph_construction.graph_builder import load_graphs
 from gnn_tracking.utils.loading import get_loaders as _get_loaders
-from gnn_tracking.utils.loading import train_test_val_split
 from torch_geometric.loader import DataLoader
 
 from gnn_tracking_hpo.util.log import logger
@@ -15,9 +15,8 @@ from gnn_tracking_hpo.util.log import logger
 
 def get_graphs_split(
     *,
-    n_graphs,
-    test_frac=0.2,
-    val_frac=0.12,
+    train_size: int,
+    val_size: int,
     input_dirs: list[os.PathLike] | list[str],
     sector: int | None = None,
     test=False,
@@ -25,45 +24,51 @@ def get_graphs_split(
     """Load graphs for training, testing, and validation from one directory.
 
     Args:
-        n_graphs: Total number of graphs
-        test_frac: Fraction of graphs used for testing
-        val_frac: Fraction of graphs for validation
+        train_size: Number of graphs to use for training
+        val_size: Number of graphs to use for validation
         input_dirs: Directory containing the graphs
         sector: Only load specific sector
         test:
 
     Returns:
+        Training and validation graphs as dictionary
 
     """
+    assert train_size >= 1 or train_size == 0
+    assert val_size >= 1 or val_size == 0
+
     logger.debug("Loading graphs from %s", input_dirs)
 
     if test:
         # Let's cheat and only load one graph that we use for
         # train/val/test
+        logger.debug(
+            "Loading test graphs (only one graph is loaded and used for train/test/val"
+        )
         graph = load_graphs(input_dirs, stop=1, sector=sector)[0]
         return {
             "train": [graph],
-            "test": [graph],
             "val": [graph],
+            "test": [],
         }
-
-    if n_graphs is None:
-        raise ValueError(
-            "Please explicitly set n_graphs to track it as a hyperparameter"
-        )
 
     logger.info("Loading data to cpu memory")
     graphs = load_graphs(
         input_dirs,
-        stop=n_graphs,
+        stop=train_size + val_size,
         sector=sector,
         n_processes=12 if not test else 1,
     )
-    return train_test_val_split(
+    train_graphs, val_graphs = sklearn.model_selection.train_test_split(
         graphs,
-        test_frac=test_frac,
-        val_frac=val_frac,
+        train_size=train_size,
+        test_size=val_size,
     )
+    return {
+        "train": train_graphs,
+        "val": val_graphs,
+        "test": [],
+    }
 
 
 def get_loaders(
