@@ -382,9 +382,6 @@ class TCNTrainable(HPOTrainable):
 
     def get_loaders(self):
         logger.debug("Getting loaders")
-        if self.tc.get("no_data"):
-            logger.debug("No data requested")
-            return None
         n_graphs = (
             self.tc["n_graphs_train"]
             + self.tc["n_graphs_test"]
