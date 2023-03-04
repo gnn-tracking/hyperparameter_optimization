@@ -12,6 +12,11 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=70G
 
+function stats {
+  jobstats "${SLURM_JOB_ID}"
+}
+trap stats EXIT
+
 ip_head=$1
 if [ -z "$ip_head" ]; then
   ip_head=$(cat "${HOME}/.ray_head_ip_address")

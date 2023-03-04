@@ -11,9 +11,14 @@
 #SBATCH --cpus-per-task 12
 #SBATCH --gres=gpu:1
 #SBATCH --mem=70G
-#SBATCH --mail-type=end
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=kl5675@princeton.edu
+
+function stats {
+  jobstats "${SLURM_JOB_ID}"
+}
+trap stats EXIT
+
 
 ip_head=$1
 if [ -z "$ip_head" ]; then
