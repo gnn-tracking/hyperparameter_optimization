@@ -62,7 +62,6 @@ def suggest_config(
     d("sector", sector)
     d("n_graphs_train", 300)
     d("n_graphs_val", 69)
-    d("n_graphs_test", 1)
     d("m_ec_tpr", ec_tpr)
     if truth_cut:
         d("training_pt_thld", 0.9)

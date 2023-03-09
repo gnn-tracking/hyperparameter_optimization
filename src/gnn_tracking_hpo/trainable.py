@@ -265,17 +265,13 @@ class HPOTrainable(tune.Trainable, ABC):
         """
         config = get_config(project, hash)
         if n_graphs is not None:
-            previous_n_graphs = (
-                config["n_graphs_train"]
-                + config["n_graphs_val"]
-                + config["n_graphs_test"]
-            )
+            previous_n_graphs = config["n_graphs_train"] + config["n_graphs_val"]
             if previous_n_graphs == 0:
                 raise ValueError(
                     "Cannot rescale n_graphs when previous_n_graphs == 0. Use "
                     "`config_override` to set graph numbers manually."
                 )
-            for key in ["n_graphs_train", "n_graphs_val", "n_graphs_test"]:
+            for key in ["n_graphs_train", "n_graphs_val"]:
                 config[key] = int(config[key] * n_graphs / previous_n_graphs)
         if config_override is not None:
             config.update(config_override)

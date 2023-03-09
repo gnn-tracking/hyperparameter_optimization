@@ -47,7 +47,6 @@ def suggest_config(
     d("sector", sector)
     d("n_graphs_train", 300)
     d("n_graphs_val", 69)
-    d("n_graphs_test", 1)
     d("batch_size", 1)
     d("focal_gamma", 0, 10)  # 5 might be a good default
     d("focal_alpha", 0.8, 1)  # 0.95 might be a good default

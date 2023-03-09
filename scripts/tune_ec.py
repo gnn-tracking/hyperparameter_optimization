@@ -74,7 +74,6 @@ def suggest_config(
         # Currently only have limited graphs available in that case
         d("n_graphs_train", 300)
         d("n_graphs_val", 69)
-        d("n_graphs_test", 1)
 
     # d("training_pt_thld", 0.0, 0.9)
     # d("training_without_noise", [True, False])

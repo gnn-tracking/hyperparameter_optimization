@@ -56,7 +56,7 @@ def load_ec(
     config = get_config(tune_dir, run_hash)
     # In case any new values were added, we need to suggest this again
     suggest_default_values(config, None, ec="default", hc="none")
-    config.update({"n_graphs_train": 1, "n_graphs_val": 1, "n_graphs_test": 1})
+    config.update({"n_graphs_train": 1, "n_graphs_val": 1})
     if config_update is not None:
         config.update(config_update)
     trainable = ECTrainable(config)
@@ -119,7 +119,6 @@ def suggest_config(
     d("sector", sector)
     d("n_graphs_train", 12379)
     d("n_graphs_val", 100)
-    d("n_graphs_test", 1)
 
     d("m_mask_orphan_nodes", True)
 
