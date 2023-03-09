@@ -63,10 +63,11 @@ def suggest_config(
     d("sector", sector)
     d("lw_edge", 1.0)
 
-    d("n_graphs_train", 12180 + 199)
+    d("n_graphs_train", 12476)
+    d("train_data_dir", "/tigress/jdezoort/object_condensation/graphs_v0/part1_pt0.4")
+    d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
     d("n_graphs_val", 100)
-    d("n_graphs_val", 1)
-    d("batch_size", 5)
+    d("batch_size", 50)
 
     if sector is not None:
         # Currently only have limited graphs available in that case
@@ -82,18 +83,18 @@ def suggest_config(
     # Tuned parameters
     # ----------------
 
-    d("lr", 0.0001, 0.0006)
+    d("lr", 0.0001, 0.0010)
     d("adam_beta1", 0.8, 0.99)
     d("adam_beta2", 0.990, 0.999)
     d("adam_eps", 1e-9, 1e-7, log=True)
     d("m_hidden_dim", 32, 64)
-    d("m_L_ec", 6, 8)
+    d("m_L_ec", 5, 8)
     d("focal_gamma", 0.0, 5.0)
     d("focal_alpha", 0.1, 1.0)
     d("m_alpha_ec", 0.3, 0.99)
     d("m_interaction_node_hidden_dim", 32, 64)
     d("m_interaction_edge_hidden_dim", 32, 64)
-    d("ec_pt_thld", 0.0, 0.9)
+    d("ec_pt_thld", 0.4, 0.9)
 
     suggest_default_values(config, trial, hc="none")
     return config
