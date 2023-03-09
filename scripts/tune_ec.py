@@ -108,8 +108,8 @@ if __name__ == "__main__":
     dispatcher = Dispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
-        grace_period=2,
-        no_improvement_patience=7,
+        grace_period=8,
+        no_improvement_patience=10,
     )
     dispatcher(
         ECTrainable,
