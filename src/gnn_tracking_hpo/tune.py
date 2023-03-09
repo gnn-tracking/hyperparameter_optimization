@@ -296,8 +296,8 @@ class Dispatcher:
             return len(self.points_to_evaluate)
         if self.num_samples is not None:
             return self.num_samples
-        logger.warning("No n-samples specified, defaulting to only 20")
-        return 20
+        logger.warning("No n-samples specified, defaulting to infinity")
+        return -1
 
     def get_scheduler(self) -> None | ASHAScheduler:
         if self.no_scheduler:
