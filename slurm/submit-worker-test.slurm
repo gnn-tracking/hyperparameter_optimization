@@ -31,4 +31,4 @@ ray start \
   --address "$ip_head" \
   --num-cpus "${SLURM_CPUS_PER_TASK}" \
   --num-gpus "1" \
-  --block \
+  --block

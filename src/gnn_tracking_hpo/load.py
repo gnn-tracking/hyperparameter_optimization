@@ -118,7 +118,7 @@ def get_graphs_separate(
 
 
 def get_loaders(
-    graph_dct: dict[str, list], batch_size=1, test=False
+    graph_dct: dict[str, list], batch_size=1, val_batch_size=1, test=False
 ) -> dict[str, DataLoader]:
     """Get data loaders
 
@@ -133,5 +133,6 @@ def get_loaders(
     return _get_loaders(
         graph_dct,
         batch_size=batch_size,
+        other_batch_size=val_batch_size,
         cpus=12 if not test else 1,
     )

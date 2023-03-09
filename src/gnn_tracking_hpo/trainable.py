@@ -163,6 +163,7 @@ def suggest_default_values(
 
     d("sector", None)
     d("batch_size", 1)
+    d("_val_batch_size", 1)
 
     # These defaults are for backward compatibility, they might not be reasonable
     d("m_interaction_node_hidden_dim", 5)
@@ -409,6 +410,7 @@ class TCNTrainable(HPOTrainable):
             graph_dict,
             test=self.tc["test"],
             batch_size=self.tc["batch_size"],
+            val_batch_size=self.tc["_val_batch_size"],
         )
 
     def get_trainer(self) -> TCNTrainer:

@@ -68,6 +68,7 @@ def suggest_config(
     d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
     d("n_graphs_val", 100)
     d("batch_size", 50)
+    d("_val_batch_size", 40)
 
     if sector is not None:
         # Currently only have limited graphs available in that case
