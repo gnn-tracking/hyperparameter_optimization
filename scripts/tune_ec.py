@@ -83,7 +83,7 @@ def suggest_config(
     # Tuned parameters
     # ----------------
 
-    d("lr", 0.0001, 0.0010)
+    d("lr", 0.0005, 0.0100)
     d("adam_beta1", 0.8, 0.99)
     d("adam_beta2", 0.990, 0.999)
     d("adam_eps", 1e-9, 1e-7, log=True)
