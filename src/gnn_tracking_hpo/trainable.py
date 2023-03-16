@@ -166,8 +166,8 @@ def suggest_default_values(
     d("_val_batch_size", 1)
 
     # These defaults are for backward compatibility, they might not be reasonable
-    d("m_interaction_node_hidden_dim", 5)
-    d("m_interaction_edge_hidden_dim", 4)
+    # d("m_interaction_node_hidden_dim", 5)
+    # d("m_interaction_edge_hidden_dim", 4)
 
     if hc != "none":
         d("repulsive_radius_threshold", 10.0)
@@ -220,14 +220,14 @@ def suggest_default_values(
         raise ValueError(f"Unknown scheduler: {c['scheduler']}")
 
     # Model parameters
-    d("m_h_dim", 5)
-    d("m_e_dim", 4)
+    # d("m_h_dim", 5)
+    # d("m_e_dim", 4)
     if hc != "none":
         d("m_h_outdim", 2)
     d("m_hidden_dim", 40)
     if ec in ["default"]:
         d("m_L_ec", 3)
-        d("m_alpha_ec", 0.5)
+        # d("m_alpha_ec", 0.5)
     if hc != "none":
         d("m_L_hc", 3)
         d("m_alpha_hc", 0.5)
