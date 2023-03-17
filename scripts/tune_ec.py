@@ -63,12 +63,12 @@ def suggest_config(
     d("sector", sector)
     d("lw_edge", 1.0)
 
-    d("n_graphs_train", 12476)
-    d("train_data_dir", "/tigress/jdezoort/object_condensation/graphs_v0/part1_pt0.4")
-    d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
+    d("n_graphs_train", 12366)
+    d("train_data_dir", "/tigress/jdezoort/object_condensation/graphs_v0/part1")
+    # d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
     d("n_graphs_val", 100)
-    d("batch_size", 50)
-    d("_val_batch_size", 40)
+    d("batch_size", 5)
+    d("_val_batch_size", 5)
 
     if sector is not None:
         # Currently only have limited graphs available in that case
@@ -109,8 +109,8 @@ if __name__ == "__main__":
     dispatcher = Dispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
-        grace_period=8,
-        no_improvement_patience=10,
+        grace_period=4,
+        no_improvement_patience=6,
     )
     dispatcher(
         ECTrainable,
