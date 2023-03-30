@@ -18,7 +18,8 @@ Part of this are fully parameterized versions of the models.
 ## Framework
 
 * Uses [ray tune](https://docs.ray.io/en/latest/tune/index.html) as overarching
-  framework
+  framework. For deployment on [SLURM][] managed HPC nodes, ray workers are deployed
+  as SLURM batch jobs (as further described [here][slurm-deployment])
 * [Optuna](https://optuna.readthedocs.io/) is used to power the search
 * Results are reported to [wandb/weights & biases](https://wandb.ai/)
 
@@ -48,3 +49,6 @@ git submodule update --init --recursive
 * [additional stoppers for ray tune](https://github.com/klieret/ray-tune-stoppers-contrib.git):
   package with additional early stopping conditions for trials used in our
   HPO
+
+[SLURM]: https://slurm.schedmd.com/documentation.html
+[slurm-deployment]: https://github.com/klieret/ray-tune-slurm-demo/#option-2-head-node-and-worker-nodes
