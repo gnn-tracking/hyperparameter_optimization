@@ -250,8 +250,8 @@ class HPOTrainable(tune.Trainable, ABC):
     ):
         """Load config from wandb and restore on-disk checkpoint.
 
-        This is differet from `tune.Trainable.restore` which is called from an instance,
-        i.e., already needs to be initialized with a config.
+        This is different from `tune.Trainable.restore` which is called from
+        an instance, i.e., already needs to be initialized with a config.
 
         Args:
             project: The wandb project name that should also correspond to the local
