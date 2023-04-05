@@ -10,7 +10,7 @@ from pathlib import Path
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "gnn_tracking_experiments"
+project = "hyperparameter_optimization"
 copyright = "2022, Kilian Lieret"
 author = "Kilian Lieret"
 

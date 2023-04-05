@@ -1,5 +1,5 @@
-Welcome to gnn_tracking_experiments documentation!
-==================================================
+Hyperparameter optimization for GNN Tracking
+============================================
 
 .. toctree::
    :maxdepth: 2
