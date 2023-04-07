@@ -64,15 +64,15 @@ def suggest_config(
     d("sector", sector)
     d("lw_edge", 1.0)
 
-    d("n_graphs_train", 12476)
+    d("n_graphs_train", 12376)
     d(
         "train_data_dir",
-        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v0/part1_pt0.4_mixed75",
+        "/tigress/jdezoort/object_condensation/graphs_v0/part1",
     )
-    d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
+    # d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
     d("n_graphs_val", 100)
-    d("batch_size", 20)
-    d("_val_batch_size", 20)
+    d("batch_size", 7)
+    d("_val_batch_size", 7)
 
     if sector is not None:
         # Currently only have limited graphs available in that case
