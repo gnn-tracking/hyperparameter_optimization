@@ -91,7 +91,8 @@ def suggest_config(
     d("m_hidden_dim", 48, 64)  # 32 64
     d("focal_gamma", 2.0, 4.0)
     d("focal_alpha", 0.35, 0.45)
-    d("m_alpha_ec", 0.0, 0.99)
+    d("m_alpha_ec_node", 0.0, 0.99)
+    d("m_alpha_ec_edge", 0.0, 0.99)
     d("m_interaction_node_dim", 48, 64)  # 32 64
     d("m_interaction_edge_dim", 48, 64)  # 32 64
     d("ec_pt_thld", 0.4, 0.9)
