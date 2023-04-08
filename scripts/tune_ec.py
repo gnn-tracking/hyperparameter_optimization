@@ -71,8 +71,8 @@ def suggest_config(
     )
     # d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
     d("n_graphs_val", 100)
-    d("batch_size", 7)
-    d("_val_batch_size", 7)
+    d("batch_size", 5)
+    d("_val_batch_size", 5)
 
     if sector is not None:
         # Currently only have limited graphs available in that case
@@ -93,15 +93,15 @@ def suggest_config(
     d("m_alpha_ec_edge", 0.0)
     d("m_L_ec", 6)
     d("m_residual_type", "skip1")
+    d("lr", 0.0001, 0.0009)
 
     # Tuned parameters
     # ----------------
 
-    d("lr", 0.0005, 0.0100)
-    d("adam_beta1", 0.8, 0.99)
-    d("adam_beta2", 0.990, 0.999)
-    d("adam_eps", 1e-9, 1e-7, log=True)
-    d("m_alpha_ec_node", 0.0, 0.5)
+    # d("adam_beta1", 0.8, 0.99)
+    # d("adam_beta2", 0.990, 0.999)
+    # d("adam_eps", 1e-9, 1e-7, log=True)
+    d("m_alpha_ec_node", 0.35)
     # rt = d("m_residual_type", ["skip1", "skip2", "skip_top"])
     # if rt == "skip2":
     #     # This is a hack because of this: https://github.com/optuna/optuna/issues/372
@@ -110,7 +110,7 @@ def suggest_config(
     # else:
     #     d("m_L_ec", 5, 6)
 
-    d("m_use_intermediate_encodings", [True, False])
+    d("m_use_intermediate_encodings", [True])
 
     suggest_default_values(config, trial, hc="none")
     return config
@@ -120,13 +120,15 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
-
-    print("Live replacevement version 4")
+    # todo: remove me
+    kwargs.pop("no_scheduler")
     dispatcher = Dispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
         grace_period=4,
         no_improvement_patience=6,
+        # todo: remove me
+        no_scheduler=True,
         additional_stoppers=[
             ThresholdTrialStopper(
                 "max_mcc_pt0.9",
@@ -134,7 +136,7 @@ if __name__ == "__main__":
                     1: 0.74,
                     3: 0.8,
                     6: 0.85,
-                    10: 0.88,
+                    10: 0.90,
                 },
             )
         ],
