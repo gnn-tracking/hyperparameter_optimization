@@ -10,7 +10,8 @@
 #SBATCH --time=12:00:00
 #SBATCH --cpus-per-task 12
 #SBATCH --gres=gpu:1
-#SBATCH --mem=70G
+#SBATCH --mem=200G
+#SBATCH --constraint=gpu80
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=kl5675@princeton.edu
 
