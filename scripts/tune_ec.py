@@ -4,7 +4,6 @@ model.
 
 from __future__ import annotations
 
-import random
 from argparse import ArgumentParser
 from typing import Any
 
@@ -81,6 +80,17 @@ def suggest_config(
 
     d("ec_loss", "haughty_focal")
 
+    # Almost fixed parameters
+    # -----------------------
+
+    d("m_hidden_dim", 48, 64)  # 32 64
+    d("m_interaction_node_dim", 48, 64)  # 32 64
+    d("m_interaction_edge_dim", 48, 64)  # 32 64
+    d("focal_gamma", 2.0, 4.0)
+    d("focal_alpha", 0.35, 0.45)
+    d("ec_pt_thld", 0.75, 0.85)
+    d("m_alpha_ec_edge", 0.0, 0.1)
+
     # Tuned parameters
     # ----------------
 
@@ -88,21 +98,14 @@ def suggest_config(
     d("adam_beta1", 0.8, 0.99)
     d("adam_beta2", 0.990, 0.999)
     d("adam_eps", 1e-9, 1e-7, log=True)
-    d("m_hidden_dim", 48, 64)  # 32 64
-    d("focal_gamma", 2.0, 4.0)
-    d("focal_alpha", 0.35, 0.45)
     d("m_alpha_ec_node", 0.0, 0.99)
-    d("m_alpha_ec_edge", 0.0, 0.99)
-    d("m_interaction_node_dim", 48, 64)  # 32 64
-    d("m_interaction_edge_dim", 48, 64)  # 32 64
-    d("ec_pt_thld", 0.4, 0.9)
     rt = d("m_residual_type", ["skip1", "skip2", "skip_top"])
     if rt == "skip2":
         # This is a hack because of this: https://github.com/optuna/optuna/issues/372
-        choice = random.choice([4, 6])
-        d("m_L_ec", choice, choice)
+        # choice = random.choice([4, 6])
+        d("m_L_ec", 6)
     else:
-        d("m_L_ec", 4, 7)
+        d("m_L_ec", 5, 6)
 
     d("m_use_intermediate_encodings", [True, False])
 
