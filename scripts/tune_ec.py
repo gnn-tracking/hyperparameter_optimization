@@ -11,6 +11,7 @@ import optuna
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
+from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -123,6 +124,17 @@ if __name__ == "__main__":
         metric="max_mcc_pt0.9",
         grace_period=4,
         no_improvement_patience=6,
+        additional_stoppers=[
+            ThresholdTrialStopper(
+                "max_mcc_pt0.9",
+                {
+                    0: 0.74,
+                    2: 0.8,
+                    6: 0.85,
+                    10: 0.88,
+                },
+            )
+        ],
     )
     dispatcher(
         ECTrainable,
