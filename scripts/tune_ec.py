@@ -121,6 +121,7 @@ if __name__ == "__main__":
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
 
+    print("Live replacevement version 4")
     dispatcher = Dispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
@@ -130,8 +131,8 @@ if __name__ == "__main__":
             ThresholdTrialStopper(
                 "max_mcc_pt0.9",
                 {
-                    0: 0.74,
-                    2: 0.8,
+                    1: 0.74,
+                    3: 0.8,
                     6: 0.85,
                     10: 0.88,
                 },
