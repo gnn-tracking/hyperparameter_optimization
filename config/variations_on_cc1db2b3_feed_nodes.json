@@ -1,0 +1,32 @@
+[
+    {
+        "m_interaction_node_dim": 120,
+        "m_interaction_edge_dim": 120,
+        "m_alpha_ec_node": 0.9
+    },
+    {
+        "m_interaction_node_dim": 120,
+        "m_interaction_edge_dim": 120,
+        "m_alpha_ec_node": 0.5
+    },
+    {
+        "m_interaction_node_dim": 80,
+        "m_interaction_edge_dim": 80,
+        "m_alpha_ec_node": 0.9
+    },
+    {
+        "m_interaction_node_dim": 80,
+        "m_interaction_edge_dim": 80,
+        "m_alpha_ec_node": 0.5
+    },
+    {
+        "m_interaction_node_dim": 120,
+        "m_interaction_edge_dim": 80,
+        "m_alpha_ec_node": 0.35
+    },
+    {
+        "m_interaction_node_dim": 80,
+        "m_interaction_edge_dim": 120,
+        "m_alpha_ec_node": 0.35
+    }
+]
