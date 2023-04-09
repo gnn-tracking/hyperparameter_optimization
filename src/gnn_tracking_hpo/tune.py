@@ -10,7 +10,7 @@ from typing import Any, Callable
 
 import optuna
 import pytimeparse
-from ray import logger, tune
+from ray import tune
 from ray.air import CheckpointConfig, FailureConfig, RunConfig
 from ray.air.integrations.wandb import WandbLoggerCallback
 from ray.tune import Callback, ResultGrid, Stopper, SyncConfig, Trainable
@@ -29,6 +29,7 @@ from gnn_tracking_hpo.cli import (
 )
 from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+from gnn_tracking_hpo.util.log import logger
 
 server = della
 
@@ -270,7 +271,9 @@ class Dispatcher:
 
     @cached_property
     def points_to_evaluate(self) -> list[dict[str, Any]]:
-        return get_points_to_evaluate(self.enqueue)
+        pe = get_points_to_evaluate(self.enqueue)
+        logger.info("Got %d points to evaluate", len(pe))
+        return pe
 
     def get_optuna_search(self, suggest_config: Callable) -> OptunaSearch:
         fixed_config: None | dict[str, Any] = None
