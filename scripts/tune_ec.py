@@ -4,7 +4,6 @@ model.
 
 from __future__ import annotations
 
-import random
 from argparse import ArgumentParser
 from typing import Any
 
@@ -87,21 +86,22 @@ def suggest_config(
 
     d("focal_gamma", 3.5)  # 2 4
     d("focal_alpha", 0.45)  # 0.35, 0.45
-    d("ec_pt_thld", 0.75, 0.85)
+    d("ec_pt_thld", 0.8145532232268194)
     d("m_alpha_ec_edge", 0.0)
     d("m_L_ec", 6)
     d("m_residual_type", "skip1")
-    d("lr", 0.0001, 0.0009)
-    d("m_alpha_ec_node", 0.35)
+    d("lr", 0.0006402252927288013)
     d("m_use_intermediate_encodings", [True])
+    d("m_feed_node_attributes", [True])
 
     # Tuned parameters
     # ----------------
 
-    dim = random.randrange(50, 100)
-    d("m_hidden_dim", dim)  # 32 64
-    d("m_interaction_node_dim", dim)  # 32 64
-    d("m_interaction_edge_dim", dim)  # 32 64
+    d("m_alpha_ec_node", 0.3, 0.9)
+    nd = d("m_interaction_node_dim", 90, 130)  # 32 64
+    ed = d("m_interaction_edge_dim", 90, 130)  # 32 64
+    hd = max(nd, ed)
+    d("m_hidden_dim", hd, hd)  # 32 64
     # d("adam_beta1", 0.8, 0.99)
     # d("adam_beta2", 0.990, 0.999)
     # d("adam_eps", 1e-9, 1e-7, log=True)
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         **kwargs,
         metric="max_mcc_pt0.9",
         grace_period=4,
-        no_improvement_patience=6,
+        no_improvement_patience=8,
         # todo: remove me
         no_scheduler=True,
         additional_stoppers=[
@@ -135,9 +135,8 @@ if __name__ == "__main__":
                 "max_mcc_pt0.9",
                 {
                     1: 0.74,
-                    5: 0.8,
-                    9: 0.85,
-                    14: 0.90,
+                    11: 0.8,
+                    21: 0.85,
                 },
             )
         ],
