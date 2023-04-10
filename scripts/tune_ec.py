@@ -91,12 +91,13 @@ def suggest_config(
     d("m_L_ec", 6)
     d("m_residual_type", "skip1")
     d("lr", 0.0006402252927288013)
-    d("m_use_intermediate_encodings", [True])
     d("m_feed_node_attributes", [True])
 
     # Tuned parameters
     # ----------------
 
+    d("m_use_intermediate_encodings", [True, False])
+    d("m_no_edge_attributes", [True, False])
     d("m_alpha_ec_node", 0.3, 0.9)
     nd = d("m_interaction_node_dim", 90, 130)  # 32 64
     ed = d("m_interaction_edge_dim", 90, 130)  # 32 64
