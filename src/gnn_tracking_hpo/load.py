@@ -5,9 +5,9 @@ from __future__ import annotations
 
 import os
 
-import sklearn.model_selection
 from gnn_tracking.utils.loading import TrackingDataset
 from gnn_tracking.utils.loading import get_loaders as _get_loaders
+from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 
 from gnn_tracking_hpo.util.log import logger
@@ -52,19 +52,18 @@ def get_graphs_split(
             "test": ds,
         }
 
-    graphs = TrackingDataset(
+    ds = TrackingDataset(
         input_dirs,
         stop=train_size + val_size,
         sector=sector,
     )
-    train_graphs, val_graphs = sklearn.model_selection.train_test_split(
-        graphs,
-        train_size=train_size,
-        test_size=val_size,
+    train_ds, val_ds = random_split(
+        ds,
+        (train_size, val_size),
     )
     return {
-        "train": train_graphs,
-        "val": val_graphs,
+        "train": train_ds,
+        "val": val_ds,
         "test": [],
     }
 
