@@ -287,6 +287,7 @@ class TCNTrainable(HPOTrainable):
     # after setup when setting ``reuse_actor == True`` and overwriting your values
     # from set
     def setup(self, config: dict[str, Any]):
+        config = self.preprocess_config(config)
         if sji := get_slurm_job_id():
             logger.info("I'm running on a node with job ID=%s", sji)
         else:
@@ -305,6 +306,19 @@ class TCNTrainable(HPOTrainable):
         self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
+
+    @staticmethod
+    def preprocess_config(config: dict[str, Any]) -> dict[str, Any]:
+        """Preprocess config, for example to deal with legacy configs."""
+        rename_keys = {
+            "alpha_node": "alpha",
+            "use_intermediate_encodings": "use_intermediate_edge_embeddings",
+            "feed_node_attribues": "use_node_embedding",
+        }
+        for old, new in rename_keys.items():
+            if old in config:
+                config[new] = config.pop(old)
+        return config
 
     def get_model(self) -> nn.Module:
         return GraphTCN(
