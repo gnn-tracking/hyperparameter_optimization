@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 
 import sklearn.model_selection
-from gnn_tracking.graph_construction.graph_builder import load_graphs
+from gnn_tracking.utils.loading import TrackingDataset
 from gnn_tracking.utils.loading import get_loaders as _get_loaders
 from torch_geometric.loader import DataLoader
 
@@ -43,21 +43,19 @@ def get_graphs_split(
         # Let's cheat and only load one graph that we use for
         # train/val/test
         logger.debug(
-            "Loading test graphs (only one graph is loaded and used for train/test/val"
+            "For test graphs only one graph is loaded and used for train/test/val"
         )
-        graph = load_graphs(input_dirs, stop=1, sector=sector)[0]
+        ds = TrackingDataset(input_dirs, stop=1, sector=sector)
         return {
-            "train": [graph],
-            "val": [graph],
-            "test": [],
+            "train": ds,
+            "val": ds,
+            "test": ds,
         }
 
-    logger.info("Loading data to cpu memory")
-    graphs = load_graphs(
+    graphs = TrackingDataset(
         input_dirs,
         stop=train_size + val_size,
         sector=sector,
-        n_processes=12 if not test else 1,
     )
     train_graphs, val_graphs = sklearn.model_selection.train_test_split(
         graphs,
@@ -97,22 +95,15 @@ def get_graphs_separate(
     assert train_size >= 1 or train_size == 0
     assert val_size >= 1 or val_size == 0
 
-    logger.debug("Loading graphs from %s", train_dirs)
-
-    n_processes = 12 if not test else 1
-    logger.info("Loading training data to cpu memory")
-    train_graphs = load_graphs(
+    train_graphs = TrackingDataset(
         train_dirs,
         stop=train_size,
         sector=sector,
-        n_processes=n_processes,
     )
-    logger.info("Loading validation data to cpu memory")
-    val_graphs = load_graphs(
+    val_graphs = TrackingDataset(
         val_dirs,
         stop=val_size,
         sector=sector,
-        n_processes=n_processes,
     )
     return {"train": train_graphs, "val": val_graphs, "test": []}
 
