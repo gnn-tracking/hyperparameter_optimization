@@ -44,7 +44,7 @@ class ECTrainable(TCNTrainable):
 
     def get_model(self) -> nn.Module:
         return SignatureAdaptedECForGraphTCN(
-            node_indim=6, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
+            node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
 
 
@@ -67,9 +67,15 @@ def suggest_config(
     d("n_graphs_train", 12376)
     d(
         "train_data_dir",
-        "/tigress/jdezoort/object_condensation/graphs_v0/part1",
+        [
+            f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_{i}"
+            for i in range(1, 9)
+        ],
     )
-    # d("val_data_dir", "/scratch/gpfs/kl5675/data/gnn_tracking/graphs/training_part09")
+    d(
+        "val_data_dir",
+        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_9",
+    )
     d("n_graphs_val", 100)
     d("batch_size", 5)
     d("_val_batch_size", 5)
@@ -87,7 +93,6 @@ def suggest_config(
     d("focal_gamma", 3.5)  # 2 4
     d("focal_alpha", 0.45)  # 0.35, 0.45
     d("ec_pt_thld", 0.8145532232268194)
-    d("m_alpha_ec_edge", 0.0)
     d("m_L_ec", 6)
     d("m_residual_type", "skip1")
     d("lr", 0.0006402252927288013)
@@ -97,7 +102,7 @@ def suggest_config(
     # ----------------
 
     d("m_use_intermediate_edge_embeddings", [True, False])
-    d("m_alpha_ec", 0.3, 0.9)
+    d("m_alpha", 0.3, 0.9)
     nd = d("m_interaction_node_dim", 90, 130)  # 32 64
     ed = d("m_interaction_edge_dim", 90, 130)  # 32 64
     hd = max(nd, ed)
