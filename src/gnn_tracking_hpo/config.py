@@ -8,13 +8,14 @@ from pathlib import Path
 from typing import Any
 
 import gnn_tracking
+import optuna
 from gnn_tracking.utils.versioning import get_commit_hash
 
 from gnn_tracking_hpo.util.log import logger
 
 
 def auto_suggest_if_not_fixed(
-    key: str, config: dict[str, Any], trial, *args, **kwargs
+    key: str, config: dict[str, Any], trial: optuna.Trial, *args, **kwargs
 ) -> Any:
     """Similar to ``suggest_if_not_fixed``, but automatically chooses the correct
     function.
@@ -22,6 +23,8 @@ def auto_suggest_if_not_fixed(
     **Important**: It matters whether the argument types are ints or floats!
     """
     if key in config:
+        pass
+    if key in trial.params:
         pass
     if len(args) == 2:
         if all(isinstance(x, int) for x in args):
