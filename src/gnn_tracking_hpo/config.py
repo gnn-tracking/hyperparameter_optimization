@@ -15,7 +15,11 @@ from gnn_tracking_hpo.util.log import logger
 
 
 def auto_suggest_if_not_fixed(
-    key: str, config: dict[str, Any], trial: optuna.Trial, *args, **kwargs
+    key: str,
+    config: dict[str, Any],
+    trial: optuna.Trial,
+    *args,
+    **kwargs,
 ) -> Any:
     """Similar to ``suggest_if_not_fixed``, but automatically chooses the correct
     function.
