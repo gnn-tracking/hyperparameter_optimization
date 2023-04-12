@@ -120,7 +120,7 @@ def suggest_default_values(
     if we do not change anything.
 
     Args:
-        config:
+        config: Gets modified in place
         trial:
         ec: One of "default" (train), "perfect" (perfect ec), "fixed"
         hc: One of "default" (train), "none" (no hc)
@@ -164,10 +164,6 @@ def suggest_default_values(
     d("sector", None)
     d("batch_size", 1)
     d("_val_batch_size", 1)
-
-    # These defaults are for backward compatibility, they might not be reasonable
-    # d("m_interaction_node_hidden_dim", 5)
-    # d("m_interaction_edge_hidden_dim", 4)
 
     if hc != "none":
         d("repulsive_radius_threshold", 10.0)

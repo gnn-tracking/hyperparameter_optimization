@@ -66,8 +66,6 @@ def suggest_config(
     d("lw_background", 1e-6, 1e-1, log=True)
     d("lw_potential_repulsive", 1e-1, 1e1, log=True)
     d("lw_edge", 1e-3, 1e3, log=True)
-    d("m_interaction_node_hidden_dim", 128)
-    d("m_interaction_edge_hidden_dim", 128)
 
     suggest_default_values(config, trial)
     return config
