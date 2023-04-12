@@ -322,7 +322,7 @@ class TCNTrainable(HPOTrainable):
 
     def get_model(self) -> nn.Module:
         return GraphTCN(
-            node_indim=6, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
+            node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
 
     def get_edge_loss_function(self):
