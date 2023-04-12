@@ -40,6 +40,7 @@ def maybe_run_distributed(local=False) -> None:
     """
     if local:
         logger.debug("Running in local mode, so not attempting to connect to ray head")
+        os.environ["TUNE_DISABLE_AUTO_INIT"] = "1"
         return
 
     def get_from_file_or_environ(name: str, path: Path, env_name: str) -> str | None:
