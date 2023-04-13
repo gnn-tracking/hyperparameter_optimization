@@ -64,14 +64,11 @@ def suggest_config(
     d("sector", sector)
     d("lw_edge", 1.0)
 
-    d("n_graphs_train", 12376)
-    d(
-        "train_data_dir",
-        [
-            f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_{i}"
-            for i in range(1, 9)
-        ],
-    )
+    d("n_graphs_train", 247776)
+    config["train_data_dir"] = [
+        f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_{i}"
+        for i in range(1, 9)
+    ]
     d(
         "val_data_dir",
         "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_9",
@@ -79,12 +76,6 @@ def suggest_config(
     d("n_graphs_val", 100)
     d("batch_size", 5)
     d("_val_batch_size", 5)
-
-    if sector is not None:
-        # Currently only have limited graphs available in that case
-        d("n_graphs_train", 300)
-        d("n_graphs_val", 69)
-
     d("ec_loss", "haughty_focal")
 
     # (Almost) fixed parameters

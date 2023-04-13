@@ -125,4 +125,5 @@ def get_loaders(
         batch_size=batch_size,
         other_batch_size=val_batch_size,
         cpus=12 if not test else 1,
+        max_sample_size=12000,
     )
