@@ -19,15 +19,6 @@ from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 
 
-class SignatureAdaptedECForGraphTCN(ECForGraphTCN):
-    """Adapt signature of ECForGraphTCN to match the signature of the
-    main model.
-    """
-
-    def forward(self, *args, **kwargs):
-        return {"W": ECForGraphTCN.forward(self, *args, **kwargs)}
-
-
 class ECTrainable(TCNTrainable):
     def get_loss_functions(self) -> dict[str, Any]:
         return {
@@ -43,7 +34,7 @@ class ECTrainable(TCNTrainable):
         return trainer
 
     def get_model(self) -> nn.Module:
-        return SignatureAdaptedECForGraphTCN(
+        return ECForGraphTCN(
             node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
 
