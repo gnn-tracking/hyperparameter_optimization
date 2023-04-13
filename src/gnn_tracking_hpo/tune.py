@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import random
 import sys
 from argparse import ArgumentParser
@@ -150,6 +151,8 @@ class Dispatcher:
                 stopping
         """
         self.test = test
+        if cpu:
+            os.environ["GNN_TRACKING_DEVICE"] = "cpu"
         self.cpu = cpu
         self.restore = restore
         self.enqueue = enqueue
