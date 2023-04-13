@@ -271,9 +271,7 @@ class Dispatcher:
 
     @cached_property
     def points_to_evaluate(self) -> list[dict[str, Any]]:
-        pe = get_points_to_evaluate(self.enqueue)
-        logger.info("Got %d points to evaluate", len(pe))
-        return pe
+        return get_points_to_evaluate(self.enqueue)
 
     def get_optuna_search(self, suggest_config: Callable) -> OptunaSearch:
         fixed_config: None | dict[str, Any] = None
