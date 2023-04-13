@@ -75,7 +75,7 @@ def suggest_config(
     d("focal_gamma", 3.5)  # 2 4
     d("focal_alpha", 0.45)  # 0.35, 0.45
     d("ec_pt_thld", 0.8145532232268194)
-    d("m_L_ec", 6)
+    d("m_L_ec", 5, 6)
     d("m_residual_type", "skip1")
     d("lr", 0.0006402252927288013)
     d("m_use_node_embedding", [True])
@@ -114,14 +114,13 @@ if __name__ == "__main__":
         **kwargs,
         metric="max_mcc_pt0.9",
         grace_period=4,
-        no_improvement_patience=8,
+        no_improvement_patience=15,
         # todo: remove me
         no_scheduler=True,
         additional_stoppers=[
             ThresholdTrialStopper(
                 "max_mcc_pt0.9",
                 {
-                    1: 0.74,
                     11: 0.8,
                     21: 0.85,
                 },
