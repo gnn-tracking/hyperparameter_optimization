@@ -13,7 +13,11 @@ from rt_stoppers_contrib.threshold_by_epoch import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
-from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
+from gnn_tracking_hpo.trainable import (
+    TCNTrainable,
+    legacy_config_compatibility,
+    suggest_default_values,
+)
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.log import logger
 from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoint, get_config
@@ -53,12 +57,12 @@ def load_ec(
     """
     logger.info("Initializing pre-trained EC")
     checkpoint_path = find_checkpoint(tune_dir, run_hash, epoch)
-    config = get_config(tune_dir, run_hash)
+    config = legacy_config_compatibility(get_config(tune_dir, run_hash))
     # In case any new values were added, we need to suggest this again
     suggest_default_values(config, None, ec="default", hc="none")
-    config.update({"n_graphs_train": 1, "n_graphs_val": 1})
     if config_update is not None:
         config.update(config_update)
+    config["_no_data"] = True
     trainable = ECTrainable(config)
     trainable.load_checkpoint(checkpoint_path)
     ec = trainable.trainer.model
@@ -116,9 +120,16 @@ def suggest_config(
     # Definitely Fixed hyperparameters
     # --------------------------------
 
+    d("n_graphs_train", 247776)
+    config["train_data_dir"] = [
+        f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_{i}"
+        for i in range(1, 9)
+    ]
+    d(
+        "val_data_dir",
+        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_9",
+    )
     d("sector", sector)
-    d("n_graphs_train", 12379)
-    d("n_graphs_val", 100)
 
     d("m_mask_orphan_nodes", True)
 
@@ -126,30 +137,32 @@ def suggest_config(
     d("ec_hash", ec_hash)
     d("ec_epoch", ec_epoch)
 
-    # >>>>>>>>>>>>> IMPORTANT, adjust that based on the EC <<<<<<<
-    d("m_ec_threshold", 0.1, 0.5)
-
     d("batch_size", 5)
 
     # Keep one fixed because of normalization invariance
     d("lw_potential_attractive", 1.0)
 
+    d("m_hidden_dim", 120)
+    d("m_h_dim", 120)
+    d("m_e_dim", 120)
+
+    # Most of the following parameters are fixed based on af5b5461
+
+    d("attr_pt_thld", 0.6)
+    d("q_min", 0.34)
+    d("sb", 0.09)
+    d("m_alpha_hc", 0.63)
+    d("lw_background", 0.0041)
+    d("lw_potential_repulsive", 0.16)
+    d("repulsive_radius_threshold", 3.7)
+    d("m_h_outdim", 7)
+
     # Tuned hyperparameters
     # ---------------------
 
-    d("attr_pt_thld", 0.0, 0.9)
-    d("m_h_outdim", 2, 8)
-    d("q_min", 0.3, 0.5)
-    d("sb", 0.05, 0.12)
-    d("lr", 0.0001, 0.0006)
-    d("repulsive_radius_threshold", 1.5, 10)
-    d("m_hidden_dim", 128, 256)
-    d("m_L_hc", 3, 7)
-    d("m_h_dim", 5, 8)
-    d("m_e_dim", 4, 6)
-    d("m_alpha_hc", 0.3, 0.99)
-    d("lw_background", 1e-6, 1e-1, log=True)
-    d("lw_potential_repulsive", 1e-1, 1e1, log=True)
+    d("m_ec_threshold", 0.1, 0.5)
+    d("lr", 0.0001, 0.0010)
+    d("m_L_hc", 3, 5)
 
     suggest_default_values(config, trial, ec="fixed")
     return config

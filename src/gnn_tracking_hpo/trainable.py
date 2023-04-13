@@ -277,6 +277,25 @@ class HPOTrainable(tune.Trainable, ABC):
         return trainable
 
 
+def legacy_config_compatibility(config: dict[str, Any]) -> dict[str, Any]:
+    """Preprocess config, for example to deal with legacy configs."""
+    rename_keys = {
+        "m_alpha_ec_node": "m_alpha",
+        "m_use_intermediate_encodings": "m_use_intermediate_edge_embeddings",
+        "m_feed_node_attributes": "m_use_node_embedding",
+    }
+    remove_keys = ["m_alpha_ec_edge"]
+    for old, new in rename_keys.items():
+        if old in config:
+            logger.warning("Renaming key %s to %s", old, new)
+            config[new] = config.pop(old)
+    for key in remove_keys:
+        if key in config:
+            logger.warning("Removing key %s", key)
+            del config[key]
+    return config
+
+
 class TCNTrainable(HPOTrainable):
     """A wrapper around `TCNTrainer` for use with Ray Tune."""
 
@@ -287,7 +306,7 @@ class TCNTrainable(HPOTrainable):
     # after setup when setting ``reuse_actor == True`` and overwriting your values
     # from set
     def setup(self, config: dict[str, Any]):
-        config = self.preprocess_config(config)
+        config = legacy_config_compatibility(config)
         if sji := get_slurm_job_id():
             logger.info("I'm running on a node with job ID=%s", sji)
         else:
@@ -306,19 +325,6 @@ class TCNTrainable(HPOTrainable):
         self.tc = config
         fix_seeds()
         self.trainer = self.get_trainer()
-
-    @staticmethod
-    def preprocess_config(config: dict[str, Any]) -> dict[str, Any]:
-        """Preprocess config, for example to deal with legacy configs."""
-        rename_keys = {
-            "alpha_node": "alpha",
-            "use_intermediate_encodings": "use_intermediate_edge_embeddings",
-            "feed_node_attribues": "use_node_embedding",
-        }
-        for old, new in rename_keys.items():
-            if old in config:
-                config[new] = config.pop(old)
-        return config
 
     def get_model(self) -> nn.Module:
         return GraphTCN(
@@ -395,6 +401,10 @@ class TCNTrainable(HPOTrainable):
 
     def get_loaders(self):
         logger.debug("Getting loaders")
+        if self.tc.get("_no_data", False):
+            logger.debug("Not adding loaders to trainer")
+            return {}
+
         if self.tc["val_data_dir"]:
             graph_dict = get_graphs_separate(
                 train_size=self.tc["n_graphs_train"],
