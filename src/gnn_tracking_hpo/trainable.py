@@ -262,7 +262,7 @@ class HPOTrainable(tune.Trainable, ABC):
                 training.
             config_override: Update the config with these values.
         """
-        config = get_config(project, hash)
+        config = legacy_config_compatibility(get_config(project, hash))
         if n_graphs is not None:
             previous_n_graphs = config["n_graphs_train"] + config["n_graphs_val"]
             if previous_n_graphs == 0:
