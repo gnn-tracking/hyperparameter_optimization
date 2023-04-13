@@ -26,19 +26,6 @@ add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
 
 
-class UnPackDictionaryForward(nn.Module):
-    def __init__(self, ec: nn.Module):
-        """Small wrapper class that basically undos what the
-        `SignatureAdaptedECForGraphTCN` class that was used to adapt the signature of
-        the edge classifier for training with the normal TCN trainer does.
-        """
-        super().__init__()
-        self.ec = ec
-
-    def forward(self, *args, **kwargs):
-        return self.ec(*args, **kwargs)["W"]
-
-
 def load_ec(
     tune_dir: str,
     run_hash: str,
@@ -69,7 +56,7 @@ def load_ec(
     for param in ec.parameters():
         param.requires_grad = False
     logger.info("Pre-trained EC initialized")
-    return UnPackDictionaryForward(ec)
+    return ec
 
 
 class PretrainedECTrainable(TCNTrainable):
@@ -95,7 +82,7 @@ class PretrainedECTrainable(TCNTrainable):
     def get_model(self) -> nn.Module:
         return PreTrainedECGraphTCN(
             self.ec,
-            node_indim=6,
+            node_indim=7,
             edge_indim=4,
             **subdict_with_prefix_stripped(self.tc, "m_"),
         )
@@ -132,6 +119,7 @@ def suggest_config(
     d("sector", sector)
 
     d("m_mask_orphan_nodes", True)
+    d("use_ec_embeddings_for_hc", True)
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
