@@ -140,6 +140,9 @@ def suggest_default_values(
         config[k] = v
         c[k] = v
 
+    d("node_indim", 7)
+    d("edge_indim", 4)
+
     if test_data_dir := os.environ.get("TEST_TRAIN_DATA_DIR"):
         d("train_data_dir", test_data_dir)
     else:
@@ -319,9 +322,8 @@ class TCNTrainable(HPOTrainable):
         logger.info("The ID of my dispatcher is %d", self.dispatcher_id)
         SlurmControl()(dispatcher_id=str(self.dispatcher_id))
         config_table = tabulate.tabulate(
-            sorted(config.items()),
+            sorted([(k, str(v)[:40]) for k, v in config.items()]),
             tablefmt="simple_outline",
-            maxcolwidths=40,
         )
         logger.debug("Got config\n%s", config_table)
         self.tc = config
@@ -330,7 +332,9 @@ class TCNTrainable(HPOTrainable):
 
     def get_model(self) -> nn.Module:
         return GraphTCN(
-            node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
+            node_indim=self.tc.get("node_indim", 7),
+            edge_indim=self.tc.get("edge_indim", 4),
+            **subdict_with_prefix_stripped(self.tc, "m_"),
         )
 
     def get_edge_loss_function(self):

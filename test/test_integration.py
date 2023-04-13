@@ -15,6 +15,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "test_data" / "data" / "grap
 
 def suggest_config(trial: optuna.Trial, *args, **kwargs) -> dict[str, Any]:
     config = get_metadata(test=True)
+    config["node_indim"] = 6
     suggest_default_values(config, trial)
     return config
 
