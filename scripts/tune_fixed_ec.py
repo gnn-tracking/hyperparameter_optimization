@@ -9,7 +9,7 @@ from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from ray.tune.schedulers import ASHAScheduler
-from rt_stoppers_contrib.threshold_by_epoch import ThresholdTrialStopper
+from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
