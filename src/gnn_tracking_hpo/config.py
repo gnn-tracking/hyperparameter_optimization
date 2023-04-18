@@ -27,9 +27,9 @@ def auto_suggest_if_not_fixed(
     **Important**: It matters whether the argument types are ints or floats!
     """
     if key in config:
-        pass
+        return
     if key in trial.params:
-        pass
+        return
     if len(args) == 2:
         if all(isinstance(x, int) for x in args):
             return trial.suggest_int(key, *args, **kwargs)
