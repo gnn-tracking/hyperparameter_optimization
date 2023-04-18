@@ -339,46 +339,43 @@ class TCNTrainable(HPOTrainable):
             **subdict_with_prefix_stripped(self.tc, "m_"),
         )
 
-    def get_edge_loss_function(self) -> nn.Module:
+    def get_edge_loss_function(self) -> tuple[nn.Module, float]:
         if self.tc["ec_loss"] == "focal":
-            return EdgeWeightFocalLoss(
+            lf = EdgeWeightFocalLoss(
                 pt_thld=self.tc["ec_pt_thld"],
                 alpha=self.tc["focal_alpha"],
                 gamma=self.tc["focal_gamma"],
             )
         elif self.tc["ec_loss"] == "haughty_focal":
-            return HaughtyFocalLoss(
+            lf = HaughtyFocalLoss(
                 pt_thld=self.tc["ec_pt_thld"],
                 alpha=self.tc["focal_alpha"],
                 gamma=self.tc["focal_gamma"],
             )
         else:
             raise ValueError(f"Unknown edge loss: {self.tc['edge_loss']}")
+        return lf, self.tc["lw_edge"]
 
-    def get_potential_loss_function(self) -> nn.Module:
-        return PotentialLoss(
+    def get_potential_loss_function(self) -> tuple[nn.Module, dict[str, float]]:
+        lf = PotentialLoss(
             q_min=self.tc["q_min"],
             attr_pt_thld=self.tc["attr_pt_thld"],
             radius_threshold=self.tc["repulsive_radius_threshold"],
         )
+        lw = {
+            "attractive": self.tc["lw_potential_attractive"],
+            "repulsive": self.tc["lw_potential_repulsive"],
+        }
+        return lf, lw
 
-    def get_background_loss_function(self) -> nn.Module:
-        return BackgroundLoss(sb=self.tc["sb"])
+    def get_background_loss_function(self) -> tuple[nn.Module, float]:
+        return BackgroundLoss(sb=self.tc["sb"]), self.tc["lw_background"]
 
     def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
         return {
-            "edge": (self.get_edge_loss_function(), self.tc["lw_edge"]),
-            "potential": (
-                self.get_potential_loss_function(),
-                {
-                    "attractive": self.tc["lw_potential_attractive"],
-                    "repulsive": self.tc["lw_potential_repulsive"],
-                },
-            ),
-            "background": (
-                self.get_background_loss_function(),
-                self.tc["lw_background"],
-            ),
+            "edge": self.get_edge_loss_function(),
+            "potential": self.get_potential_loss_function(),
+            "background": self.get_background_loss_function(),
         }
 
     def get_cluster_functions(self) -> dict[str, Any]:
