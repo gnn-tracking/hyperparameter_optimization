@@ -167,12 +167,17 @@ def suggest_default_values(
 
     if hc != "none":
         d("repulsive_radius_threshold", 10.0)
+        d("lw_potential_attractive", 1.0)
+        d("lw_potential_repulsive", 1.0)
+        d("lw_background", 1.0)
 
     if ec == "perfect":
         d("m_ec_tpr", 1.0)
         d("m_ec_tnr", 1.0)
     elif ec == "fixed" and hc != "none":
         d("m_ec_threshold", 0.5)
+    elif ec == "default":
+        d("lw_edge", 1.0)
 
     # Loss function parameters
     if hc != "none":
@@ -360,7 +365,7 @@ class TCNTrainable(HPOTrainable):
     def get_background_loss_function(self) -> nn.Module:
         return BackgroundLoss(sb=self.tc["sb"])
 
-    def get_ljss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
+    def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
         return {
             "edge": (self.get_edge_loss_function(), self.tc["lw_edge"]),
             "potential": (
@@ -444,7 +449,6 @@ class TCNTrainable(HPOTrainable):
             model=self.get_model(),
             loaders=self.get_loaders(),
             loss_functions=self.get_loss_functions(),
-            loss_weights=self.get_loss_weights(),
             lr=self.tc["lr"],
             lr_scheduler=self.get_lr_scheduler(),
             cluster_functions=self.get_cluster_functions(),  # type: ignore
