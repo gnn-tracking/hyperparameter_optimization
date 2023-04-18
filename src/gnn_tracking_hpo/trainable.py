@@ -19,7 +19,7 @@ from gnn_tracking.metrics.losses import (
 from gnn_tracking.models.track_condensation_networks import GraphTCN
 from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
 from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
-from gnn_tracking.training.tcn_trainer import TCNTrainer, TrainingTruthCutConfig
+from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
@@ -159,9 +159,6 @@ def suggest_default_values(
         d("n_graphs_train", n_graphs_default - 1 - n_graphs_val)
         d("n_graphs_val", n_graphs_val)
 
-    d("training_pt_thld", 0.0)
-    d("training_without_noise", False)
-    d("training_without_non_reconstructable", False)
     d("ec_pt_thld", 0.0)
 
     d("sector", None)
@@ -337,7 +334,7 @@ class TCNTrainable(HPOTrainable):
             **subdict_with_prefix_stripped(self.tc, "m_"),
         )
 
-    def get_edge_loss_function(self):
+    def get_edge_loss_function(self) -> nn.Module:
         if self.tc["ec_loss"] == "focal":
             return EdgeWeightFocalLoss(
                 pt_thld=self.tc["ec_pt_thld"],
@@ -448,11 +445,6 @@ class TCNTrainable(HPOTrainable):
             optimizer=self.get_optimizer(),
         )
         trainer.max_batches_for_clustering = 100 if not test else 10
-        trainer.training_truth_cuts = TrainingTruthCutConfig(
-            without_noise=self.tc["training_without_noise"],
-            pt_thld=self.tc["training_pt_thld"],
-            without_non_reconstructable=self.tc["training_without_non_reconstructable"],
-        )
 
         return trainer
 
