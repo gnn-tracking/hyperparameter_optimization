@@ -69,9 +69,11 @@ class PretrainedECTrainable(TCNTrainable):
         super().__init__(config=config, **kwargs)
 
     def get_loss_functions(self) -> dict[str, Any]:
-        loss_functions = super().get_loss_functions()
-        loss_functions.pop("edge")
-        return loss_functions
+        return {
+            "edge": self.get_edge_loss_function(),
+            "potential": self.get_potential_loss_function(),
+            "background": self.get_background_loss_function(),
+        }
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
