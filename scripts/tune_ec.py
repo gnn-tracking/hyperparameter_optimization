@@ -22,7 +22,7 @@ from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 class ECTrainable(TCNTrainable):
     def get_loss_functions(self) -> dict[str, Any]:
         return {
-            "edge": self.get_edge_loss_function(),
+            "edge": (self.get_edge_loss_function(), self.tc["lw_edge"]),
         }
 
     def get_cluster_functions(self) -> dict[str, Any]:

@@ -69,10 +69,9 @@ class PretrainedECTrainable(TCNTrainable):
         super().__init__(config=config, **kwargs)
 
     def get_loss_functions(self) -> dict[str, Any]:
-        return {
-            "potential": self.get_potential_loss_function(),
-            "background": self.get_background_loss_function(),
-        }
+        loss_functions = super().get_loss_functions()
+        loss_functions.pop("edge")
+        return loss_functions
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
@@ -118,8 +117,8 @@ def suggest_config(
     )
     d("sector", sector)
 
-    d("m_mask_orphan_nodes", True)
-    d("use_ec_embeddings_for_hc", True)
+    d("m_mask_orphan_nodes", False)
+    d("use_ec_embeddings_for_hc", False)
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)

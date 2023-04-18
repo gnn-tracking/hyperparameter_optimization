@@ -350,21 +350,30 @@ class TCNTrainable(HPOTrainable):
         else:
             raise ValueError(f"Unknown edge loss: {self.tc['edge_loss']}")
 
-    def get_potential_loss_function(self):
+    def get_potential_loss_function(self) -> nn.Module:
         return PotentialLoss(
             q_min=self.tc["q_min"],
             attr_pt_thld=self.tc["attr_pt_thld"],
             radius_threshold=self.tc["repulsive_radius_threshold"],
         )
 
-    def get_background_loss_function(self):
+    def get_background_loss_function(self) -> nn.Module:
         return BackgroundLoss(sb=self.tc["sb"])
 
-    def get_loss_functions(self) -> dict[str, Any]:
+    def get_ljss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
         return {
-            "edge": self.get_edge_loss_function(),
-            "potential": self.get_potential_loss_function(),
-            "background": self.get_background_loss_function(),
+            "edge": (self.get_edge_loss_function(), self.tc["lw_edge"]),
+            "potential": (
+                self.get_potential_loss_function(),
+                {
+                    "attractive": self.tc["lw_potential_attractive"],
+                    "repulsive": self.tc["lw_potential_repulsive"],
+                },
+            ),
+            "background": (
+                self.get_background_loss_function(),
+                self.tc["lw_background"],
+            ),
         }
 
     def get_cluster_functions(self) -> dict[str, Any]:
@@ -398,9 +407,6 @@ class TCNTrainable(HPOTrainable):
             return partial(SGD, **subdict_with_prefix_stripped(self.tc, "sgd_"))
         else:
             raise ValueError(f"Unknown optimizer {self.tc['optimizer']}")
-
-    def get_loss_weights(self):
-        return subdict_with_prefix_stripped(self.tc, "lw_")
 
     def get_loaders(self):
         logger.debug("Getting loaders")
