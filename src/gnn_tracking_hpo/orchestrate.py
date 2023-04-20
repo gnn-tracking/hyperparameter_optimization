@@ -39,17 +39,21 @@ def maybe_run_distributed(local=False, **kwargs) -> None:
         local: Force not to connect distributed
         kwargs: Additional kwargs to pass to ray.init
     """
-    if "num_cpus" not in kwargs and "num_gpus" not in kwargs:
-        logger.warning(
-            "Neither num_cpus nor num_gpus specified, so ray will use all available"
-            " resources. This might be a bad idea if you're running on a shared"
-            " machine. "
-        )
 
     if local:
+        if "num_cpus" not in kwargs and "num_gpus" not in kwargs:
+            logger.warning(
+                "Neither num_cpus nor num_gpus specified, so ray will use all available"
+                " resources. This might be a bad idea if you're running on a shared"
+                " machine. "
+            )
         logger.debug("Running in local mode, so not attempting to connect to ray head")
         ray.init(address="local", **kwargs)
         return
+    else:
+        # Mustn't specify num cpus/gpus when connecting to ray head
+        kwargs.pop("num_cpus", None)
+        kwargs.pop("num_gpus", None)
 
     def get_from_file_or_environ(name: str, path: Path, env_name: str) -> str | None:
         from_env = os.environ.get(env_name)
