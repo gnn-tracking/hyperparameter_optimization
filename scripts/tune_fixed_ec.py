@@ -123,8 +123,11 @@ def suggest_config(
     d("ec_hash", ec_hash)
     d("ec_epoch", ec_epoch)
     d("edge_loss_threshold", 0.00019)
-    d("ec_pt_thld", 0.8145532232268194)
-    d("lw_edge", 10)
+    d("ec_loss", "haughty_focal")
+    d("ec_pt_thld", 0.81)
+    d("focal_alpha", 0.45)
+    d("focal_gamma", 3.5)
+    d("lw_edge", 100)
 
     d("batch_size", 5)
 
