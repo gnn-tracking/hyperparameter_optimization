@@ -123,6 +123,7 @@ def suggest_config(
     d("ec_hash", ec_hash)
     d("ec_epoch", ec_epoch)
     d("edge_loss_threshold", 0.00019)
+    d("ec_pt_thld", 0.8145532232268194)
     d("lw_edge", 10)
 
     d("batch_size", 5)
