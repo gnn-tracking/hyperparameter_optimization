@@ -8,7 +8,7 @@ import colorlog
 LOG_DEFAULT_LEVEL = logging.DEBUG
 
 
-def get_logger(name="gnnt_hpo"):
+def get_logger(name="HPO"):
     """Sets up global logger."""
     _log = colorlog.getLogger(name)
 
