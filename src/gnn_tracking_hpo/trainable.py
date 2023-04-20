@@ -122,7 +122,8 @@ def suggest_default_values(
     Args:
         config: Gets modified in place
         trial:
-        ec: One of "default" (train), "perfect" (perfect ec), "fixed"
+        ec: One of "default" (train), "perfect" (perfect ec), "fixed", "continued"
+            (fixed architecture, continued training)
         hc: One of "default" (train), "none" (no hc)
     """
     if ec not in ["default", "perfect", "fixed"]:
@@ -145,19 +146,26 @@ def suggest_default_values(
 
     if test_data_dir := os.environ.get("TEST_TRAIN_DATA_DIR"):
         d("train_data_dir", test_data_dir)
+        d("val_data_dir", test_data_dir)
     else:
-        d("train_data_dir", ["/tigress/jdezoort/object_condensation/graphs"])
-
-    d("val_data_dir", None)
+        d(
+            "train_data_dir",
+            [
+                f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_{i}"
+                for i in range(1, 9)
+            ],
+        )
+        d(
+            "val_data_dir",
+            "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_9",
+        )
 
     if c["test"]:
         config["n_graphs_train"] = 1
         config["n_graphs_val"] = 1
     else:
-        n_graphs_default = 5_000
-        n_graphs_val = c.get("n_graphs_val", min(400, int(0.1 * n_graphs_default)))
-        d("n_graphs_train", n_graphs_default - 1 - n_graphs_val)
-        d("n_graphs_val", n_graphs_val)
+        d("n_graphs_train", 247776)
+        d("n_graphs_val", 100)
 
     d("ec_pt_thld", 0.0)
 
@@ -174,7 +182,7 @@ def suggest_default_values(
     if ec == "perfect":
         d("m_ec_tpr", 1.0)
         d("m_ec_tnr", 1.0)
-    elif ec == "fixed" and hc != "none":
+    elif ec in ["fixed", "continued", "default"] and hc != "none":
         d("m_ec_threshold", 0.5)
     elif ec == "default":
         d("lw_edge", 1.0)
@@ -186,7 +194,7 @@ def suggest_default_values(
         d("sb", 0.1)
 
     d("ec_loss", "focal")
-    if ec in ["default"] and c["ec_loss"] in ["focal", "haughty_focal"]:
+    if ec in ["default", "continued"] and c["ec_loss"] in ["focal", "haughty_focal"]:
         d("focal_alpha", 0.25)
         d("focal_gamma", 2.0)
 
@@ -232,7 +240,7 @@ def suggest_default_values(
     if hc != "none":
         d("m_L_hc", 3)
         d("m_alpha_hc", 0.5)
-    if ec in ["default"] and hc != "none":
+    if ec in ["default", "continued"] and hc != "none":
         d("m_feed_edge_weights", False)
 
 

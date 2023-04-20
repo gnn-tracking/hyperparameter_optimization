@@ -5,6 +5,7 @@ from functools import partial
 from typing import Any
 
 import optuna
+import torch
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
@@ -32,7 +33,6 @@ def load_ec(
     epoch: int = -1,
     *,
     config_update: dict | None = None,
-    device=None,
 ) -> nn.Module:
     """Load pre-trained edge classifier
 
@@ -59,6 +59,17 @@ def load_ec(
     return ec
 
 
+class ThresholdedEdgeLoss(nn.Module):
+    def __init__(self, loss: nn.Module, threshold: float):
+        super().__init__()
+        self._threshold = threshold
+        self._loss = loss
+
+    def forward(self, *args, **kwargs) -> torch.Tensor:
+        loss = self._loss(*args, **kwargs)
+        return torch.max(torch.Tensor(0.0), loss - self._threshold)
+
+
 class PretrainedECTrainable(TCNTrainable):
     def __init__(self, config: dict[str, Any], **kwargs):
         self.ec = load_ec(
@@ -68,12 +79,9 @@ class PretrainedECTrainable(TCNTrainable):
         )
         super().__init__(config=config, **kwargs)
 
-    def get_loss_functions(self) -> dict[str, Any]:
-        return {
-            "edge": self.get_edge_loss_function(),
-            "potential": self.get_potential_loss_function(),
-            "background": self.get_background_loss_function(),
-        }
+    def get_edge_loss_function(self) -> tuple[nn.Module, float]:
+        loss, weight = super().get_edge_loss_function()[0]
+        return ThresholdedEdgeLoss(loss, self.tc["edge_loss_threshold"]), weight
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
@@ -108,23 +116,17 @@ def suggest_config(
     # Definitely Fixed hyperparameters
     # --------------------------------
 
-    d("n_graphs_train", 247776)
-    config["train_data_dir"] = [
-        f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_{i}"
-        for i in range(1, 9)
-    ]
-    d(
-        "val_data_dir",
-        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_9",
-    )
     d("sector", sector)
 
     d("m_mask_orphan_nodes", False)
     d("use_ec_embeddings_for_hc", False)
+    d("feed_edge_weights", True)
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
     d("ec_epoch", ec_epoch)
+    d("edge_loss_threshold", 0.00019)
+    d("lw_edge", 10)
 
     d("batch_size", 5)
 
@@ -153,7 +155,7 @@ def suggest_config(
     d("lr", 0.0001, 0.0010)
     d("m_L_hc", 3, 5)
 
-    suggest_default_values(config, trial, ec="fixed")
+    suggest_default_values(config, trial, ec="continued")
     return config
 
 
