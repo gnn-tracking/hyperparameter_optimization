@@ -9,8 +9,6 @@ import torch
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from ray.tune.schedulers import ASHAScheduler
-from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -66,8 +64,7 @@ class ThresholdedEdgeLoss(nn.Module):
         self._loss = loss
 
     def forward(self, *args, **kwargs) -> torch.Tensor:
-        loss = self._loss(*args, **kwargs)
-        return torch.max(torch.Tensor(0.0), loss - self._threshold)
+        return torch.nn.functional.relu(self._loss(*args, **kwargs) - self._threshold)
 
 
 class PretrainedECTrainable(TCNTrainable):
@@ -80,7 +77,7 @@ class PretrainedECTrainable(TCNTrainable):
         super().__init__(config=config, **kwargs)
 
     def get_edge_loss_function(self) -> tuple[nn.Module, float]:
-        loss, weight = super().get_edge_loss_function()[0]
+        loss, weight = super().get_edge_loss_function()
         return ThresholdedEdgeLoss(loss, self.tc["edge_loss_threshold"]), weight
 
     def get_trainer(self) -> TCNTrainer:
@@ -159,20 +156,6 @@ def suggest_config(
     return config
 
 
-class ThisDispatcher(Dispatcher):
-    def get_scheduler(self) -> None | ASHAScheduler:
-        if self.no_scheduler:
-            # FIFO scheduler
-            return None
-        return ASHAScheduler(
-            metric=self.metric,
-            mode="max",
-            grace_period=self.grace_period,
-            reduction_factor=2,
-            stop_last_trials=False,
-        )
-
-
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
@@ -192,23 +175,21 @@ if __name__ == "__main__":
     )
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
-    if kwargs["cpu"]:
-        PretrainedECTrainable._device = "cpu"
     this_suggest_config = partial(
         suggest_config,
         ec_hash=kwargs.pop("ec_hash"),
         ec_project=kwargs.pop("ec_project"),
         ec_epoch=kwargs.pop("ec_epoch"),
     )
-    dispatcher = ThisDispatcher(
-        grace_period=2,
+    dispatcher = Dispatcher(
+        grace_period=6,
         no_improvement_patience=6,
         metric="trk.double_majority_pt0.9",
-        additional_stoppers=[
-            ThresholdTrialStopper(
-                "trk.double_majority_pt0.9", {5: 0.5, 10: 0.63, 15: 0.65}
-            )
-        ],
+        # additional_stoppers=[
+        #     ThresholdTrialStopper(
+        #         "trk.double_majority_pt0.9", {5: 0.5, 10: 0.63, 15: 0.65}
+        #     )
+        # ],
         **kwargs,
     )
     dispatcher(

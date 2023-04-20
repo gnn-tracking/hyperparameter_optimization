@@ -126,7 +126,7 @@ def suggest_default_values(
             (fixed architecture, continued training)
         hc: One of "default" (train), "none" (no hc)
     """
-    if ec not in ["default", "perfect", "fixed"]:
+    if ec not in ["default", "perfect", "fixed", "continued"]:
         raise ValueError(f"Invalid ec: {ec}")
     if hc not in ["default", "none"]:
         raise ValueError(f"Invalid hc: {hc}")
