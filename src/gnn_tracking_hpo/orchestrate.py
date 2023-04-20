@@ -31,16 +31,24 @@ def maybe_run_wandb_offline() -> None:
         logger.debug("You seem to have internet, so setting wandb to online")
 
 
-def maybe_run_distributed(local=False) -> None:
+def maybe_run_distributed(local=False, **kwargs) -> None:
     """If it looks like we're running across multiple nodes, enable distributed
     mode of ray
 
     Args:
         local: Force not to connect distributed
+        kwargs: Additional kwargs to pass to ray.init
     """
+    if "num_cpus" not in kwargs and "num_gpus" not in kwargs:
+        logger.warning(
+            "Neither num_cpus nor num_gpus specified, so ray will use all available"
+            " resources. This might be a bad idea if you're running on a shared"
+            " machine. "
+        )
+
     if local:
         logger.debug("Running in local mode, so not attempting to connect to ray head")
-        ray.init(address="local")
+        ray.init(address="local", **kwargs)
         return
 
     def get_from_file_or_environ(name: str, path: Path, env_name: str) -> str | None:
@@ -72,6 +80,7 @@ def maybe_run_distributed(local=False) -> None:
         ray.init(
             address=head_ip,
             _node_ip_address=head_ip.split(":")[0],
+            **kwargs,
         )
         register_ray()
     else:

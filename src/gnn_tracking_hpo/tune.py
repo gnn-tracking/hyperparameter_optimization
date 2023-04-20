@@ -214,9 +214,15 @@ class Dispatcher:
             simple_run_without_tune(trainable, suggest_config)
 
         maybe_run_wandb_offline()
-        maybe_run_distributed(local=self.local)
+        maybe_run_distributed(local=self.local, **self.get_resources())
         tuner = self.get_tuner(trainable, suggest_config)
         return tuner.fit()
+
+    def get_resources(self) -> dict[str, int]:
+        return {
+            "num_gpus": 1 if not self.cpu else 0,
+            "num_cpus": server.cpus_per_gpu if not self.test else 1,
+        }
 
     def get_tuner(
         self, trainable: type[Trainable], suggest_config: Callable
@@ -225,8 +231,8 @@ class Dispatcher:
             tune.with_resources(
                 trainable,
                 {
-                    "gpu": 1 if not self.cpu else 0,
-                    "cpu": server.cpus_per_gpu if not self.test else 1,
+                    "cpu": self.get_resources()["num_cpus"],
+                    "gpu": self.get_resources()["num_gpus"],
                 },
             ),
             tune_config=self.get_tune_config(suggest_config),
