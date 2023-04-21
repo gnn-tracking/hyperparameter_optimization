@@ -31,6 +31,7 @@ def load_ec(
     epoch: int = -1,
     *,
     config_update: dict | None = None,
+    freeze: bool = True,
 ) -> nn.Module:
     """Load pre-trained edge classifier
 
@@ -51,8 +52,9 @@ def load_ec(
     trainable = ECTrainable(config)
     trainable.load_checkpoint(checkpoint_path)
     ec = trainable.trainer.model
-    for param in ec.parameters():
-        param.requires_grad = False
+    if freeze:
+        for param in ec.parameters():
+            param.requires_grad = False
     logger.info("Pre-trained EC initialized")
     return ec
 
@@ -73,6 +75,7 @@ class PretrainedECTrainable(TCNTrainable):
             config["ec_project"],
             config["ec_hash"],
             config["ec_epoch"],
+            freeze=config["ec_freeze"],
         )
         super().__init__(config=config, **kwargs)
 
@@ -150,6 +153,7 @@ def suggest_config(
     # Tuned hyperparameters
     # ---------------------
 
+    d("ec_freeze", [True, False])
     d("adam_beta1", 0.8, 0.99)
     d("adam_beta2", 0.990, 0.999)
     d("lw_potential_repulsive", 0.1, 0.2)
