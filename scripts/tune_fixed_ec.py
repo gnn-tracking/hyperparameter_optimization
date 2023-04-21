@@ -145,13 +145,15 @@ def suggest_config(
     d("sb", 0.09)
     d("m_alpha_hc", 0.63)
     d("lw_background", 0.0041)
-    d("lw_potential_repulsive", 0.16)
     d("repulsive_radius_threshold", 3.7)
-    d("m_h_outdim", 7)
 
     # Tuned hyperparameters
     # ---------------------
 
+    d("adam_beta1", 0.8, 0.99)
+    d("adam_beta2", 0.990, 0.999)
+    d("lw_potential_repulsive", 0.1, 0.2)
+    d("m_h_outdim", 7, 12)
     d("m_ec_threshold", 0.1, 0.5)
     d("lr", 0.0001, 0.0010)
     d("m_L_hc", 3, 5)
