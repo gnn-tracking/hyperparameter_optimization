@@ -115,8 +115,8 @@ def suggest_config(
 
     d("sector", sector)
 
-    d("m_mask_orphan_nodes", False)
-    d("use_ec_embeddings_for_hc", False)
+    d("m_mask_orphan_nodes", True)
+    d("use_ec_embeddings_for_hc", True)
     d("feed_edge_weights", True)
 
     d("ec_project", ec_project)
