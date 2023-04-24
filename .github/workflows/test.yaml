@@ -32,7 +32,7 @@ jobs:
       - name: Install Conda environment from environment.yml
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: environments/minimal.lock
+          environment-file: environments/minimal.yml
           environment-name: anaconda-client-env
           cache-downloads: true
           cache-env: true
