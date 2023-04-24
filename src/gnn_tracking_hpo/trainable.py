@@ -182,10 +182,10 @@ def suggest_default_values(
     if ec == "perfect":
         d("m_ec_tpr", 1.0)
         d("m_ec_tnr", 1.0)
-    elif ec in ["fixed", "continued", "default"] and hc != "none":
-        d("m_ec_threshold", 0.5)
-    elif ec == "default":
+    elif ec in ["fixed", "continued", "default"]:
         d("lw_edge", 1.0)
+        if hc != "none":
+            d("m_ec_threshold", 0.5)
 
     # Loss function parameters
     if hc != "none":
