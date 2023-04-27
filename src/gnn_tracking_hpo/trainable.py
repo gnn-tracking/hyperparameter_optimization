@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from abc import ABC
 from functools import partial
@@ -151,21 +152,22 @@ def suggest_default_values(
         d(
             "train_data_dir",
             [
-                f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_{i}"
+                f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v3/part_{i}"
                 for i in range(1, 9)
             ],
         )
         d(
             "val_data_dir",
-            "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v1/part_9",
+            "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v3/part_9",
         )
 
     if c["test"]:
         config["n_graphs_train"] = 1
         config["n_graphs_val"] = 1
     else:
-        d("n_graphs_train", 247776)
-        d("n_graphs_val", 100)
+        # Don't include val graphs
+        d("n_graphs_train", 7743)
+        d("n_graphs_val", 10)
 
     d("ec_pt_thld", 0.0)
 
@@ -233,7 +235,7 @@ def suggest_default_values(
     # d("m_e_dim", 4)
     if hc != "none":
         d("m_h_outdim", 2)
-    d("m_hidden_dim", 40)
+    d("m_hidden_dim", None)
     if ec in ["default"]:
         d("m_L_ec", 3)
         # d("m_alpha_ec", 0.5)
@@ -459,6 +461,7 @@ class TCNTrainable(HPOTrainable):
             cluster_functions=self.get_cluster_functions(),  # type: ignore
             optimizer=self.get_optimizer(),
         )
+        trainer.logger.setLevel(logging.DEBUG)
         trainer.max_batches_for_clustering = 100 if not test else 10
 
         return trainer

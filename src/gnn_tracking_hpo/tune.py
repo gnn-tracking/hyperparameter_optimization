@@ -28,11 +28,9 @@ from gnn_tracking_hpo.cli import (
     add_test_option,
     add_wandb_options,
 )
-from gnn_tracking_hpo.config import della, get_points_to_evaluate, read_json
+from gnn_tracking_hpo.config import get_points_to_evaluate, read_json
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
 from gnn_tracking_hpo.util.log import logger
-
-server = della
 
 
 def add_common_options(parser: ArgumentParser):
@@ -221,7 +219,7 @@ class Dispatcher:
     def get_resources(self) -> dict[str, int]:
         return {
             "num_gpus": 1 if not self.cpu else 0,
-            "num_cpus": server.cpus_per_gpu if not self.test else 1,
+            "num_cpus": 6 if not self.test else 1,
         }
 
     def get_tuner(

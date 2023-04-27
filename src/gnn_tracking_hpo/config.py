@@ -118,9 +118,6 @@ class ServerConfig:
         return self.cpus // self.gpus
 
 
-della = ServerConfig(gpus=4, cpus=48, max_batches=20)
-server = della
-
 
 def retrieve_config_from_wandb(hash: str) -> dict[str, Any]:
     """Retrieve configuration of run from wandb based on (part of) a hash"""
