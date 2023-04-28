@@ -64,7 +64,7 @@ def suggest_config(
     # ----------------
 
     d("ec_pt_thld", 0.75, 0.85)
-    d("focal_gamma", 3, 4)  # 2 4
+    d("focal_gamma", 3.0, 4.0)  # 2 4
     d("focal_alpha", 0.4, 0.5)  # 0.35, 0.45
     d("lr", 2e-4, 8e-4)
     d("m_alpha", 0.3, 0.9)
