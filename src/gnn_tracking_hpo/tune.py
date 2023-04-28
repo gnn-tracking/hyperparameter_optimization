@@ -243,6 +243,7 @@ class Dispatcher:
             patience=self.no_improvement_patience,
             mode="max",
             grace_period=self.grace_period,
+            rel_change_thld=0.005,
         )
 
     def get_stoppers(self) -> list[Stopper]:

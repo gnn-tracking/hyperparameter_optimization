@@ -11,7 +11,6 @@ import optuna
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -90,24 +89,20 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
-    # todo: remove me
-    kwargs.pop("no_scheduler")
     dispatcher = Dispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
-        grace_period=4,
-        no_improvement_patience=15,
-        # todo: remove me
-        no_scheduler=True,
-        additional_stoppers=[
-            ThresholdTrialStopper(
-                "max_mcc_pt0.9",
-                {
-                    11: 0.8,
-                    21: 0.85,
-                },
-            )
-        ],
+        grace_period=5,
+        no_improvement_patience=10,
+        # additional_stoppers=[
+        #     ThresholdTrialStopper(
+        #         "max_mcc_pt0.9",
+        #         {
+        #             11: 0.8,
+        #             21: 0.85,
+        #         },
+        #     )
+        # ],
     )
     dispatcher(
         ECTrainable,
