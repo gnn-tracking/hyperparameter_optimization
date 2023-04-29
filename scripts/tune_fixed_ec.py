@@ -79,9 +79,14 @@ class PretrainedECTrainable(TCNTrainable):
         )
         super().__init__(config=config, **kwargs)
 
-    def get_edge_loss_function(self) -> tuple[nn.Module, float]:
-        loss, weight = super().get_edge_loss_function()
-        return ThresholdedEdgeLoss(loss, self.tc["edge_loss_threshold"]), weight
+    # def get_edge_loss_function(self) -> tuple[nn.Module, float]:
+    #     loss, weight = super().get_edge_loss_function()
+    #     return ThresholdedEdgeLoss(loss, self.tc["edge_loss_threshold"]), weight
+
+    def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
+        loss_functions = super().get_loss_functions()
+        loss_functions.pop("edge")
+        return loss_functions
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
@@ -100,7 +105,6 @@ class PretrainedECTrainable(TCNTrainable):
 def suggest_config(
     trial: optuna.Trial,
     *,
-    sector: int | None = None,
     ec_project: str,
     ec_hash: str,
     ec_epoch: int = -1,
@@ -116,30 +120,26 @@ def suggest_config(
     # Definitely Fixed hyperparameters
     # --------------------------------
 
-    d("sector", sector)
-
     d("m_mask_orphan_nodes", True)
-    d("use_ec_embeddings_for_hc", True)
-    d("feed_edge_weights", True)
 
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
     d("ec_epoch", ec_epoch)
-    d("edge_loss_threshold", 0.00019)
+    d("edge_loss_threshold", 0.00022)
     d("ec_loss", "haughty_focal")
-    d("ec_pt_thld", 0.81)
-    d("focal_alpha", 0.45)
-    d("focal_gamma", 3.5)
+    d("ec_pt_thld", 0.848971336839656)
+    d("focal_alpha", 0.4027910076269785)
+    d("focal_gamma", 3.720490411295307)
     d("lw_edge", 100)
-
-    d("batch_size", 5)
 
     # Keep one fixed because of normalization invariance
     d("lw_potential_attractive", 1.0)
 
-    d("m_hidden_dim", 120)
-    d("m_h_dim", 120)
-    d("m_e_dim", 120)
+    d("m_hidden_dim", None)
+    # d("m_h_dim", 32)
+    # d("m_e_dim", 42)
+    d("m_h_dim", 38)
+    d("m_e_dim", 62)
 
     # Most of the following parameters are fixed based on af5b5461
 
@@ -149,18 +149,19 @@ def suggest_config(
     d("m_alpha_hc", 0.63)
     d("lw_background", 0.0041)
     d("repulsive_radius_threshold", 3.7)
+    d("m_combiner_class", "LMModularGraphTCN")
 
     # Tuned hyperparameters
     # ---------------------
 
-    d("ec_freeze", [True, False])
-    d("adam_beta1", 0.8, 0.99)
-    d("adam_beta2", 0.990, 0.999)
+    d("ec_freeze", True)
+    d("adam_beta1", 0.9, 0.99)
+    # d("adam_beta2", 0.990, 0.999)
     d("lw_potential_repulsive", 0.1, 0.2)
     d("m_h_outdim", 7, 12)
     d("m_ec_threshold", 0.1, 0.5)
     d("lr", 0.0001, 0.0010)
-    d("m_L_hc", 3, 5)
+    d("m_L_hc", 3)
 
     suggest_default_values(config, trial, ec="continued")
     return config
@@ -192,8 +193,8 @@ if __name__ == "__main__":
         ec_epoch=kwargs.pop("ec_epoch"),
     )
     dispatcher = Dispatcher(
-        grace_period=6,
-        no_improvement_patience=6,
+        grace_period=5,
+        no_improvement_patience=10,
         metric="trk.double_majority_pt0.9",
         # additional_stoppers=[
         #     ThresholdTrialStopper(
