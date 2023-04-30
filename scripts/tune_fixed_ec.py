@@ -166,6 +166,7 @@ def suggest_config(
     d("ec_freeze", [True, False])
     d("adam_beta1", 0.8, 0.99)
     d("adam_beta2", 0.990, 0.999)
+    d("adam_weight_decay", 1e-7, 1e-2, log=True)
     d("lw_potential_repulsive", 0.1, 0.2)
     d("m_h_outdim", 7, 12)
     d("m_ec_threshold", 0.1, 0.5)
@@ -202,7 +203,7 @@ if __name__ == "__main__":
         ec_epoch=kwargs.pop("ec_epoch"),
     )
     dispatcher = Dispatcher(
-        grace_period=6,
+        grace_period=8,
         no_improvement_patience=6,
         metric="trk.double_majority_pt0.9",
         # additional_stoppers=[
