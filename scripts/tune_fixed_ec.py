@@ -164,9 +164,10 @@ def suggest_config(
     # Tuned hyperparameters
     # ---------------------
 
-    d("ec_freeze", [True, False])
+    d("ec_freeze", True)
     d("adam_beta1", 0.8, 0.99)
     d("adam_beta2", 0.990, 0.999)
+    d("adam_epsilon", 1e-8, 1e-2, log=True)
     d("adam_weight_decay", 1e-7, 3e-5, log=True)
     d("lw_potential_repulsive", 0.1, 0.4)
     d("m_h_outdim", 7, 12)
