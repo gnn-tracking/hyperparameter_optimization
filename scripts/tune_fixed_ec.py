@@ -9,6 +9,7 @@ import torch
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
+from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -166,11 +167,11 @@ def suggest_config(
     d("ec_freeze", [True, False])
     d("adam_beta1", 0.8, 0.99)
     d("adam_beta2", 0.990, 0.999)
-    d("adam_weight_decay", 1e-7, 1e-2, log=True)
-    d("lw_potential_repulsive", 0.1, 0.2)
+    d("adam_weight_decay", 1e-7, 3e-5, log=True)
+    d("lw_potential_repulsive", 0.1, 0.4)
     d("m_h_outdim", 7, 12)
-    d("m_ec_threshold", 0.1, 0.5)
-    d("lr", 0.0001, 0.0010)
+    d("m_ec_threshold", 0.25, 0.5)
+    d("lr", 0.0002, 0.0006)
     d("m_L_hc", 3, 5)
 
     suggest_default_values(config, trial, ec="continued")
@@ -203,14 +204,14 @@ if __name__ == "__main__":
         ec_epoch=kwargs.pop("ec_epoch"),
     )
     dispatcher = Dispatcher(
-        grace_period=8,
+        grace_period=6,
         no_improvement_patience=6,
         metric="trk.double_majority_pt0.9",
-        # additional_stoppers=[
-        #     ThresholdTrialStopper(
-        #         "trk.double_majority_pt0.9", {5: 0.5, 10: 0.63, 15: 0.65}
-        #     )
-        # ],
+        additional_stoppers=[
+            ThresholdTrialStopper(
+                "trk.double_majority_pt0.9", {2: 0.4, 5: 0.5, 10: 0.63, 15: 0.7}
+            )
+        ],
         **kwargs,
     )
     dispatcher(
