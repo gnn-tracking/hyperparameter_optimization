@@ -87,7 +87,7 @@ def suggest_config(
     d("focal_alpha", 0.4, 0.5)
 
     d("lr", 4e-4, 8e-4)
-    d("adam_weight_decay", 1e-7, 3e-5, log=True)
+    d("adam_weight_decay", 1e-9, 2e-7, log=True)
     d("adam_beta1", 0.9, 0.99)
     d("adam_epsilon", 1e-8, 1e-5, log=True)
     d("adam_beta2", 0.9, 0.9999)
