@@ -118,7 +118,6 @@ class ServerConfig:
         return self.cpus // self.gpus
 
 
-
 def retrieve_config_from_wandb(hash: str) -> dict[str, Any]:
     """Retrieve configuration of run from wandb based on (part of) a hash"""
     import wandb
