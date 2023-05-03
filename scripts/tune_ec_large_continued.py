@@ -78,14 +78,26 @@ def suggest_config(
     ec_hash = d("ec_hash", ec_hash)
     d("ec_epoch", -1)
     original_config = get_config(ec_project, ec_hash)
-    d("ec_pt_thld", original_config["ec_pt_thld"])
-    d("focal_alpha", original_config["focal_alpha"])
-    d("focal_gamma", original_config["focal_gamma"])
 
     # Tuned parameters
     # ----------------
 
-    d("lr", 1e-6, 1e-4, log=True)
+    d("lr", 5e-5)
+    d(
+        "ec_pt_thld",
+        0.9 * original_config["ec_pt_thld"],
+        1.1 * original_config["ec_pt_thld"],
+    )
+    d(
+        "focal_alpha",
+        0.9 * original_config["focal_alpha"],
+        1.1 * original_config["focal_alpha"],
+    )
+    d(
+        "focal_gamma",
+        0.85 * original_config["focal_gamma"],
+        1.15 * original_config["focal_gamma"],
+    )
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)
     # d("adam_epsilon", 1e-8, 1e-5, log=True)
