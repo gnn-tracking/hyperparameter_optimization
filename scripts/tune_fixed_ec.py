@@ -13,51 +13,13 @@ from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
-from gnn_tracking_hpo.trainable import (
-    TCNTrainable,
-    legacy_config_compatibility,
-    suggest_default_values,
-)
+from gnn_tracking_hpo.restore import restore_model
+from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
-from gnn_tracking_hpo.util.log import logger
-from gnn_tracking_hpo.util.paths import add_scripts_path, find_checkpoint, get_config
+from gnn_tracking_hpo.util.paths import add_scripts_path
 
 add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
-
-
-def load_ec(
-    tune_dir: str,
-    run_hash: str,
-    epoch: int = -1,
-    *,
-    config_update: dict | None = None,
-    freeze: bool = True,
-) -> nn.Module:
-    """Load pre-trained edge classifier
-
-    Args:
-        tune_dir (str): Name of ray tune outptu directory
-        run_hash (str): Hash of the run
-        epoch (int, optional): Epoch to load. Defaults to -1 (last epoch).
-        config_update (dict, optional): Update the config with this dict.
-    """
-    logger.info("Initializing pre-trained EC")
-    checkpoint_path = find_checkpoint(tune_dir, run_hash, epoch)
-    config = legacy_config_compatibility(get_config(tune_dir, run_hash))
-    # In case any new values were added, we need to suggest this again
-    suggest_default_values(config, None, ec="default", hc="none")
-    if config_update is not None:
-        config.update(config_update)
-    config["_no_data"] = True
-    trainable = ECTrainable(config)
-    trainable.load_checkpoint(checkpoint_path)
-    ec = trainable.trainer.model
-    if freeze:
-        for param in ec.parameters():
-            param.requires_grad = False
-    logger.info("Pre-trained EC initialized")
-    return ec
 
 
 class ThresholdedEdgeLoss(nn.Module):
@@ -72,7 +34,8 @@ class ThresholdedEdgeLoss(nn.Module):
 
 class PretrainedECTrainable(TCNTrainable):
     def __init__(self, config: dict[str, Any], **kwargs):
-        self.ec = load_ec(
+        self.ec = restore_model(
+            ECTrainable,
             config["ec_project"],
             config["ec_hash"],
             config["ec_epoch"],
