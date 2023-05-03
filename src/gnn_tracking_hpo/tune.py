@@ -281,6 +281,9 @@ class Dispatcher:
     def points_to_evaluate(self) -> list[dict[str, Any]]:
         return get_points_to_evaluate(self.enqueue)
 
+    def get_optuna_sampler(self):
+        return None
+
     def get_optuna_search(self, suggest_config: Callable) -> OptunaSearch:
         fixed_config: None | dict[str, Any] = None
         if self.fixed is not None:
@@ -291,6 +294,7 @@ class Dispatcher:
             metric=self.metric,
             mode="max",
             points_to_evaluate=self.points_to_evaluate,
+            sampler=self.get_optuna_sampler(),
         )
         if self.restore:
             logger.info(f"Restoring previous state from {self.restore}")

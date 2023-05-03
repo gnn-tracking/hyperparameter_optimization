@@ -102,6 +102,9 @@ class MyDispatcher(Dispatcher):
             rel_change_thld=0.003,
         )
 
+    def get_optuna_sampler(self):
+        return optuna.samplers.RandomSampler()
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -110,7 +113,7 @@ if __name__ == "__main__":
     dispatcher = MyDispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
-        grace_period=2,
+        no_scheduler=True,
         additional_stoppers=[
             ThresholdTrialStopper(
                 "max_mcc_pt0.9",
