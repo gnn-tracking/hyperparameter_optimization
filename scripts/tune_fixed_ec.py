@@ -33,16 +33,6 @@ class ThresholdedEdgeLoss(nn.Module):
 
 
 class PretrainedECTrainable(TCNTrainable):
-    def __init__(self, config: dict[str, Any], **kwargs):
-        self.ec = restore_model(
-            ECTrainable,
-            config["ec_project"],
-            config["ec_hash"],
-            config["ec_epoch"],
-            freeze=config["ec_freeze"],
-        )
-        super().__init__(config=config, **kwargs)
-
     def get_edge_loss_function(self) -> tuple[nn.Module, float]:
         loss, weight = super().get_edge_loss_function()
         return ThresholdedEdgeLoss(loss, self.tc["edge_loss_threshold"]), weight
@@ -53,8 +43,15 @@ class PretrainedECTrainable(TCNTrainable):
         return trainer
 
     def get_model(self) -> nn.Module:
+        ec = restore_model(
+            ECTrainable,
+            self.tc["ec_project"],
+            self.tc["ec_hash"],
+            self.tc["ec_epoch"],
+            freeze=self.tc["ec_freeze"],
+        )
         return PreTrainedECGraphTCN(
-            self.ec,
+            ec,
             node_indim=7,
             edge_indim=4,
             **subdict_with_prefix_stripped(self.tc, "m_"),
