@@ -5,6 +5,7 @@ model.
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from functools import partial
 from typing import Any
 
 import optuna
@@ -15,7 +16,7 @@ from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.trainable import suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
-from gnn_tracking_hpo.util.paths import add_scripts_path
+from gnn_tracking_hpo.util.paths import add_scripts_path, get_config
 
 add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
@@ -27,7 +28,7 @@ class ContinuedECTrainable(ECTrainable):
             ECTrainable,
             self.tc["ec_project"],
             self.tc["ec_hash"],
-            self.tc["ec_epoch"],
+            self.tc.get("ec_epoch", -1),
             freeze=False,
         )
 
@@ -35,6 +36,7 @@ class ContinuedECTrainable(ECTrainable):
 def suggest_config(
     trial: optuna.Trial,
     *,
+    ec_hash: str,
     test=False,
     fixed: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -72,17 +74,18 @@ def suggest_config(
     d("m_hidden_dim", 120)
     d("m_alpha", 0.5)
 
-    d("ec_project", "ec_230502")
-    d("ec_hash", "759be1c8")
+    ec_project = d("ec_project", "ec_230502")
+    ec_hash = d("ec_hash", ec_hash)
     d("ec_epoch", -1)
-    d("ec_pt_thld", 0.8292467946621858)
-    d("focal_alpha", 0.430815829482855)
-    d("focal_gamma", 3.781611232231564)
+    original_config = get_config(ec_project, ec_hash)
+    d("ec_pt_thld", original_config["ec_pt_thld"])
+    d("focal_alpha", original_config["focal_alpha"])
+    d("focal_gamma", original_config["focal_gamma"])
 
     # Tuned parameters
     # ----------------
 
-    d("lr", 1e-9, 1e-4, log=True)
+    d("lr", 1e-6, 1e-4, log=True)
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)
     # d("adam_epsilon", 1e-8, 1e-5, log=True)
@@ -109,7 +112,10 @@ class MyDispatcher(Dispatcher):
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
+    parser.add_argument("--ec-hash", type=str, required=True)
     kwargs = vars(parser.parse_args())
+    kwargs.pop("no_scheduler")
+    ec_hash = kwargs.pop("ec_hash")
     dispatcher = MyDispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
@@ -126,5 +132,5 @@ if __name__ == "__main__":
     )
     dispatcher(
         ContinuedECTrainable,
-        suggest_config,
+        partial(suggest_config, ec_hash=ec_hash),
     )
