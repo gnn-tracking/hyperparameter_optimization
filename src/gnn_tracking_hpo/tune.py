@@ -237,7 +237,7 @@ class Dispatcher:
             run_config=self.get_run_config(),
         )
 
-    def get_no_improvement_stopper(self) -> NoImprovementTrialStopper:
+    def get_no_improvement_stopper(self) -> NoImprovementTrialStopper | None:
         return NoImprovementTrialStopper(
             metric=self.metric,
             patience=self.no_improvement_patience,
