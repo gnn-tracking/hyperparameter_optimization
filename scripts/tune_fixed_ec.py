@@ -120,13 +120,20 @@ def suggest_config(
     # d("adam_epsilon", 1e-8, 1e-2, log=True)
     # d("adam_weight_decay", 1e-7, 3e-5, log=True)
     d("lw_potential_repulsive", 0.1, 0.4)
-    d("m_h_outdim", 7, 12)
+    d("m_h_outdim", 12)
     d("m_ec_threshold", 0.25, 0.5)
-    d("lr", 5e-4)
+    d("lr", 2e-3)
+    d("scheduler", "exponentiallr")
+    d("exponentiallr_gamma", 0.9)
     d("m_L_hc", 4)
 
     suggest_default_values(config, trial, ec="continued")
     return config
+
+
+class MyDispatcher(Dispatcher):
+    def get_optuna_sampler(self):
+        return optuna.samplers.RandomSampler()
 
 
 if __name__ == "__main__":
@@ -159,9 +166,7 @@ if __name__ == "__main__":
         no_improvement_patience=6,
         metric="trk.double_majority_pt0.9",
         additional_stoppers=[
-            ThresholdTrialStopper(
-                "trk.double_majority_pt0.9", {2: 0.4, 5: 0.5, 10: 0.63, 15: 0.7}
-            )
+            ThresholdTrialStopper("trk.double_majority_pt0.9", {0: 0.6, 4: 0.8})
         ],
         **kwargs,
     )
