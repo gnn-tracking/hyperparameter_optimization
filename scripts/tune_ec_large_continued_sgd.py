@@ -38,6 +38,7 @@ def suggest_config(
     trial: optuna.Trial,
     *,
     ec_hash: str,
+    ec_project: str,
     test=False,
     fixed: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -75,7 +76,7 @@ def suggest_config(
     d("m_hidden_dim", 120)
     d("m_alpha", 0.5)
 
-    d("ec_project", "ec_230502")
+    d("ec_project", ec_project)
     d("ec_hash", ec_hash)
     d("ec_epoch", -1)
 
@@ -107,8 +108,10 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
     parser.add_argument("--ec-hash", type=str, required=True)
+    parser.add_argument("--ec-project", type=str, required=True)
     kwargs = vars(parser.parse_args())
     kwargs.pop("no_scheduler")
+    ec_project = kwargs.pop("ec_project")
     ec_hash = kwargs.pop("ec_hash")
     dispatcher = MyDispatcher(
         **kwargs,
@@ -126,5 +129,5 @@ if __name__ == "__main__":
     )
     dispatcher(
         ContinuedECTrainable,
-        partial(suggest_config, ec_hash=ec_hash),
+        partial(suggest_config, ec_hash=ec_hash, ec_project=ec_project),
     )

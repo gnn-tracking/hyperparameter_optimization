@@ -24,13 +24,11 @@ def find_result_dir(project: str, part: str, *, base_path=_default_base_path) ->
     """
     project_dir = base_path / project
     hits = [d for d in project_dir.iterdir() if d.is_dir and part in d.name]
-    if len(hits) == 0:
+    if len(hits) != 1:
         raise ValueError(
-            f"No such directory found: subdir of {project_dir}"
-            f" with {part} in its name"
+            f"Searched {project_dir} for folders with {part} in its name. "
+            f"Found {len(hits)} hits: {hits}. Need exactly 1."
         )
-    if len(hits) >= 2:
-        raise ValueError(f"Non-unique description of dir: {project_dir}")
     result_dir = hits[0]
     assert result_dir.is_dir()
     return result_dir
