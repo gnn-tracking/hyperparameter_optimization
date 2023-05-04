@@ -227,6 +227,9 @@ def suggest_default_values(
         d("steplr_gamma", 0.1)
     elif c["scheduler"] == "exponentiallr":
         d("exponentiallr_gamma", 0.9)
+    elif c["scheduler"] == "cycliclr":
+        d("cycliclr_mode", "triangular")
+        d("cycliclr_gamma", 1)
     else:
         raise ValueError(f"Unknown scheduler: {c['scheduler']}")
 
@@ -403,6 +406,15 @@ class TCNTrainable(HPOTrainable):
                 lr_scheduler.ExponentialLR,
                 **subdict_with_prefix_stripped(self.tc, "exponentiallr_"),
             )
+        elif self.tc["scheduler"] == "cycliclr":
+            return partial(
+                lr_scheduler.CyclicLR,
+                base_lr=self.tc["lr"],
+                max_lr=self.tc["max_lr"],
+                mode=self.tc["cycliclr_mode"],
+                step_size_up=self.tc["cycliclr_step_size_up"],
+                step_size_down=self.tc["cycliclr_step_size_down"],
+            )
         else:
             raise ValueError(f"Unknown scheduler {self.tc['scheduler']}")
 
@@ -463,6 +475,9 @@ class TCNTrainable(HPOTrainable):
         )
         trainer.logger.setLevel(logging.DEBUG)
         trainer.max_batches_for_clustering = 100 if not test else 10
+        if self.tc["scheduler"] == "cycliclr":
+            logger.info("Setting lr_scheduler_step to batch")
+            trainer.lr_scheduler_step = "batch"
 
         return trainer
 

@@ -84,10 +84,13 @@ def suggest_config(
     # ----------------
 
     d("optimizer", "sgd")
-    d("sgd_momentum", 0.0, 0.9)
-    d("scheduler", "exponentiallr")
-    d("exponentiallr_gamma", 0.8, 0.95)
-    d("lr", 5e-5, 1e-4)
+    d("sgd_momentum", 0.2)
+    d("scheduler", "cycliclr")
+    d("max_lr", 1e-4, 1e-2)
+    d("cycliclr_mode", "triangular2")
+    d("cycliclr_step_size_up", 1200)
+    d("cycliclr_step_size_down", 1200)
+    d("lr", 5e-5)
     d("ec_pt_thld", 0.9)
     d("focal_alpha", 0.3966639332867394)
     d("focal_gamma", 3.9912747796867887)
