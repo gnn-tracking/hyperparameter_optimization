@@ -28,8 +28,8 @@ def restore_model(
         config_update (dict, optional): Update the config with this dict.
     """
     logger.info("Initializing pre-trained model")
-    checkpoint_path = find_checkpoint(tune_dir, run_hash, epoch)
-    config = legacy_config_compatibility(get_config(tune_dir, run_hash))
+    checkpoint_path = find_checkpoint(tune_dir, f"_{run_hash}_", epoch)
+    config = legacy_config_compatibility(get_config(tune_dir, f"_{run_hash}_"))
     # In case any new values were added, we need to suggest this again
     suggest_default_values(config, None, ec="default", hc="none")
     if config_update is not None:
