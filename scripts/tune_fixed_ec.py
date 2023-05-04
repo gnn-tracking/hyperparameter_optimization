@@ -5,7 +5,6 @@ from functools import partial
 from typing import Any
 
 import optuna
-import torch
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
@@ -22,20 +21,11 @@ add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
 
 
-class ThresholdedEdgeLoss(nn.Module):
-    def __init__(self, loss: nn.Module, threshold: float):
-        super().__init__()
-        self._threshold = threshold
-        self._loss = loss
-
-    def forward(self, *args, **kwargs) -> torch.Tensor:
-        return torch.nn.functional.relu(self._loss(*args, **kwargs) - self._threshold)
-
-
 class PretrainedECTrainable(TCNTrainable):
-    def get_edge_loss_function(self) -> tuple[nn.Module, float]:
-        loss, weight = super().get_edge_loss_function()
-        return ThresholdedEdgeLoss(loss, self.tc["edge_loss_threshold"]), weight
+    def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
+        lfs = super().get_loss_functions()
+        lfs.pop("edge")
+        return lfs
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
@@ -96,12 +86,12 @@ def suggest_config(
     d("ec_project", ec_project)
     d("ec_hash", ec_hash)
     d("ec_epoch", ec_epoch)
-    d("edge_loss_threshold", 0.00019)
-    d("ec_loss", "haughty_focal")
-    d("ec_pt_thld", 0.81)
-    d("focal_alpha", 0.45)
-    d("focal_gamma", 3.5)
-    d("lw_edge", 100)
+    # d("edge_loss_threshold", 0.00019)
+    # d("ec_loss", "haughty_focal")
+    # d("ec_pt_thld", 0.81)
+    # d("focal_alpha", 0.45)
+    # d("focal_gamma", 3.5)
+    # d("lw_edge", 100)
 
     d("batch_size", 5)
 
@@ -125,15 +115,15 @@ def suggest_config(
     # ---------------------
 
     d("ec_freeze", True)
-    d("adam_beta1", 0.8, 0.99)
-    d("adam_beta2", 0.990, 0.999)
-    d("adam_epsilon", 1e-8, 1e-2, log=True)
-    d("adam_weight_decay", 1e-7, 3e-5, log=True)
+    # d("adam_beta1", 0.8, 0.99)
+    # d("adam_beta2", 0.990, 0.999)
+    # d("adam_epsilon", 1e-8, 1e-2, log=True)
+    # d("adam_weight_decay", 1e-7, 3e-5, log=True)
     d("lw_potential_repulsive", 0.1, 0.4)
     d("m_h_outdim", 7, 12)
     d("m_ec_threshold", 0.25, 0.5)
-    d("lr", 0.0002, 0.0006)
-    d("m_L_hc", 3, 5)
+    d("lr", 5e-4)
+    d("m_L_hc", 4)
 
     suggest_default_values(config, trial, ec="continued")
     return config
