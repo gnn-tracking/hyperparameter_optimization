@@ -214,10 +214,8 @@ def suggest_default_values(
         d("sgd_weight_decay", 0.0)
         d("sgd_nesterov", False)
         d("sgd_dampening", 0.0)
+
     d("scheduler", None)
-    if c["scheduler"] is not None:
-        if c["optimizer"] == "adam":
-            raise ValueError("Don't use lr scheduler with Adam.")
 
     # Schedulers
     if c["scheduler"] is None:

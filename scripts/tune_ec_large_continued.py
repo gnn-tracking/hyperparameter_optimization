@@ -74,7 +74,7 @@ def suggest_config(
     d("m_hidden_dim", 120)
     d("m_alpha", 0.5)
 
-    ec_project = d("ec_project", "ec_230502")
+    ec_project = d("ec_project", "ec")
     ec_hash = d("ec_hash", ec_hash)
     d("ec_epoch", -1)
     original_config = get_config(ec_project, ec_hash)
@@ -82,22 +82,27 @@ def suggest_config(
     # Tuned parameters
     # ----------------
 
-    d("lr", 5e-5)
+    d("lr", 5e-5, 1e-4)
+    eps = 0.1
+    ea = 1 - eps
+    eb = 1 + eps
     d(
         "ec_pt_thld",
-        0.9 * original_config["ec_pt_thld"],
-        1.1 * original_config["ec_pt_thld"],
+        ea * original_config["ec_pt_thld"],
+        eb * original_config["ec_pt_thld"],
     )
     d(
         "focal_alpha",
-        0.9 * original_config["focal_alpha"],
-        1.1 * original_config["focal_alpha"],
+        ea * original_config["focal_alpha"],
+        eb * original_config["focal_alpha"],
     )
     d(
         "focal_gamma",
-        0.85 * original_config["focal_gamma"],
-        1.15 * original_config["focal_gamma"],
+        ea * original_config["focal_gamma"],
+        eb * original_config["focal_gamma"],
     )
+    d("scheduler", "exponentiallr")
+    d("exponentiallr_gamma", 0.8, 0.9)
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)
     # d("adam_epsilon", 1e-8, 1e-5, log=True)
