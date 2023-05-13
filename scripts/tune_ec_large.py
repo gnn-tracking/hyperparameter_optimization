@@ -11,7 +11,7 @@ import optuna
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from rt_stoppers_contrib import ThresholdTrialStopper
+from rt_stoppers_contrib import NoImprovementTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -96,24 +96,29 @@ def suggest_config(
     return config
 
 
+class MyDispatcher(Dispatcher):
+    def get_no_improvement_stopper(self) -> NoImprovementTrialStopper:
+        return NoImprovementTrialStopper(
+            metric=self.metric,
+            patience=10,
+            mode="max",
+            grace_period=0,
+            rel_change_thld=0.005,
+        )
+
+    def get_optuna_sampler(self):
+        return optuna.samplers.RandomSampler()
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
-    dispatcher = Dispatcher(
+    kwargs.pop("no_scheduler")
+    dispatcher = MyDispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
-        grace_period=6,
-        no_improvement_patience=10,
-        additional_stoppers=[
-            ThresholdTrialStopper(
-                "max_mcc_pt0.9",
-                {
-                    11: 0.8,
-                    21: 0.85,
-                },
-            )
-        ],
+        no_scheduler=True,
     )
     dispatcher(
         ECTrainable,
