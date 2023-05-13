@@ -27,8 +27,10 @@ def auto_suggest_if_not_fixed(
     **Important**: It matters whether the argument types are ints or floats!
     """
     if key in config:
+        logger.debug("Already fixed %s to %s", key, config[key])
         return
     if key in trial.params:
+        logger.debug("Already fixed %s to %s", key, config[key])
         return
     if len(args) == 2:
         if all(isinstance(x, int) for x in args):
@@ -87,6 +89,7 @@ def get_points_to_evaluate(
         paths = list[str]()
     for path in paths:
         if isinstance(path, str) and "/" not in path and not Path(path).exists():
+            logger.debug("Assuming that %s is a wandb hash", path)
             # Assume it's a wandb hash
             points_to_evaluate.append(retrieve_config_from_wandb(str(path)))
             continue
