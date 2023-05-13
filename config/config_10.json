@@ -1,11 +1,4 @@
 {
-    "lr": 0.0005,
-    "cosineannealinglr_eta_min": 5e-05,
-    "m_interaction_edge_dim": 64,
-    "m_interaction_node_dim": 64,
-    "m_hidden_dim": 64,
-    "cosineannealinglr_T_max": 100,
-    "scheduler": "cosineannealinglr",
     "m_L_ec": 6,
     "sector": null,
     "ec_loss": "haughty_focal",
@@ -40,8 +33,12 @@
     "adam_weight_decay": 0,
     "m_use_node_embedding": true,
     "m_use_intermediate_edge_embeddings": true,
-    "scheduelr": "linearlr",
-    "linearlr_T_max": 50,
+    "scheduler": "linearlr",
+    "linearlr_total_iters": 50,
+    "lr": 0.0001,
     "linearlr_start_factor": 1,
-    "linearlr_end_factor": 0.02
+    "linearlr_end_factor": 0.05,
+    "m_interaction_edge_dim": 32,
+    "m_interaction_node_dim": 32,
+    "m_hidden_dim": 32
 }

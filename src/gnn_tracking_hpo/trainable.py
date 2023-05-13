@@ -232,7 +232,7 @@ def suggest_default_values(
         d("cosineannealinglr_T_max", 10)
         d("cosineannealinglr_eta_min", 0)
     elif c["scheduler"] == "linearlr":
-        d("linearlr_T_max", 10)
+        d("linearlr_total_iters", 10)
         d("linearlr_start_factor", 1)
         d("linearlr_end_factor", 1)
     else:
