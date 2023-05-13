@@ -18,6 +18,8 @@ from ray.tune import Callback, ResultGrid, Stopper, SyncConfig, Trainable
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.tune.stopper import CombinedStopper, MaximumIterationStopper, TimeoutStopper
+
+from gnn_tracking_hpo.trainable import suggest_default_values
 from rt_stoppers_contrib import LoggedStopper, NoImprovementTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
@@ -289,8 +291,21 @@ class Dispatcher:
         if self.fixed is not None:
             fixed_config = read_json(Path(self.fixed))
 
+        if self.points_to_evaluate:
+            logger.warning(
+                "Workaround for https://github.com/ray-project/ray/issues/35319"
+            )
+            assert len(self.points_to_evaluate) == 1
+            assert self.only_enqueued
+            assert self.get_num_samples() == 1
+            point = self.points_to_evaluate[0]
+            space = partial(suggest_config, fixed=point, test=self.test)
+
+        else:
+            space = partial(suggest_config, test=self.test, fixed=fixed_config)
+
         optuna_search = OptunaSearch(
-            partial(suggest_config, test=self.test, fixed=fixed_config),
+            space,
             metric=self.metric,
             mode="max",
             points_to_evaluate=self.points_to_evaluate,
