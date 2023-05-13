@@ -420,6 +420,16 @@ class TCNTrainable(HPOTrainable):
                 step_size_up=self.tc["cycliclr_step_size_up"],
                 step_size_down=self.tc["cycliclr_step_size_down"],
             )
+        elif self.tc["scheduler"] == "cosineannealinglr":
+            return partial(
+                lr_scheduler.CosineAnnealingLR,
+                **subdict_with_prefix_stripped(self.tc, "cosineannealinglr_"),
+            )
+        elif self.tc["scheduler"] == "linearlr":
+            return partial(
+                lr_scheduler.LinearLR,
+                **subdict_with_prefix_stripped(self.tc, "linearlr_"),
+            )
         else:
             raise ValueError(f"Unknown scheduler {self.tc['scheduler']}")
 
