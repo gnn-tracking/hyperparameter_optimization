@@ -1,9 +1,0 @@
-[
-  {
-    "lw_edge": 100,
-    "lw_potential_attractive": 100,
-    "lw_potential_repulsive": 0.01,
-    "q_min": 0.001,
-    "sb": 0.1
-  }
-]
