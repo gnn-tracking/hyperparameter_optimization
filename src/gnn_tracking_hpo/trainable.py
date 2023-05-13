@@ -228,6 +228,9 @@ def suggest_default_values(
     elif c["scheduler"] == "cycliclr":
         d("cycliclr_mode", "triangular")
         d("cycliclr_gamma", 1)
+    elif c["scheduler"] == "cosineannealinglr":
+        d("cosineannealinglr_T_max", 10)
+        d("cosineannealinglr_eta_min", 0)
     else:
         raise ValueError(f"Unknown scheduler: {c['scheduler']}")
 
