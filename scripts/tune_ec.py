@@ -5,6 +5,7 @@ model.
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from functools import partial
 from typing import Any
 
 import optuna
@@ -15,6 +16,7 @@ from rt_stoppers_contrib import NoImprovementTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
+from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 
@@ -33,10 +35,33 @@ class ECTrainable(TCNTrainable):
         trainer.ec_eval_pt_thlds = [0.0, 0.5, 0.9, 1.2, 1.5]
         return trainer
 
-    def get_model(self) -> nn.Module:
+    @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return "ec_project" in self.tc
+
+    def _get_from_scratch_model(self) -> nn.Module:
+        """New model to be trained (rather than continuing training a pretrained
+        one).
+        """
         return ECForGraphTCN(
             node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
+
+    def _get_continued_model(self) -> nn.Module:
+        """Load previously trained model to continue"""
+        return restore_model(
+            ECTrainable,
+            self.tc["ec_project"],
+            self.tc["ec_hash"],
+            self.tc.get("ec_epoch", -1),
+            freeze=False,
+        )
+
+    def get_model(self) -> nn.Module:
+        if self._is_continued_run:
+            return self._get_continued_model()
+        return self._get_from_scratch_model()
 
 
 def suggest_config(
@@ -44,6 +69,7 @@ def suggest_config(
     *,
     test=False,
     fixed: dict[str, Any] | None = None,
+    ec_hash: str = "",
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -66,6 +92,14 @@ def suggest_config(
     d("batch_size", 5)
     d("_val_batch_size", 5)
     d("ec_loss", "haughty_focal")
+
+    # Restoring
+    # -----------------------
+
+    if ec_hash:
+        d("ec_project", "ec")
+        d("ec_hash", ec_hash)
+        d("ec_epoch", -1)
 
     # fixed parameters
     # -----------------------
@@ -112,8 +146,10 @@ class MyDispatcher(Dispatcher):
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
+    parser.add_argument("--ec-hash", type=str, required=True)
     kwargs = vars(parser.parse_args())
     kwargs.pop("no_scheduler")
+    ec_hash = kwargs.pop("ec_hash")
     dispatcher = MyDispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
@@ -121,5 +157,5 @@ if __name__ == "__main__":
     )
     dispatcher(
         ECTrainable,
-        suggest_config,
+        partial(suggest_config, ec_hash=ec_hash),
     )
