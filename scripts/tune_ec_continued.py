@@ -16,7 +16,7 @@ from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.trainable import suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
-from gnn_tracking_hpo.util.paths import add_scripts_path, get_config
+from gnn_tracking_hpo.util.paths import add_scripts_path
 
 add_scripts_path()
 from tune_ec import ECTrainable  # noqa: E402
@@ -74,10 +74,9 @@ def suggest_config(
     d("m_hidden_dim", 64)
     d("m_alpha", 0.5)
 
-    ec_project = d("ec_project", "ec")
-    ec_hash = d("ec_hash", ec_hash)
+    d("ec_project", "ec")
+    d("ec_hash", ec_hash)
     d("ec_epoch", -1)
-    original_config = get_config(ec_project, ec_hash)
 
     # Tuned parameters
     # ----------------
