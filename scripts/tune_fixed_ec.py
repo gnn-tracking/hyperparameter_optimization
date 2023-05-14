@@ -23,9 +23,9 @@ from tune_ec import ECTrainable  # noqa: E402
 
 class PretrainedECTrainable(TCNTrainable):
     def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
-        lfs = super().get_loss_functions()
-        lfs.pop("edge")
-        return lfs
+        loss_functions = super().get_loss_functions()
+        loss_functions.pop("edge")
+        return loss_functions
 
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
