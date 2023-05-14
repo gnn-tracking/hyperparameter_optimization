@@ -35,9 +35,9 @@
     "m_use_intermediate_edge_embeddings": true,
     "scheduler": "linearlr",
     "linearlr_total_iters": 50,
-    "lr": 0.001,
+    "lr": 0.003,
     "linearlr_start_factor": 1,
-    "linearlr_end_factor": 0.05,
+    "linearlr_end_factor": 0.0033333333333333335,
     "m_interaction_edge_dim": 64,
     "m_interaction_node_dim": 64,
     "m_hidden_dim": 64

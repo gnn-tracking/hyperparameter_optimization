@@ -35,7 +35,7 @@
     "m_use_intermediate_edge_embeddings": true,
     "scheduler": "cosineannealinglr",
     "cosineannealinglr_T_max": 50,
-    "lr": 0.00075,
+    "lr": 0.0006,
     "cosineannealinglr_eta_min": 1e-05,
     "m_interaction_edge_dim": 64,
     "m_interaction_node_dim": 64,
