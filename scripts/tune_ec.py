@@ -72,7 +72,6 @@ def suggest_config(
     d("lr", 2e-4, 8e-4)
     d("m_alpha", 0.3, 0.9)
     d("adam_beta1", 0.9, 0.99)
-    d("adam_epsilon", 1e-8, 1e-5, log=True)
     d("adam_weight_decay", 1e-7, 3e-5, log=True)
 
     suggest_default_values(config, trial, hc="none")

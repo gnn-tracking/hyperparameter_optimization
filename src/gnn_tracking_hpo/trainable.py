@@ -127,6 +127,8 @@ def suggest_default_values(
             (fixed architecture, continued training)
         hc: One of "default" (train), "none" (no hc)
     """
+    if "adam_epsilon" in config:
+        raise ValueError("It's adam_eps, not adam_epsilon")
     if ec not in ["default", "perfect", "fixed", "continued"]:
         raise ValueError(f"Invalid ec: {ec}")
     if hc not in ["default", "none"]:
