@@ -69,9 +69,9 @@ def suggest_config(
     d("m_residual_type", "skip1")
     d("m_use_node_embedding", [True])
     d("m_use_intermediate_edge_embeddings", True)
-    d("m_interaction_node_dim", 120)
-    d("m_interaction_edge_dim", 120)
-    d("m_hidden_dim", 120)
+    d("m_interaction_node_dim", 64)
+    d("m_interaction_edge_dim", 64)
+    d("m_hidden_dim", 64)
     d("m_alpha", 0.5)
 
     ec_project = d("ec_project", "ec")
@@ -83,30 +83,16 @@ def suggest_config(
     # ----------------
 
     d("lr", 5e-5, 1e-4)
-    eps = 0.1
-    ea = 1 - eps
-    eb = 1 + eps
     d(
         "ec_pt_thld",
-        ea * original_config["ec_pt_thld"],
-        eb * original_config["ec_pt_thld"],
+        0.9,
     )
     d(
         "focal_alpha",
-        ea * original_config["focal_alpha"],
-        eb * original_config["focal_alpha"],
     )
     d(
         "focal_gamma",
-        ea * original_config["focal_gamma"],
-        eb * original_config["focal_gamma"],
     )
-    d("scheduler", "exponentiallr")
-    d("exponentiallr_gamma", 0.8, 0.9)
-    # d("adam_weight_decay", 0)
-    # d("adam_beta1", 0.9, 0.99)
-    # d("adam_epsilon", 1e-8, 1e-5, log=True)
-    # d("adam_beta2", 0.9, 0.9999)
 
     suggest_default_values(config, trial, hc="none")
     return config
@@ -141,9 +127,7 @@ if __name__ == "__main__":
             ThresholdTrialStopper(
                 "max_mcc_pt0.9",
                 {
-                    0: 0.91,
-                    2: 0.95,
-                    6: 0.96,
+                    0: 0.90,
                 },
             )
         ],
