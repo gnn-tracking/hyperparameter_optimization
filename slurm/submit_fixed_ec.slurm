@@ -11,7 +11,7 @@
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=kl5675@princeton.edu
 
-python3 ../scripts/tune_ec_large.py \
+python3 ../scripts/tune_ec.py \
   --local \
   --group ec \
   --only-enqueued \

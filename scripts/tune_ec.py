@@ -106,24 +106,23 @@ def suggest_config(
 
     d("m_L_ec", 6)
     d("m_residual_type", "skip1")
-    d("m_use_node_embedding", [True])
+    d("m_use_node_embedding", True)
     d("m_use_intermediate_edge_embeddings", True)
-    d("m_interaction_node_dim", 120)
-    d("m_interaction_edge_dim", 120)
-    d("m_hidden_dim", 120)
+    d("m_interaction_node_dim", 64)
+    d("m_interaction_edge_dim", 64)
+    d("m_hidden_dim", 64)
     d("m_alpha", 0.5)
+    d("ec_pt_thld", 0.9)
+    d("focal_gamma", 0.3966639332867394)
+    d("focal_alpha", 3.9912747796867887)
 
     # Tuned parameters
     # ----------------
 
-    d("ec_pt_thld", 0.75, 0.85)
-    d("focal_gamma", 3.0, 4.0)
-    d("focal_alpha", 0.4, 0.5)
-
-    d("lr", 4e-4, 8e-4)
-    d("adam_weight_decay", 0)
-    d("adam_beta1", 0.9, 0.99)
-    d("adam_beta2", 0.9, 0.9999)
+    d("lr", 1e-4, 1e-6, log=True)
+    # d("adam_weight_decay", 0)
+    # d("adam_beta1", 0.9, 0.99)
+    # d("adam_beta2", 0.9, 0.9999)
 
     suggest_default_values(config, trial, hc="none")
     return config
