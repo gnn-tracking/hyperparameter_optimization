@@ -145,7 +145,7 @@ class MyDispatcher(Dispatcher):
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
-    parser.add_argument("--ec-hash", type=str, required=True)
+    parser.add_argument("--ec-hash", type=str)
     kwargs = vars(parser.parse_args())
     kwargs.pop("no_scheduler")
     ec_hash = kwargs.pop("ec_hash")
