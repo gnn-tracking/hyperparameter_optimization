@@ -39,7 +39,8 @@ def maybe_run_distributed(local=False, **kwargs) -> None:
         local: Force not to connect distributed
         kwargs: Additional kwargs to pass to ray.init
     """
-
+    # Disable deduplication of logs
+    os.environ["RAY_DEDUP_LOGS"] = "0"
     if local:
         if "num_cpus" not in kwargs and "num_gpus" not in kwargs:
             logger.warning(
