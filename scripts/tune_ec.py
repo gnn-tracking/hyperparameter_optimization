@@ -15,6 +15,7 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from rt_stoppers_contrib import NoImprovementTrialStopper
 from torch import nn
 
+from gnn_tracking_hpo.cli import add_ec_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
@@ -70,6 +71,8 @@ def suggest_config(
     test=False,
     fixed: dict[str, Any] | None = None,
     ec_hash: str = "",
+    ec_project: str = "",
+    ec_epoch: int = -1,
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -97,9 +100,9 @@ def suggest_config(
     # -----------------------
 
     if ec_hash:
-        d("ec_project", "ec")
+        d("ec_project", ec_project)
         d("ec_hash", ec_hash)
-        d("ec_epoch", -1)
+        d("ec_epoch", ec_epoch)
 
     # fixed parameters
     # -----------------------
@@ -113,13 +116,13 @@ def suggest_config(
     d("m_hidden_dim", 64)
     d("m_alpha", 0.5)
     d("ec_pt_thld", 0.9)
-    d("focal_gamma", 0.3966639332867394)
-    d("focal_alpha", 3.9912747796867887)
+    d("focal_alpha", 0.3966639332867394)
+    d("focal_gamma", 3.9912747796867887)
 
     # Tuned parameters
     # ----------------
 
-    d("lr", 1e-4, 1e-6, log=True)
+    d("lr", 1e-6, 1e-4, log=True)
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)
     # d("adam_beta2", 0.9, 0.9999)
@@ -145,14 +148,16 @@ class MyDispatcher(Dispatcher):
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
-    parser.add_argument("--ec-hash", type=str)
+    add_ec_restore_options(parser)
     kwargs = vars(parser.parse_args())
-    ec_hash = kwargs.pop("ec_hash")
+    this_suggest_config = partial(
+        suggest_config,
+        ec_hash=kwargs.pop("ec_hash"),
+        ec_project=kwargs.pop("ec_project"),
+        ec_epoch=kwargs.pop("ec_epoch"),
+    )
     dispatcher = MyDispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
     )
-    dispatcher(
-        ECTrainable,
-        partial(suggest_config, ec_hash=ec_hash),
-    )
+    dispatcher(ECTrainable, this_suggest_config)

@@ -309,7 +309,7 @@ def legacy_config_compatibility(config: dict[str, Any]) -> dict[str, Any]:
         "m_use_intermediate_encodings": "m_use_intermediate_edge_embeddings",
         "m_feed_node_attributes": "m_use_node_embedding",
     }
-    remove_keys = ["m_alpha_ec_edge"]
+    remove_keys = ["m_alpha_ec_edge", "adam_epsilon"]
     for old, new in rename_keys.items():
         if old in config:
             logger.warning("Renaming key %s to %s", old, new)

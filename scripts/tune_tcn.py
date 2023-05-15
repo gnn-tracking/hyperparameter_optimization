@@ -11,6 +11,7 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
+from gnn_tracking_hpo.cli import add_ec_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
@@ -137,21 +138,7 @@ class MyDispatcher(Dispatcher):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument(
-        "--ec-hash", required=True, type=str, help="Hash of the edge classifier to load"
-    )
-    parser.add_argument(
-        "--ec-project",
-        required=True,
-        type=str,
-        help="Name of the folder that the edge classifier to load belongs to",
-    )
-    parser.add_argument(
-        "--ec-epoch",
-        type=int,
-        default=-1,
-        help="Epoch of the edge classifier to load. Defaults to -1 (last epoch).",
-    )
+    add_ec_restore_options(parser)
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
     this_suggest_config = partial(

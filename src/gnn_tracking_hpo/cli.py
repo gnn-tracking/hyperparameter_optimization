@@ -3,7 +3,7 @@ from __future__ import annotations
 from argparse import ArgumentParser
 
 
-def add_local_option(parser: ArgumentParser):
+def add_local_option(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--local",
         help="Run locally, not with head node",
@@ -11,7 +11,7 @@ def add_local_option(parser: ArgumentParser):
     )
 
 
-def add_test_option(parser: ArgumentParser):
+def add_test_option(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--test",
         help="As-fast-as-possible run to test the setup.",
@@ -19,7 +19,7 @@ def add_test_option(parser: ArgumentParser):
     )
 
 
-def add_cpu_option(parser: ArgumentParser):
+def add_cpu_option(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--cpu",
         help="Do not run on a GPU, only use CPU",
@@ -27,7 +27,7 @@ def add_cpu_option(parser: ArgumentParser):
     )
 
 
-def add_enqueue_option(parser: ArgumentParser):
+def add_enqueue_option(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--enqueue",
         help="Read trials from these json files and enqueue "
@@ -37,7 +37,7 @@ def add_enqueue_option(parser: ArgumentParser):
     )
 
 
-def add_wandb_options(parser: ArgumentParser):
+def add_wandb_options(parser: ArgumentParser) -> None:
     """To be used as a decorator. Add command line options for wandb metadata."""
 
     parser.add_argument("--tags", nargs="+", help="Tags for wandb")
@@ -48,7 +48,7 @@ def add_wandb_options(parser: ArgumentParser):
     parser.add_argument("--note", help="Wandb note")
 
 
-def add_truth_cut_options(parser: ArgumentParser):
+def add_truth_cut_options(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--training-pt-thld",
         default=0.0,
@@ -61,4 +61,22 @@ def add_truth_cut_options(parser: ArgumentParser):
     parser.add_argument(
         "--training-without-non-reconstructable",
         action="store_true",
+    )
+
+
+def add_ec_restore_options(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--ec-hash", required=True, type=str, help="Hash of the edge classifier to load"
+    )
+    parser.add_argument(
+        "--ec-project",
+        required=True,
+        type=str,
+        help="Name of the folder that the edge classifier to load belongs to",
+    )
+    parser.add_argument(
+        "--ec-epoch",
+        type=int,
+        default=-1,
+        help="Epoch of the edge classifier to load. Defaults to -1 (last epoch).",
     )
