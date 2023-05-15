@@ -18,8 +18,6 @@ from ray.tune import Callback, ResultGrid, Stopper, SyncConfig, Trainable
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.tune.stopper import CombinedStopper, MaximumIterationStopper, TimeoutStopper
-
-from gnn_tracking_hpo.trainable import suggest_default_values
 from rt_stoppers_contrib import LoggedStopper, NoImprovementTrialStopper
 from wandb_osh.ray_hooks import TriggerWandbSyncRayHook
 
@@ -31,7 +29,11 @@ from gnn_tracking_hpo.cli import (
     add_wandb_options,
 )
 from gnn_tracking_hpo.config import get_points_to_evaluate, read_json
-from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
+from gnn_tracking_hpo.orchestrate import (
+    have_internet,
+    maybe_run_distributed,
+    maybe_run_wandb_offline,
+)
 from gnn_tracking_hpo.util.log import logger
 
 
@@ -262,7 +264,7 @@ class Dispatcher:
         return [stopper for stopper in stoppers if stopper is not None]
 
     def get_wandb_callbacks(self) -> list[Callback]:
-        return [
+        callbacks = [
             WandbLoggerCallback(
                 api_key_file="~/.wandb_api_key",
                 project="gnn_tracking",
@@ -270,8 +272,10 @@ class Dispatcher:
                 group=self.group,
                 notes=self.note,
             ),
-            TriggerWandbSyncRayHook(),
         ]
+        if not have_internet():
+            callbacks.append(TriggerWandbSyncRayHook())
+        return callbacks
 
     def get_callbacks(self) -> list[Callback]:
         callbacks: list[Callback] = []

@@ -40,7 +40,7 @@ class ECTrainable(TCNTrainable):
         """We're restoring a model from a previous run and continuing."""
         return "ec_project" in self.tc
 
-    def _get_from_scratch_model(self) -> nn.Module:
+    def _get_new_model(self) -> nn.Module:
         """New model to be trained (rather than continuing training a pretrained
         one).
         """
@@ -48,7 +48,7 @@ class ECTrainable(TCNTrainable):
             node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
         )
 
-    def _get_continued_model(self) -> nn.Module:
+    def _get_restored_model(self) -> nn.Module:
         """Load previously trained model to continue"""
         return restore_model(
             ECTrainable,
@@ -60,8 +60,8 @@ class ECTrainable(TCNTrainable):
 
     def get_model(self) -> nn.Module:
         if self._is_continued_run:
-            return self._get_continued_model()
-        return self._get_from_scratch_model()
+            return self._get_restored_model()
+        return self._get_new_model()
 
 
 def suggest_config(
@@ -138,8 +138,8 @@ class MyDispatcher(Dispatcher):
             rel_change_thld=0.005,
         )
 
-    def get_optuna_sampler(self):
-        return optuna.samplers.RandomSampler()
+    # def get_optuna_sampler(self):
+    #     return optuna.samplers.RandomSampler()
 
 
 if __name__ == "__main__":
@@ -147,12 +147,10 @@ if __name__ == "__main__":
     add_common_options(parser)
     parser.add_argument("--ec-hash", type=str)
     kwargs = vars(parser.parse_args())
-    kwargs.pop("no_scheduler")
     ec_hash = kwargs.pop("ec_hash")
     dispatcher = MyDispatcher(
         **kwargs,
         metric="max_mcc_pt0.9",
-        no_scheduler=True,
     )
     dispatcher(
         ECTrainable,
