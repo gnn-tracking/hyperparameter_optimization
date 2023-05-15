@@ -8,7 +8,6 @@ import optuna
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
-from rt_stoppers_contrib import ThresholdTrialStopper
 from torch import nn
 
 from gnn_tracking_hpo.cli import add_ec_restore_options
@@ -99,33 +98,28 @@ def suggest_config(
     # Keep one fixed because of normalization invariance
     d("lw_potential_attractive", 1.0)
 
-    d("m_hidden_dim", 120)
-    d("m_h_dim", 120)
-    d("m_e_dim", 120)
+    d("m_hidden_dim", 64)
+    d("m_h_dim", 64)
+    d("m_e_dim", 64)
 
     # Most of the following parameters are fixed based on af5b5461
 
-    d("attr_pt_thld", 0.6)
+    d("attr_pt_thld", 0.9)  # Changed
     d("q_min", 0.34)
     d("sb", 0.09)
     d("m_alpha_hc", 0.63)
     d("lw_background", 0.0041)
     d("repulsive_radius_threshold", 3.7)
+    d("m_h_outdim", 12)
+    d("m_L_hc", 4)
+    d("ec_freeze", True)
+    d("lw_potential_repulsive", 0.16)
 
     # Tuned hyperparameters
     # ---------------------
 
-    d("ec_freeze", True)
-    # d("adam_beta1", 0.8, 0.99)
-    # d("adam_beta2", 0.990, 0.999)
-    # d("adam_weight_decay", 1e-7, 3e-5, log=True)
-    d("lw_potential_repulsive", 0.1, 0.4)
-    d("m_h_outdim", 12)
     d("m_ec_threshold", 0.25, 0.5)
     d("lr", 2e-3)
-    d("scheduler", "exponentiallr")
-    d("exponentiallr_gamma", 0.9)
-    d("m_L_hc", 4)
 
     suggest_default_values(config, trial, ec="continued")
     return config
@@ -148,12 +142,12 @@ if __name__ == "__main__":
         ec_epoch=kwargs.pop("ec_epoch"),
     )
     dispatcher = Dispatcher(
-        grace_period=6,
+        grace_period=3,
         no_improvement_patience=6,
         metric="trk.double_majority_pt0.9",
-        additional_stoppers=[
-            ThresholdTrialStopper("trk.double_majority_pt0.9", {0: 0.6, 4: 0.8})
-        ],
+        # additional_stoppers=[
+        #     ThresholdTrialStopper("trk.double_majority_pt0.9", {0: 0.6, 4: 0.8})
+        # ],
         **kwargs,
     )
     dispatcher(

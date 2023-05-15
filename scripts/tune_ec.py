@@ -122,7 +122,7 @@ def suggest_config(
     # Tuned parameters
     # ----------------
 
-    d("lr", 1e-6, 1e-4, log=True)
+    d("lr", 1e-4, 1e-3, log=True)
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)
     # d("adam_beta2", 0.9, 0.9999)
