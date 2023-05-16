@@ -336,6 +336,7 @@ class PretrainedECTCNTrainable(DefaultTrainable):
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
         trainer.ec_threshold = self.tc["m_ec_threshold"]
+        logger.info("Final loss weights %s", trainer.loss_functions)
         return trainer
 
     def _get_new_model(self) -> nn.Module:

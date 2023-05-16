@@ -32,7 +32,7 @@ def suggest_config(
     config.update(fixed or {})
 
     def d(key, *args, **kwargs):
-        auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
+        return auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
     # Definitely Fixed hyperparameters
     # --------------------------------
@@ -62,8 +62,6 @@ def suggest_config(
         d("ec_hash", ec_hash)
         d("ec_epoch", ec_epoch)
 
-    d("lw_edge", 100)
-
     d("batch_size", 5)
 
     # Keep one fixed because of normalization invariance
@@ -83,16 +81,19 @@ def suggest_config(
     d("repulsive_radius_threshold", 3.7)
     d("m_h_outdim", 12)
     d("m_L_hc", 4)
-    d("ec_freeze", False)
+    ec_freeze = d("ec_freeze", False)
     d("lw_potential_repulsive", 0.16)
 
     # Tuned hyperparameters
     # ---------------------
 
-    d("m_ec_threshold", 0.3, 0.4)
-    d("lr", [1e-3, 5e-4])
+    # d("m_ec_threshold", 0.3, 0.4)
+    d("lr", [5e-4])
+    if not ec_freeze:
+        d("lw_edge", 2_000)
 
-    suggest_default_values(config, trial, ec="continued")
+    ec_suggestions = "continued" if ec_freeze else "fixed"
+    suggest_default_values(config, trial, ec=ec_suggestions)
     return config
 
 
