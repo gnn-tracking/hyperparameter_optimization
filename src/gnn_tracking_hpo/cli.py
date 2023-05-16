@@ -64,13 +64,16 @@ def add_truth_cut_options(parser: ArgumentParser) -> None:
     )
 
 
-def add_ec_restore_options(parser: ArgumentParser) -> None:
+def add_ec_restore_options(parser: ArgumentParser, required=False) -> None:
     parser.add_argument(
-        "--ec-hash", required=True, type=str, help="Hash of the edge classifier to load"
+        "--ec-hash",
+        required=required,
+        type=str,
+        help="Hash of the edge classifier to load",
     )
     parser.add_argument(
         "--ec-project",
-        required=True,
+        required=required,
         type=str,
         help="Name of the folder that the edge classifier to load belongs to",
     )
@@ -82,13 +85,13 @@ def add_ec_restore_options(parser: ArgumentParser) -> None:
     )
 
 
-def add_tc_restore_options(parser: ArgumentParser) -> None:
+def add_tc_restore_options(parser: ArgumentParser, required=False) -> None:
     parser.add_argument(
-        "--tc-hash", required=True, type=str, help="Hash of the TCN to load"
+        "--tc-hash", required=required, type=str, help="Hash of the TCN to load"
     )
     parser.add_argument(
         "--tc-project",
-        required=True,
+        required=required,
         type=str,
         help="Name of the folder that the TCN to load belongs to",
     )

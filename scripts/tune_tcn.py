@@ -104,8 +104,8 @@ if __name__ == "__main__":
     add_ec_restore_options(parser)
     add_tc_restore_options(parser)
     kwargs = vars(parser.parse_args())
-    if "ec_hash" in kwargs and "tc_hash" in kwargs:
-        raise ValueError("Cannot specify both ec_hash and tc_hash at the moment")
+    if ("ec_hash" in kwargs) ^ ("tc_hash" in kwargs):
+        raise ValueError("Must specify ec_hash XOR tc_hash at the moment")
     this_suggest_config = partial(
         suggest_config,
         **pop(
