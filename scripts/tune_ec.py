@@ -9,61 +9,14 @@ from functools import partial
 from typing import Any
 
 import optuna
-from gnn_tracking.models.edge_classifier import ECForGraphTCN
-from gnn_tracking.training.tcn_trainer import TCNTrainer
-from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from rt_stoppers_contrib import NoImprovementTrialStopper
-from torch import nn
 
 from gnn_tracking_hpo.cli import add_ec_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
-from gnn_tracking_hpo.restore import restore_model
-from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
+from gnn_tracking_hpo.defaults import suggest_default_values
+from gnn_tracking_hpo.trainable import ECTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.dict import pop
-
-
-class ECTrainable(TCNTrainable):
-    def get_loss_functions(self) -> dict[str, Any]:
-        return {
-            "edge": self.get_edge_loss_function(),
-        }
-
-    def get_cluster_functions(self) -> dict[str, Any]:
-        return {}
-
-    def get_trainer(self) -> TCNTrainer:
-        trainer = super().get_trainer()
-        trainer.ec_eval_pt_thlds = [0.0, 0.5, 0.9, 1.2, 1.5]
-        return trainer
-
-    @property
-    def _is_continued_run(self) -> bool:
-        """We're restoring a model from a previous run and continuing."""
-        return "ec_project" in self.tc
-
-    def _get_new_model(self) -> nn.Module:
-        """New model to be trained (rather than continuing training a pretrained
-        one).
-        """
-        return ECForGraphTCN(
-            node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
-        )
-
-    def _get_restored_model(self) -> nn.Module:
-        """Load previously trained model to continue"""
-        return restore_model(
-            ECTrainable,
-            tune_dir=self.tc["ec_project"],
-            run_hash=self.tc["ec_hash"],
-            epoch=self.tc.get("ec_epoch", -1),
-            freeze=False,
-        )
-
-    def get_model(self) -> nn.Module:
-        if self._is_continued_run:
-            return self._get_restored_model()
-        return self._get_new_model()
 
 
 def suggest_config(

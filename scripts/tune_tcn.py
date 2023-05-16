@@ -5,72 +5,14 @@ from functools import partial
 from typing import Any
 
 import optuna
-from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
-from gnn_tracking.training.tcn_trainer import TCNTrainer
-from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from ray.tune.stopper import MaximumIterationStopper
-from torch import nn
 
 from gnn_tracking_hpo.cli import add_ec_restore_options, add_tc_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
-from gnn_tracking_hpo.restore import restore_model
-from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
+from gnn_tracking_hpo.defaults import suggest_default_values
+from gnn_tracking_hpo.trainable import TCNTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.dict import pop
-from gnn_tracking_hpo.util.paths import add_scripts_path
-
-add_scripts_path()
-from tune_ec import ECTrainable  # noqa: E402
-
-
-class PretrainedECTrainable(TCNTrainable):
-    def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
-        loss_functions = super().get_loss_functions()
-        loss_functions.pop("edge")
-        return loss_functions
-
-    def get_trainer(self) -> TCNTrainer:
-        trainer = super().get_trainer()
-        trainer.ec_threshold = self.tc["m_ec_threshold"]
-        return trainer
-
-    @property
-    def _is_continued_run(self) -> bool:
-        """We're restoring a model from a previous run and continuing."""
-        return "tc_project" in self.tc
-
-    def _get_new_model(self) -> nn.Module:
-        ec = restore_model(
-            ECTrainable,
-            self.tc["ec_project"],
-            self.tc["ec_hash"],
-            self.tc["ec_epoch"],
-            freeze=self.tc["ec_freeze"],
-        )
-        return PreTrainedECGraphTCN(
-            ec,
-            node_indim=7,
-            edge_indim=4,
-            **subdict_with_prefix_stripped(self.tc, "m_"),
-        )
-
-    def _get_restored_model(self) -> nn.Module:
-        """Load previously trained model to continue"""
-        return restore_model(
-            PretrainedECTrainable,
-            tune_dir=self.tc["tc_project"],
-            run_hash=self.tc["tc_hash"],
-            epoch=self.tc.get("tc_epoch", -1),
-            freeze=False,
-            config_update={
-                "ec_freeze": self.tc["ec_freeze"],
-            },
-        )
-
-    def get_model(self) -> nn.Module:
-        if self._is_continued_run:
-            return self._get_restored_model()
-        return self._get_new_model()
 
 
 def suggest_config(
@@ -181,6 +123,6 @@ if __name__ == "__main__":
         **kwargs,
     )
     dispatcher(
-        PretrainedECTrainable,
+        TCNTrainable,
         this_suggest_config,
     )

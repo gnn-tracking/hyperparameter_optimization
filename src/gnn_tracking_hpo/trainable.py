@@ -1,25 +1,23 @@
 from __future__ import annotations
 
 import logging
-import os
 from abc import ABC
 from functools import partial
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import optuna
 import tabulate
-from gnn_tracking.metrics.cluster_metrics import common_metrics
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
     EdgeWeightFocalLoss,
     HaughtyFocalLoss,
     PotentialLoss,
 )
-from gnn_tracking.models.track_condensation_networks import GraphTCN
-from gnn_tracking.postprocessing.clusterscanner import ClusterScanResult
-from gnn_tracking.postprocessing.dbscanscanner import DBSCANHyperParamScanner
+from gnn_tracking.models.edge_classifier import ECForGraphTCN
+from gnn_tracking.models.track_condensation_networks import (
+    GraphTCN,
+    PreTrainedECGraphTCN,
+)
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.seeds import fix_seeds
@@ -27,233 +25,12 @@ from ray import tune
 from torch import nn
 from torch.optim import SGD, Adam, lr_scheduler
 
+from gnn_tracking_hpo.cluster_scans import reduced_dbscan_scan
 from gnn_tracking_hpo.load import get_graphs_separate, get_graphs_split, get_loaders
+from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.slurmcontrol import SlurmControl, get_slurm_job_id
 from gnn_tracking_hpo.util.log import logger
 from gnn_tracking_hpo.util.paths import find_checkpoint, get_config
-
-
-def fixed_dbscan_scan(
-    graphs: np.ndarray,
-    truth: np.ndarray,
-    sectors: np.ndarray,
-    pts: np.ndarray,
-    reconstructable: np.ndarray,
-    *,
-    guide="trk.double_majority_pt1.5",
-    epoch=None,
-    start_params: dict[str, Any] | None = None,
-) -> ClusterScanResult:
-    """Convenience function for not scanning for DBSCAN hyperparameters at all."""
-    if start_params is None:
-        start_params = {
-            "eps": 0.95,
-            "min_samples": 1,
-        }
-    dbss = DBSCANHyperParamScanner(
-        graphs=graphs,
-        truth=truth,
-        sectors=sectors,
-        pts=pts,
-        reconstructable=reconstructable,
-        guide=guide,
-        metrics=common_metrics,
-    )
-    return dbss.scan(
-        n_jobs=1,
-        n_trials=1,
-        start_params=start_params,
-    )
-
-
-def reduced_dbscan_scan(
-    graphs: list[np.ndarray],
-    truth: list[np.ndarray],
-    sectors: list[np.ndarray],
-    pts: list[np.ndarray],
-    reconstructable: list[np.ndarray],
-    *,
-    guide="trk.double_majority_pt0.9",
-    epoch=None,
-    start_params: dict[str, Any] | None = None,
-    node_mask: list[np.ndarray] | None = None,
-) -> ClusterScanResult:
-    """Convenience function for scanning DBSCAN hyperparameters with trial count
-    that depends on the epoch (using many trials early on, then alternating between
-    fixed and low samples in later epochs).
-    """
-    version_dependent_kwargs = {}
-    if node_mask is not None:
-        logger.warning("Running on a gnn_tracking version with post-EC node pruning.")
-        version_dependent_kwargs["node_mask"] = node_mask
-    dbss = DBSCANHyperParamScanner(
-        data=graphs,
-        truth=truth,
-        sectors=sectors,
-        pts=pts,
-        reconstructable=reconstructable,
-        guide=guide,
-        metrics=common_metrics,
-        min_samples_range=(1, 1),
-        eps_range=(0.95, 1.0),
-        **version_dependent_kwargs,
-    )
-    if epoch < 8:
-        n_trials = 12
-    elif epoch % 4 == 0:
-        n_trials = 12
-    else:
-        n_trials = 1
-    return dbss.scan(
-        n_jobs=min(12, n_trials),  # todo: make flexible
-        n_trials=n_trials,
-        start_params=start_params,
-    )
-
-
-def suggest_default_values(
-    config: dict[str, Any],
-    trial: None | optuna.Trial = None,
-    ec="default",
-    hc="default",
-) -> None:
-    """Set all config values, so that everything gets recorded in the database, even
-    if we do not change anything.
-
-    Args:
-        config: Gets modified in place
-        trial:
-        ec: One of "default" (train), "perfect" (perfect ec), "fixed", "continued"
-            (fixed architecture, continued training)
-        hc: One of "default" (train), "none" (no hc)
-    """
-    if "adam_epsilon" in config:
-        raise ValueError("It's adam_eps, not adam_epsilon")
-    if ec not in ["default", "perfect", "fixed", "continued"]:
-        raise ValueError(f"Invalid ec: {ec}")
-    if hc not in ["default", "none"]:
-        raise ValueError(f"Invalid hc: {hc}")
-
-    c = {**config, **(trial.params if trial is not None else {})}
-
-    def d(k, v):
-        if trial is not None and k in trial.params:
-            return
-        if k in config:
-            return
-        config[k] = v
-        c[k] = v
-
-    d("node_indim", 7)
-    d("edge_indim", 4)
-
-    if test_data_dir := os.environ.get("TEST_TRAIN_DATA_DIR"):
-        d("train_data_dir", test_data_dir)
-        d("val_data_dir", test_data_dir)
-    else:
-        d(
-            "train_data_dir",
-            [
-                f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v3/part_{i}"
-                for i in range(1, 9)
-            ],
-        )
-        d(
-            "val_data_dir",
-            "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/graphs_v3/part_9",
-        )
-
-    if c["test"]:
-        config["n_graphs_train"] = 1
-        config["n_graphs_val"] = 1
-    else:
-        # Don't include val graphs
-        d("n_graphs_train", 7743)
-        d("n_graphs_val", 10)
-
-    d("ec_pt_thld", 0.0)
-
-    d("sector", None)
-    d("batch_size", 1)
-    d("_val_batch_size", 1)
-
-    if hc != "none":
-        d("repulsive_radius_threshold", 10.0)
-        d("lw_potential_attractive", 1.0)
-        d("lw_potential_repulsive", 1.0)
-        d("lw_background", 1.0)
-
-    if ec == "perfect":
-        d("m_ec_tpr", 1.0)
-        d("m_ec_tnr", 1.0)
-    elif ec in ["fixed", "continued", "default"]:
-        d("lw_edge", 1.0)
-        if hc != "none":
-            d("m_ec_threshold", 0.5)
-
-    # Loss function parameters
-    if hc != "none":
-        d("q_min", 0.01)
-        d("attr_pt_thld", 0.9)
-        d("sb", 0.1)
-
-    d("ec_loss", "focal")
-    if ec in ["default", "continued"] and c["ec_loss"] in ["focal", "haughty_focal"]:
-        d("focal_alpha", 0.25)
-        d("focal_gamma", 2.0)
-
-    # Optimizers
-    d("lr", 5e-4)
-    d("optimizer", "adam")
-    if c["optimizer"] == "adam":
-        d("adam_beta1", 0.9)
-        d("adam_beta2", 0.999)
-        d("adam_eps", 1e-8)
-        d("adam_weight_decay", 0.0)
-        d("adam_amsgrad", False)
-    elif c["optimizer"] == "sgd":
-        d("sgd_momentum", 0.0)
-        d("sgd_weight_decay", 0.0)
-        d("sgd_nesterov", False)
-        d("sgd_dampening", 0.0)
-
-    d("scheduler", None)
-
-    # Schedulers
-    if c["scheduler"] is None:
-        pass
-    elif c["scheduler"] == "steplr":
-        d("steplr_step_size", 10)
-        d("steplr_gamma", 0.1)
-    elif c["scheduler"] == "exponentiallr":
-        d("exponentiallr_gamma", 0.9)
-    elif c["scheduler"] == "cycliclr":
-        d("cycliclr_mode", "triangular")
-        d("cycliclr_gamma", 1)
-    elif c["scheduler"] == "cosineannealinglr":
-        d("cosineannealinglr_T_max", 10)
-        d("cosineannealinglr_eta_min", 0)
-    elif c["scheduler"] == "linearlr":
-        d("linearlr_total_iters", 10)
-        d("linearlr_start_factor", 1)
-        d("linearlr_end_factor", 1)
-    else:
-        raise ValueError(f"Unknown scheduler: {c['scheduler']}")
-
-    # Model parameters
-    # d("m_h_dim", 5)
-    # d("m_e_dim", 4)
-    if hc != "none":
-        d("m_h_outdim", 2)
-    d("m_hidden_dim", None)
-    if ec in ["default"]:
-        d("m_L_ec", 3)
-        # d("m_alpha_ec", 0.5)
-    if hc != "none":
-        d("m_L_hc", 3)
-        d("m_alpha_hc", 0.5)
-    if ec in ["default", "continued"] and hc != "none":
-        d("m_feed_edge_weights", False)
 
 
 class HPOTrainable(tune.Trainable, ABC):
@@ -321,7 +98,7 @@ def legacy_config_compatibility(config: dict[str, Any]) -> dict[str, Any]:
     return config
 
 
-class TCNTrainable(HPOTrainable):
+class DefaultTrainable(HPOTrainable):
     """A wrapper around `TCNTrainer` for use with Ray Tune."""
 
     # This is set explicitly by the Dispatcher class
@@ -512,3 +289,96 @@ class TCNTrainable(HPOTrainable):
     def load_checkpoint(self, checkpoint_path, **kwargs):
         logger.debug("Loading checkpoint from %s", checkpoint_path)
         self.trainer.load_checkpoint(checkpoint_path, **kwargs)
+
+
+class TCNTrainable(DefaultTrainable):
+    def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
+        loss_functions = super().get_loss_functions()
+        loss_functions.pop("edge")
+        return loss_functions
+
+    def get_trainer(self) -> TCNTrainer:
+        trainer = super().get_trainer()
+        trainer.ec_threshold = self.tc["m_ec_threshold"]
+        return trainer
+
+    @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return "tc_project" in self.tc
+
+    def _get_new_model(self) -> nn.Module:
+        ec = restore_model(
+            ECTrainable,
+            self.tc["ec_project"],
+            self.tc["ec_hash"],
+            self.tc["ec_epoch"],
+            freeze=self.tc["ec_freeze"],
+        )
+        return PreTrainedECGraphTCN(
+            ec,
+            node_indim=7,
+            edge_indim=4,
+            **subdict_with_prefix_stripped(self.tc, "m_"),
+        )
+
+    def _get_restored_model(self) -> nn.Module:
+        """Load previously trained model to continue"""
+        return restore_model(
+            TCNTrainable,
+            tune_dir=self.tc["tc_project"],
+            run_hash=self.tc["tc_hash"],
+            epoch=self.tc.get("tc_epoch", -1),
+            freeze=False,
+            config_update={
+                "ec_freeze": self.tc["ec_freeze"],
+            },
+        )
+
+    def get_model(self) -> nn.Module:
+        if self._is_continued_run:
+            return self._get_restored_model()
+        return self._get_new_model()
+
+
+class ECTrainable(DefaultTrainable):
+    def get_loss_functions(self) -> dict[str, Any]:
+        return {
+            "edge": self.get_edge_loss_function(),
+        }
+
+    def get_cluster_functions(self) -> dict[str, Any]:
+        return {}
+
+    def get_trainer(self) -> TCNTrainer:
+        trainer = super().get_trainer()
+        trainer.ec_eval_pt_thlds = [0.0, 0.5, 0.9, 1.2, 1.5]
+        return trainer
+
+    @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return "ec_project" in self.tc
+
+    def _get_new_model(self) -> nn.Module:
+        """New model to be trained (rather than continuing training a pretrained
+        one).
+        """
+        return ECForGraphTCN(
+            node_indim=7, edge_indim=4, **subdict_with_prefix_stripped(self.tc, "m_")
+        )
+
+    def _get_restored_model(self) -> nn.Module:
+        """Load previously trained model to continue"""
+        return restore_model(
+            ECTrainable,
+            tune_dir=self.tc["ec_project"],
+            run_hash=self.tc["ec_hash"],
+            epoch=self.tc.get("ec_epoch", -1),
+            freeze=False,
+        )
+
+    def get_model(self) -> nn.Module:
+        if self._is_continued_run:
+            return self._get_restored_model()
+        return self._get_new_model()

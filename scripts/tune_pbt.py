@@ -18,12 +18,10 @@ from ray.tune.search import BasicVariantGenerator
 from torch.optim import SGD
 
 from gnn_tracking_hpo.cli import add_cpu_option, add_enqueue_option, add_test_option
-from gnn_tracking_hpo.config import della, get_metadata, get_points_to_evaluate
+from gnn_tracking_hpo.config import get_metadata, get_points_to_evaluate
 from gnn_tracking_hpo.orchestrate import maybe_run_distributed, maybe_run_wandb_offline
-from gnn_tracking_hpo.trainable import TCNTrainable
+from gnn_tracking_hpo.trainable import DefaultTrainable
 from gnn_tracking_hpo.util.log import logger
-
-server = della
 
 
 def get_param_space():
@@ -41,7 +39,7 @@ def get_param_space():
     }
 
 
-class PBTTrainable(TCNTrainable):
+class PBTTrainable(DefaultTrainable):
     def get_optimizer(self):
         return SGD
 
@@ -97,7 +95,7 @@ def main(
     tuner = ray.tune.Tuner(
         ray.tune.with_resources(
             get_trainable(test),
-            {"gpu": 1 if gpu else 0, "cpu": server.cpus_per_gpu if not test else 1},
+            {"gpu": 1 if gpu else 0, "cpu": 6 if not test else 1},
         ),
         run_config=air.RunConfig(
             name="pbt_test",

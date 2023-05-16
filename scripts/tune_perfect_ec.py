@@ -10,11 +10,12 @@ from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from torch import nn
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
-from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
+from gnn_tracking_hpo.defaults import suggest_default_values
+from gnn_tracking_hpo.trainable import DefaultTrainable
 from gnn_tracking_hpo.tune import add_common_options, main
 
 
-class DynamicTCNTrainable(TCNTrainable):
+class PerfectECTCNTrainable(DefaultTrainable):
     def get_loss_functions(self) -> dict[str, Any]:
         return {
             "potential": self.get_potential_loss_function(),
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     kwargs = vars(args)
     main(
-        DynamicTCNTrainable,
+        PerfectECTCNTrainable,
         partial(suggest_config, sector=kwargs.pop("sector")),
         grace_period=4,
         **kwargs,
