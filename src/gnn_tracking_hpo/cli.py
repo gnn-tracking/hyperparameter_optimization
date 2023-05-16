@@ -80,3 +80,21 @@ def add_ec_restore_options(parser: ArgumentParser) -> None:
         default=-1,
         help="Epoch of the edge classifier to load. Defaults to -1 (last epoch).",
     )
+
+
+def add_tc_restore_options(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--tc-hash", required=True, type=str, help="Hash of the TCN to load"
+    )
+    parser.add_argument(
+        "--tc-project",
+        required=True,
+        type=str,
+        help="Name of the folder that the TCN to load belongs to",
+    )
+    parser.add_argument(
+        "--tc-epoch",
+        type=int,
+        default=-1,
+        help="Epoch of the TCN to load. Defaults to -1 (last epoch).",
+    )

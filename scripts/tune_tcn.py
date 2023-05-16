@@ -8,13 +8,15 @@ import optuna
 from gnn_tracking.models.track_condensation_networks import PreTrainedECGraphTCN
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
+from ray.tune.stopper import MaximumIterationStopper
 from torch import nn
 
-from gnn_tracking_hpo.cli import add_ec_restore_options
+from gnn_tracking_hpo.cli import add_ec_restore_options, add_tc_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
+from gnn_tracking_hpo.util.dict import pop
 from gnn_tracking_hpo.util.paths import add_scripts_path
 
 add_scripts_path()
@@ -32,7 +34,12 @@ class PretrainedECTrainable(TCNTrainable):
         trainer.ec_threshold = self.tc["m_ec_threshold"]
         return trainer
 
-    def get_model(self) -> nn.Module:
+    @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return "tc_project" in self.tc
+
+    def _get_new_model(self) -> nn.Module:
         ec = restore_model(
             ECTrainable,
             self.tc["ec_project"],
@@ -46,6 +53,24 @@ class PretrainedECTrainable(TCNTrainable):
             edge_indim=4,
             **subdict_with_prefix_stripped(self.tc, "m_"),
         )
+
+    def _get_restored_model(self) -> nn.Module:
+        """Load previously trained model to continue"""
+        return restore_model(
+            PretrainedECTrainable,
+            tune_dir=self.tc["tc_project"],
+            run_hash=self.tc["tc_hash"],
+            epoch=self.tc.get("tc_epoch", -1),
+            freeze=False,
+            config_update={
+                "ec_freeze": self.tc["ec_freeze"],
+            },
+        )
+
+    def get_model(self) -> nn.Module:
+        if self._is_continued_run:
+            return self._get_restored_model()
+        return self._get_new_model()
 
 
 def suggest_config(
@@ -118,36 +143,41 @@ def suggest_config(
     # Tuned hyperparameters
     # ---------------------
 
-    d("m_ec_threshold", 0.25, 0.5)
-    d("lr", 2e-3)
+    d("m_ec_threshold", 0.3, 0.4)
+    d("lr", [1e-3, 5e-4])
 
     suggest_default_values(config, trial, ec="continued")
     return config
 
 
 class MyDispatcher(Dispatcher):
-    def get_optuna_sampler(self):
-        return optuna.samplers.RandomSampler()
+    pass
+    # def get_optuna_sampler(self):
+    #     return optuna.samplers.RandomSampler()
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    add_ec_restore_options(parser)
     add_common_options(parser)
+    add_ec_restore_options(parser)
+    add_tc_restore_options(parser)
     kwargs = vars(parser.parse_args())
+    if "ec_hash" in kwargs and "tc_hash" in kwargs:
+        raise ValueError("Cannot specify both ec_hash and tc_hash at the moment")
     this_suggest_config = partial(
         suggest_config,
-        ec_hash=kwargs.pop("ec_hash"),
-        ec_project=kwargs.pop("ec_project"),
-        ec_epoch=kwargs.pop("ec_epoch"),
+        **pop(
+            kwargs,
+            ["ec_hash", "ec_project", "ec_epoch", "tc_hash", "tc_project", "tc_epoch"],
+        ),
     )
     dispatcher = Dispatcher(
-        grace_period=3,
+        grace_period=6,
         no_improvement_patience=6,
         metric="trk.double_majority_pt0.9",
-        # additional_stoppers=[
-        #     ThresholdTrialStopper("trk.double_majority_pt0.9", {0: 0.6, 4: 0.8})
-        # ],
+        additional_stoppers=[
+            MaximumIterationStopper(10),
+        ],
         **kwargs,
     )
     dispatcher(

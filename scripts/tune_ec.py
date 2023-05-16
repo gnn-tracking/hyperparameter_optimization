@@ -20,6 +20,7 @@ from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.restore import restore_model
 from gnn_tracking_hpo.trainable import TCNTrainable, suggest_default_values
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
+from gnn_tracking_hpo.util.dict import pop
 
 
 class ECTrainable(TCNTrainable):
@@ -53,9 +54,9 @@ class ECTrainable(TCNTrainable):
         """Load previously trained model to continue"""
         return restore_model(
             ECTrainable,
-            self.tc["ec_project"],
-            self.tc["ec_hash"],
-            self.tc.get("ec_epoch", -1),
+            tune_dir=self.tc["ec_project"],
+            run_hash=self.tc["ec_hash"],
+            epoch=self.tc.get("ec_epoch", -1),
             freeze=False,
         )
 
@@ -152,9 +153,7 @@ if __name__ == "__main__":
     kwargs = vars(parser.parse_args())
     this_suggest_config = partial(
         suggest_config,
-        ec_hash=kwargs.pop("ec_hash"),
-        ec_project=kwargs.pop("ec_project"),
-        ec_epoch=kwargs.pop("ec_epoch"),
+        **pop(kwargs, ["ec_hash", "ec_project", "ec_epoch"]),
     )
     dispatcher = MyDispatcher(
         **kwargs,
