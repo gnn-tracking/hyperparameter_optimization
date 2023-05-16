@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from torch import nn
 
-from gnn_tracking_hpo.defaults import (
-    legacy_config_compatibility,
-    suggest_default_values,
-)
+from gnn_tracking_hpo.defaults import legacy_config_compatibility
 from gnn_tracking_hpo.util.log import logger
 from gnn_tracking_hpo.util.paths import find_checkpoint, get_config
 
@@ -31,7 +28,7 @@ def restore_model(
     checkpoint_path = find_checkpoint(tune_dir, f"_{run_hash}_", epoch)
     config = legacy_config_compatibility(get_config(tune_dir, f"_{run_hash}_"))
     # In case any new values were added, we need to suggest this again
-    suggest_default_values(config, None, ec="default", hc="none")
+    # suggest_default_values(config, None, ec="default", hc="none")
     if config_update is not None:
         config.update(config_update)
     config["_no_data"] = True

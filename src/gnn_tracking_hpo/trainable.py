@@ -109,7 +109,11 @@ class DefaultTrainable(HPOTrainable):
         logger.debug("Got config\n%s", config_table)
         self.tc = config
         fix_seeds()
+        self.hook_before_trainer_setup()
         self.trainer = self.get_trainer()
+
+    def hook_before_trainer_setup(self):
+        pass
 
     def get_model(self) -> nn.Module:
         return GraphTCN(
@@ -275,8 +279,38 @@ class DefaultTrainable(HPOTrainable):
 
 class PretrainedECTCNTrainable(DefaultTrainable):
     @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return "tc_project" in self.tc
+
+    @property
     def _need_edge_loss(self) -> bool:
         return not self.tc.get("ec_freeze", True)
+
+    def hook_before_trainer_setup(self):
+        """Ensure that we bring back the EC config before we initialize anything"""
+        self._update_config_from_restored_tc()
+        self._update_edge_loss_config_from_ec()
+
+    def _update_config_from_restored_tc(self) -> None:
+        if not self._is_continued_run:
+            return
+        keys = ["ec_project", "ec_hash", "ec_epoch"]
+        tc_config = get_config(project=self.tc["tc_project"], part=self.tc["tc_hash"])
+        if not tc_config["ec_freeze"]:
+            _ = (
+                "Currently cannot bring back pre-trained TCNS with ECs that were"
+                " not frozen. "
+            )
+            raise NotImplementedError(_)
+        for key in keys:
+            if key in tc_config:
+                logger.debug(
+                    "Setting %s to %s from restored TC configuration",
+                    key,
+                    tc_config[key],
+                )
+                self.tc[key] = tc_config[key]
 
     def _update_edge_loss_config_from_ec(self) -> None:
         """When we use an unfrozen pretrained EC, make sure the loss function
@@ -294,7 +328,6 @@ class PretrainedECTCNTrainable(DefaultTrainable):
                 self.tc[key] = ec_config[key]
 
     def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
-        self._update_edge_loss_config_from_ec()
         loss_functions = super().get_loss_functions()
         if not self._need_edge_loss:
             loss_functions.pop("edge")
@@ -304,11 +337,6 @@ class PretrainedECTCNTrainable(DefaultTrainable):
         trainer = super().get_trainer()
         trainer.ec_threshold = self.tc["m_ec_threshold"]
         return trainer
-
-    @property
-    def _is_continued_run(self) -> bool:
-        """We're restoring a model from a previous run and continuing."""
-        return "tc_project" in self.tc
 
     def _get_new_model(self) -> nn.Module:
         ec = restore_model(
@@ -333,9 +361,6 @@ class PretrainedECTCNTrainable(DefaultTrainable):
             run_hash=self.tc["tc_hash"],
             epoch=self.tc.get("tc_epoch", -1),
             freeze=False,
-            config_update={
-                "ec_freeze": self.tc["ec_freeze"],
-            },
         )
 
     def get_model(self) -> nn.Module:

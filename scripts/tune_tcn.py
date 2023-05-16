@@ -22,6 +22,9 @@ def suggest_config(
     ec_project: str,
     ec_hash: str,
     ec_epoch: int = -1,
+    tc_project: str = "",
+    tc_hash: str = "",
+    tc_epoch: int = -1,
     test=False,
     fixed: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -50,15 +53,16 @@ def suggest_config(
     d("m_use_ec_embeddings_for_hc", True)
     d("m_feed_edge_weights", True)
 
-    d("ec_project", ec_project)
-    d("ec_hash", ec_hash)
-    d("ec_epoch", ec_epoch)
-    # d("edge_loss_threshold", 0.00019)
-    # d("ec_loss", "haughty_focal")
-    # d("ec_pt_thld", 0.81)
-    # d("focal_alpha", 0.45)
-    # d("focal_gamma", 3.5)
-    # d("lw_edge", 100)
+    if tc_hash:
+        d("tc_project", tc_project)
+        d("tc_hash", tc_hash)
+        d("tc_epoch", tc_epoch)
+    if ec_hash:
+        d("ec_project", ec_project)
+        d("ec_hash", ec_hash)
+        d("ec_epoch", ec_epoch)
+
+    d("lw_edge", 100)
 
     d("batch_size", 5)
 
@@ -79,7 +83,7 @@ def suggest_config(
     d("repulsive_radius_threshold", 3.7)
     d("m_h_outdim", 12)
     d("m_L_hc", 4)
-    d("ec_freeze", True)
+    d("ec_freeze", False)
     d("lw_potential_repulsive", 0.16)
 
     # Tuned hyperparameters
