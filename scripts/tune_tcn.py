@@ -10,7 +10,7 @@ from ray.tune.stopper import MaximumIterationStopper
 from gnn_tracking_hpo.cli import add_ec_restore_options, add_tc_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.defaults import suggest_default_values
-from gnn_tracking_hpo.trainable import TCNTrainable
+from gnn_tracking_hpo.trainable import PretrainedECTCNTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.dict import pop
 
@@ -123,6 +123,6 @@ if __name__ == "__main__":
         **kwargs,
     )
     dispatcher(
-        TCNTrainable,
+        PretrainedECTCNTrainable,
         this_suggest_config,
     )

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import pprint
-from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
 from typing import Any
@@ -103,22 +102,6 @@ def get_points_to_evaluate(
     if points_to_evaluate:
         logger.info("Enqueued trials:\n%s", pprint.pformat(points_to_evaluate))
     return points_to_evaluate
-
-
-@dataclass
-class ServerConfig:
-    """Config values for server that we run on"""
-
-    #: Total number of GPUs available per node
-    gpus: int = 0
-    #: Total number of cpus available per node
-    cpus: int = 1
-    #: Max batches that we can load into the GPU RAM
-    max_batches: int = 1
-
-    @property
-    def cpus_per_gpu(self) -> int:
-        return self.cpus // self.gpus
 
 
 def retrieve_config_from_wandb(hash: str) -> dict[str, Any]:

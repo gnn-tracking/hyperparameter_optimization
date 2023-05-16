@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from torch import nn
 
-from gnn_tracking_hpo.defaults import suggest_default_values
-from gnn_tracking_hpo.trainable import legacy_config_compatibility
+from gnn_tracking_hpo.defaults import (
+    legacy_config_compatibility,
+    suggest_default_values,
+)
 from gnn_tracking_hpo.util.log import logger
 from gnn_tracking_hpo.util.paths import find_checkpoint, get_config
 
