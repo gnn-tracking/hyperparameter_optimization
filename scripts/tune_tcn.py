@@ -5,7 +5,6 @@ from functools import partial
 from typing import Any
 
 import optuna
-from ray.tune.stopper import MaximumIterationStopper
 
 from gnn_tracking_hpo.cli import add_ec_restore_options, add_tc_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -78,29 +77,31 @@ def suggest_config(
     d("sb", 0.09)
     d("m_alpha_hc", 0.63)
     d("lw_background", 0.0041)
-    d("repulsive_radius_threshold", 3.7)
     d("m_h_outdim", 12)
     d("m_L_hc", 4)
-    ec_freeze = d("ec_freeze", False)
-    d("lw_potential_repulsive", 0.16)
+    ec_freeze = d("ec_freeze", True)
+
+    d("lr", [5e-4])
+    if not ec_freeze:
+        d("lw_edge", 2_000)
+    d("m_ec_threshold", 0.36)
 
     # Tuned hyperparameters
     # ---------------------
 
-    # d("m_ec_threshold", 0.3, 0.4)
-    d("lr", [5e-4])
-    if not ec_freeze:
-        d("lw_edge", 2_000)
+    d("repulsive_radius_threshold", 3.0, 10)
+    d("lw_potential_repulsive", [0.3, 0.35, 0.4])
 
     ec_suggestions = "continued" if ec_freeze else "fixed"
     suggest_default_values(config, trial, ec=ec_suggestions)
     return config
 
 
-class MyDispatcher(Dispatcher):
-    pass
-    # def get_optuna_sampler(self):
-    #     return optuna.samplers.RandomSampler()
+# class MyDispatcher(Dispatcher):
+#     def get_optuna_sampler(self):
+#         return optuna.samplers.GridSampler({
+#             "lw_potential_repulsive": [0.01, 0.1, 1,]
+#         })
 
 
 if __name__ == "__main__":
@@ -119,12 +120,12 @@ if __name__ == "__main__":
         ),
     )
     dispatcher = Dispatcher(
-        grace_period=6,
-        no_improvement_patience=6,
+        grace_period=10,
+        no_improvement_patience=3,
         metric="trk.double_majority_pt0.9",
-        additional_stoppers=[
-            MaximumIterationStopper(10),
-        ],
+        # additional_stoppers=[
+        #     MaximumIterationStopper(10),
+        # ],
         **kwargs,
     )
     dispatcher(
