@@ -84,11 +84,11 @@ def suggest_config(
         d("lw_edge", 2_000)
 
     d("repulsive_radius_threshold", 3.7)
+    d("lr", [7e-4])
 
     # Tuned hyperparameters
     # ---------------------
 
-    d("lr", [7e-4])
     d("m_L_hc", [3, 6])
     d("m_ec_threshold", [0.25, 0.27, 0.29])
     d("lw_potential_repulsive", [0.28, 0.32, 0.36])
@@ -98,11 +98,15 @@ def suggest_config(
     return config
 
 
-# class MyDispatcher(Dispatcher):
-#     def get_optuna_sampler(self):
-#         return optuna.samplers.GridSampler({
-#             "lw_potential_repulsive": [0.01, 0.1, 1,]
-#         })
+class MyDispatcher(Dispatcher):
+    def get_optuna_sampler(self):
+        return optuna.samplers.GridSampler(
+            {
+                "m_L_hc": [3, 6],
+                "m_ec_threshold": [0.25, 0.27, 0.29],
+                "lw_potential_repulsive": [0.28, 0.32, 0.36],
+            }
+        )
 
 
 if __name__ == "__main__":
