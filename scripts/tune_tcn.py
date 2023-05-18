@@ -78,19 +78,20 @@ def suggest_config(
     d("m_alpha_hc", 0.63)
     d("lw_background", 0.0041)
     d("m_h_outdim", 12)
-    d("m_L_hc", 4)
     ec_freeze = d("ec_freeze", True)
 
-    d("lr", [5e-4])
     if not ec_freeze:
         d("lw_edge", 2_000)
-    d("m_ec_threshold", 0.36)
+
+    d("repulsive_radius_threshold", 3.7)
 
     # Tuned hyperparameters
     # ---------------------
 
-    d("repulsive_radius_threshold", 3.0, 10)
-    d("lw_potential_repulsive", [0.3, 0.35, 0.4])
+    d("lr", [7e-4])
+    d("m_L_hc", [3, 6])
+    d("m_ec_threshold", [0.25, 0.27, 0.29])
+    d("lw_potential_repulsive", [0.28, 0.32, 0.36])
 
     ec_suggestions = "continued" if ec_freeze else "fixed"
     suggest_default_values(config, trial, ec=ec_suggestions)
