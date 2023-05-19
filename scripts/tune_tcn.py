@@ -5,6 +5,8 @@ from functools import partial
 from typing import Any
 
 import optuna
+from gnn_tracking.training.lw_setter import SineLWSH
+from gnn_tracking.training.tcn_trainer import TCNTrainer
 
 from gnn_tracking_hpo.cli import add_ec_restore_options, add_tc_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -12,6 +14,23 @@ from gnn_tracking_hpo.defaults import suggest_default_values
 from gnn_tracking_hpo.trainable import PretrainedECTCNTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.dict import pop
+
+
+class LWSPretrainedECTCNTrainable(PretrainedECTCNTrainable):
+    def get_trainer(self) -> TCNTrainer:
+        trainer = super().get_trainer()
+        trainer.add_hook(self.get_lws_hook(), "batch")
+        return trainer
+
+    def get_lws_hook(self):
+        return SineLWSH(
+            loss_name=("potential", "repulsive"),
+            mean=self.tc["lw_potential_repulsive"],
+            amplitude=self.tc["lws_repulsive_sine_amplitude"],
+            period=self.tc["lws_repulsive_sine_period"],
+            amplitude_halflife=self.tc["lws_repulsive_sine_amplitude_halflife"],
+            n_batches=12000,
+        )
 
 
 def suggest_config(
@@ -85,13 +104,16 @@ def suggest_config(
 
     d("repulsive_radius_threshold", 3.7)
     d("lr", [7e-4])
+    d("m_ec_threshold", 0.27)
+    d("m_L_hc", 3)
 
     # Tuned hyperparameters
     # ---------------------
 
-    d("m_L_hc", [3, 6])
-    d("m_ec_threshold", [0.25, 0.27, 0.29])
-    d("lw_potential_repulsive", [0.28, 0.32, 0.36])
+    d("lw_potential_repulsive", [0.2, 0.28, 0.36])
+    d("lws_repulsive_sine_amplitude", [-0.10, -0.15, -0.20])
+    d("lws_repulsive_sine_period", [2, 4])
+    d("lws_repulsive_sine_amplitude_halflife", [4, 6])
 
     ec_suggestions = "continued" if ec_freeze else "fixed"
     suggest_default_values(config, trial, ec=ec_suggestions)
@@ -99,14 +121,7 @@ def suggest_config(
 
 
 class MyDispatcher(Dispatcher):
-    def get_optuna_sampler(self):
-        return optuna.samplers.GridSampler(
-            {
-                "m_L_hc": [3, 6],
-                "m_ec_threshold": [0.25, 0.27, 0.29],
-                "lw_potential_repulsive": [0.28, 0.32, 0.36],
-            }
-        )
+    pass
 
 
 if __name__ == "__main__":
@@ -134,6 +149,6 @@ if __name__ == "__main__":
         **kwargs,
     )
     dispatcher(
-        PretrainedECTCNTrainable,
+        LWSPretrainedECTCNTrainable,
         this_suggest_config,
     )
