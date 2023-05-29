@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import collections
 import logging
 from abc import ABC
 from functools import partial
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import tabulate
+import torch
+from gnn_tracking.graph_construction.radius_scanner import RadiusScanner
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
     EdgeWeightFocalLoss,
@@ -14,6 +18,7 @@ from gnn_tracking.metrics.losses import (
     PotentialLoss,
 )
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
+from gnn_tracking.models.mlp import MLP
 from gnn_tracking.models.track_condensation_networks import (
     GraphTCN,
     PreTrainedECGraphTCN,
@@ -411,3 +416,115 @@ class ECTrainable(DefaultTrainable):
         if self._is_continued_run:
             return self._get_restored_model()
         return self._get_new_model()
+
+
+class GCTrainer(TCNTrainer):
+    @torch.no_grad()
+    def test_step(self, val=True, max_batches: int | None = None) -> dict[str, float]:
+        if max_batches is None:
+            max_batches = 5
+        else:
+            max_batches = min(max_batches, 5)
+        self.model.eval()
+        loader = self.val_loader if val else self.test_loader
+        assert loader is not None
+        mos = []
+        batch_metrics = collections.defaultdict(list)
+        for _batch_idx, data in enumerate(loader):
+            if max_batches and _batch_idx > max_batches:
+                break
+            data = data.to(self.device)  # noqa: PLW2901
+            model_output = self.evaluate_model(
+                data,
+                mask_pids_reco=False,
+            )
+            batch_loss, these_batch_losses, loss_weights = self.get_batch_losses(
+                model_output
+            )
+
+            batch_metrics["total"].append(batch_loss.item())
+            for key, value in these_batch_losses.items():
+                batch_metrics[key].append(value.item())
+                batch_metrics[f"{key}_weighted"].append(
+                    value.item() * loss_weights[key]
+                )
+
+            mos.append(model_output)
+        rs = RadiusScanner(
+            model_output=mos,
+            radius_range=(0.01, 5),
+            max_num_neighbors=128,
+            n_trials=10,
+            target_fracs=(0.8, 0.9, 0.95),
+            max_edges=8_000_000,
+        )
+        rs.logger.setLevel(logging.INFO)
+        rsr = rs()
+        self._rsr = rsr
+        return (
+            rsr.get_foms()
+            | {k: np.nanmean(v) for k, v in batch_metrics.items()}
+            | {
+                f"{k}_std": np.nanstd(v, ddof=1).item()
+                for k, v in batch_metrics.items()
+            }
+        )
+
+
+class MetricLearningGraphConstruction(nn.Module):
+    def __init__(
+        self, *, node_indim: int, outdim: int = 12, n_layers: int, layer_width: int
+    ):
+        super().__init__()
+        self.encoder = MLP(
+            node_indim,
+            layer_width,
+            layer_width,
+            L=n_layers,
+            include_last_activation=True,
+        )
+        self.beta_nn = MLP(layer_width, 1, layer_width, L=1)
+        self.latent = MLP(layer_width, outdim, layer_width, L=1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, data) -> dict[str, torch.Tensor]:
+        h = self.encoder(data.x)
+        r = {
+            "H": self.latent(h),
+            "B": self.sigmoid(self.beta_nn(h)).squeeze(),
+        }
+        return r
+
+
+class GCTrainable(DefaultTrainable):
+    def get_model(self) -> nn.Module:
+        return MetricLearningGraphConstruction(
+            node_indim=7,
+            n_layers=self.tc["m_L_gc"],
+            layer_width=self.tc["m_hidden_dim"],
+            outdim=self.tc["m_h_outdim"],
+        )
+
+    def get_loss_functions(self) -> dict[str, Any]:
+        return {
+            "potential": self.get_potential_loss_function(),
+            "background": self.get_background_loss_function(),
+        }
+
+    def get_cluster_functions(self) -> dict[str, Any]:
+        return {}
+
+    def get_trainer(self) -> TCNTrainer:
+        trainer = GCTrainer(
+            model=self.get_model(),
+            loaders=self.get_loaders(),
+            loss_functions=self.get_loss_functions(),
+            lr=self.tc["lr"],
+            lr_scheduler=self.get_lr_scheduler(),
+            optimizer=self.get_optimizer(),
+        )
+        trainer.logger.setLevel(logging.DEBUG)
+        if self.tc["scheduler"] == "cycliclr":
+            logger.info("Setting lr_scheduler_step to batch")
+            trainer.lr_scheduler_step = "batch"
+        return trainer

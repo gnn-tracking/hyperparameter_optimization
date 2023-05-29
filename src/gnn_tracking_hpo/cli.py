@@ -46,6 +46,7 @@ def add_wandb_options(parser: ArgumentParser) -> None:
         help="Wandb group name",
     )
     parser.add_argument("--note", help="Wandb note")
+    parser.add_argument("--wandb-project", default="gnn_tracking", help="Wandb project")
 
 
 def add_truth_cut_options(parser: ArgumentParser) -> None:

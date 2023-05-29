@@ -26,7 +26,7 @@ def suggest_default_values(
     """
     if "adam_epsilon" in config:
         raise ValueError("It's adam_eps, not adam_epsilon")
-    if ec not in ["default", "perfect", "fixed", "continued"]:
+    if ec not in ["default", "perfect", "fixed", "continued", "none"]:
         raise ValueError(f"Invalid ec: {ec}")
     if hc not in ["default", "none"]:
         raise ValueError(f"Invalid hc: {hc}")
@@ -68,7 +68,8 @@ def suggest_default_values(
         d("n_graphs_train", 7743)
         d("n_graphs_val", 10)
 
-    d("ec_pt_thld", 0.0)
+    if ec != "none":
+        d("ec_pt_thld", 0.0)
 
     d("sector", None)
     d("batch_size", 1)

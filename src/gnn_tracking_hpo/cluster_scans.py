@@ -17,7 +17,7 @@ def fixed_dbscan_scan(
     pts: np.ndarray,
     reconstructable: np.ndarray,
     *,
-    guide="trk.double_majority_pt1.5",
+    guide="trk.double_majority_pt0.9",
     epoch=None,
     start_params: dict[str, Any] | None = None,
 ) -> ClusterScanResult:

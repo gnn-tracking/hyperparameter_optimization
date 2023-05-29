@@ -144,6 +144,7 @@ class Dispatcher:
         grace_period=3,
         no_improvement_patience=10,
         additional_stoppers=None,
+        wandb_project="gnn_tracking",
     ):
         """For most arguments, see corresponding command line interface.
 
@@ -196,6 +197,7 @@ class Dispatcher:
             with open(id_file_path, "a") as f:
                 f.write(f"{self.id} {datetime.now()} {sys.argv}\n")
             logger.debug("Wrote dispatcher ID to %s", id_file_path)
+        self.wandb_project = wandb_project
 
     def __call__(
         self,
@@ -267,7 +269,7 @@ class Dispatcher:
         callbacks = [
             WandbLoggerCallback(
                 api_key_file="~/.wandb_api_key",
-                project="gnn_tracking",
+                project=self.wandb_project,
                 tags=self.tags,
                 group=self.group,
                 notes=self.note,
