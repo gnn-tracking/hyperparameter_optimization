@@ -145,6 +145,7 @@ class Dispatcher:
         no_improvement_patience=10,
         additional_stoppers=None,
         wandb_project="gnn_tracking",
+        comparison="max",
     ):
         """For most arguments, see corresponding command line interface.
 
@@ -198,6 +199,7 @@ class Dispatcher:
                 f.write(f"{self.id} {datetime.now()} {sys.argv}\n")
             logger.debug("Wrote dispatcher ID to %s", id_file_path)
         self.wandb_project = wandb_project
+        self.comparison = comparison
 
     def __call__(
         self,
@@ -247,7 +249,7 @@ class Dispatcher:
         return NoImprovementTrialStopper(
             metric=self.metric,
             patience=self.no_improvement_patience,
-            mode="max",
+            mode=self.comparison,
             grace_period=self.grace_period,
             rel_change_thld=0.005,
         )
@@ -313,7 +315,7 @@ class Dispatcher:
         optuna_search = OptunaSearch(
             space,
             metric=self.metric,
-            mode="max",
+            mode=self.comparison,
             points_to_evaluate=self.points_to_evaluate,
             sampler=self.get_optuna_sampler(),
         )
@@ -339,7 +341,7 @@ class Dispatcher:
             return None
         return ASHAScheduler(
             metric=self.metric,
-            mode="max",
+            mode=self.comparison,
             grace_period=self.grace_period,
         )
 
@@ -356,7 +358,7 @@ class Dispatcher:
     def get_checkpoint_config(self) -> CheckpointConfig:
         return CheckpointConfig(
             checkpoint_score_attribute=self.metric,
-            checkpoint_score_order="max",
+            checkpoint_score_order=self.comparison,
             num_to_keep=5,
             checkpoint_frequency=1,
         )

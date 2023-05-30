@@ -453,9 +453,9 @@ class GCTrainer(TCNTrainer):
         rs = RadiusScanner(
             model_output=mos,
             radius_range=(0.01, 5),
-            max_num_neighbors=128,
+            max_num_neighbors=64,
             n_trials=10,
-            target_fracs=(0.8, 0.9, 0.95),
+            target_fracs=(0.8, 0.85, 0.88, 0.9, 0.93, 0.95),
             max_edges=8_000_000,
         )
         rs.logger.setLevel(logging.INFO)

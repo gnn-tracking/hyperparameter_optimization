@@ -40,21 +40,20 @@ def suggest_config(
     # fixed parameters
     # -----------------------
 
-    d("m_L_gc", 6)
     d("m_hidden_dim", 256)
-    d("m_h_outdim", 12)
     d("lw_potential_attractive", 1.0)
     d("attr_pt_thld", 0.9)
     d("sb", 0.09)
     d("q_min", 0.34)
-    d("lr", 1e-3)
 
     # Tuned parameters
     # ----------------
-
-    d("repulsive_radius_threshold", 2.0, 10.0)
-    d("lw_potential_repulsive", 1e-4, 1e-2, log=True)
-    d("lw_background", 1e-4, 1e-2, log=True)
+    d("m_L_gc", [5, 6, 8])
+    d("lr", [3e-3, 1e-3])
+    d("m_h_outdim", [8, 12, 16])
+    d("repulsive_radius_threshold", 1, 10)
+    d("lw_background", 1e-4, 3e-3)
+    d("lw_potential_repulsive", 2e-4, 1e-2)
 
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)
@@ -68,9 +67,9 @@ class MyDispatcher(Dispatcher):
     def get_no_improvement_stopper(self) -> NoImprovementTrialStopper:
         return NoImprovementTrialStopper(
             metric="total",
-            patience=10,
-            mode="max",
-            grace_period=0,
+            patience=3,
+            mode="min",
+            grace_period=3,
             rel_change_thld=0.01,
         )
 
@@ -84,8 +83,6 @@ if __name__ == "__main__":
     kwargs = vars(parser.parse_args())
     assert kwargs["wandb_project"] == "gnn_tracking_gc"
     dispatcher = MyDispatcher(
-        **kwargs,
-        metric="n_edges_frac_segment50_90",
-        grace_period=5,
+        **kwargs, metric="n_edges_frac_segment50_90", grace_period=4, comparison="min"
     )
     dispatcher(GCTrainable, suggest_config)
