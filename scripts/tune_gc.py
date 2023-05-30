@@ -4,12 +4,30 @@ from argparse import ArgumentParser
 from typing import Any
 
 import optuna
+from gnn_tracking.training.lw_setter import LinearLWSH
+from gnn_tracking.training.tcn_trainer import TCNTrainer
 from rt_stoppers_contrib import NoImprovementTrialStopper
 
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.defaults import suggest_default_values
 from gnn_tracking_hpo.trainable import GCTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
+
+
+class LWSGCTrainable(GCTrainable):
+    def get_trainer(self) -> TCNTrainer:
+        trainer = super().get_trainer()
+        trainer.add_hook(self.get_lws_hook(), "batch")
+        return trainer
+
+    def get_lws_hook(self):
+        return LinearLWSH(
+            loss_name=("potential", "repulsive"),
+            start_value=self.tc["lws_repulsive_llw_start_value"],
+            end_value=self.tc["lw_potential_repulsive"],
+            end=self.tc["lws_potential_llw_end"],
+            n_batches=800,
+        )
 
 
 def suggest_config(
@@ -55,17 +73,20 @@ def suggest_config(
     d("lw_background", 5e-4)
     d("m_midway_residual", True)
     d("m_midway_layer_norm", False)
+    d("m_h_outdim", 12)
     d("m_n_from_eta", 0)
 
     # Tuned parameters
     # ----------------
 
-    d("m_h_outdim", [8, 12, 16])
-    d("lw_potential_repulsive", 8e-3, 5e-2)
+    d("lw_potential_repulsive", [1e-2, 5e-2, 1e-1])
 
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)
     # d("adam_beta2", 0.9, 0.9999)
+
+    d("lws_repulsive_llw_start_value", [5e-4, 1e-3, 5e-3])
+    d("lws_potential_llw_end", [1, 3, 5, 9])
 
     suggest_default_values(config, trial, hc="none", ec="none")
     return config
@@ -93,4 +114,4 @@ if __name__ == "__main__":
     dispatcher = MyDispatcher(
         **kwargs, metric="n_edges_frac_segment50_90", grace_period=4, comparison="min"
     )
-    dispatcher(GCTrainable, suggest_config)
+    dispatcher(LWSGCTrainable, suggest_config)
