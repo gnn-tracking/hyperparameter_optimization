@@ -50,14 +50,18 @@ def suggest_config(
     d("m_L_gc", 6)
     d("rs_max_edges", 10_000_000)
     d("max_sample_size", 800)
+    d("lr", 1e-3)
+    d("repulsive_radius_threshold", 5)
+    d("lw_background", 5e-4)
+    d("m_midway_residual", True)
+    d("m_midway_layer_norm", False)
+    d("m_n_from_eta", 0)
 
     # Tuned parameters
     # ----------------
-    d("lr", [3e-3, 1e-3])
+
     d("m_h_outdim", [8, 12, 16])
-    d("repulsive_radius_threshold", 1, 10)
-    d("lw_background", 1e-4, 3e-3)
-    d("lw_potential_repulsive", 2e-4, 1e-2)
+    d("lw_potential_repulsive", 8e-3, 5e-2)
 
     # d("adam_weight_decay", 0)
     # d("adam_beta1", 0.9, 0.99)

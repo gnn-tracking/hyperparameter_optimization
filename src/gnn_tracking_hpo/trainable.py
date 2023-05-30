@@ -473,29 +473,61 @@ class GCTrainer(TCNTrainer):
         )
 
 
+# todo: rather break down to pre-cluster-space (dim 12) and pre-beta (dim 12), apply
+#   residuals there and then do another MLP to get to the output dim
+#   use that to directly include r and eta in the beta calculation
 class MetricLearningGraphConstruction(nn.Module):
     def __init__(
-        self, *, node_indim: int, outdim: int = 12, n_layers: int, layer_width: int
+        self,
+        *,
+        node_indim: int,
+        outdim: int = 12,
+        n_layers: int,
+        layer_width: int,
+        n_from_eta: int = 0,
+        midway_residual: bool = False,
+        midway_layer_norm: bool = False,
     ):
         super().__init__()
-        self.encoder = MLP(
+        # Flags & settings
+        self._midway_residual = midway_residual
+        self._n_from_eta = n_from_eta
+        self._midway_layer_norm = midway_layer_norm
+
+        # Static modules
+        self._sigmoid = nn.Sigmoid()
+        self._relu = nn.ReLU()
+
+        # Modules
+        self._layer_norm = nn.LayerNorm(layer_width)
+        self._encoder1 = MLP(
             node_indim,
             layer_width,
             layer_width,
-            L=n_layers,
-            include_last_activation=True,
+            L=n_layers // 2,
         )
-        self.beta_nn = MLP(layer_width, 1, layer_width, L=1)
-        self.latent = MLP(layer_width, outdim, layer_width, L=1)
-        self.sigmoid = nn.Sigmoid()
+        self._encoder2 = MLP(
+            layer_width,
+            layer_width,
+            layer_width,
+            L=n_layers - n_layers // 2,
+        )
+        self._beta_nn = MLP(layer_width, 1, layer_width, L=1)
+        self._latent = MLP(layer_width, outdim, layer_width, L=1)
 
     def forward(self, data) -> dict[str, torch.Tensor]:
-        h = self.encoder(data.x)
-        r = {
-            "H": self.latent(h),
-            "B": self.sigmoid(self.beta_nn(h)).squeeze(),
-        }
-        return r
+        main_latent_halfway = self._relu(self._encoder1(data.x))
+        main_latent = self._encoder2(main_latent_halfway)
+        if self._midway_residual:
+            main_latent += main_latent_halfway
+        if self._midway_layer_norm:
+            main_latent = self._layer_norm(main_latent)
+        main_latent = self._relu(main_latent)
+        cluster_space = self._latent(main_latent)
+        eta = data.x[:, 3]
+        cluster_space[:, : self._n_from_eta] += eta.reshape(-1, 1)
+        beta = self._sigmoid(self._beta_nn(main_latent)).squeeze()
+        return {"H": cluster_space, "B": beta}
 
 
 class GCTrainable(DefaultTrainable):
@@ -505,6 +537,9 @@ class GCTrainable(DefaultTrainable):
             n_layers=self.tc["m_L_gc"],
             layer_width=self.tc["m_hidden_dim"],
             outdim=self.tc["m_h_outdim"],
+            n_from_eta=self.tc["m_n_from_eta"],
+            midway_residual=self.tc["m_midway_residual"],
+            midway_layer_norm=self.tc["m_midway_layer_norm"],
         )
 
     def get_loss_functions(self) -> dict[str, Any]:
