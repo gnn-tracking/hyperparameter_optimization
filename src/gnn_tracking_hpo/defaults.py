@@ -43,6 +43,7 @@ def suggest_default_values(
 
     d("node_indim", 7)
     d("edge_indim", 4)
+    d("max_sample_size", 10_000)
 
     if test_data_dir := os.environ.get("TEST_TRAIN_DATA_DIR"):
         d("train_data_dir", test_data_dir)

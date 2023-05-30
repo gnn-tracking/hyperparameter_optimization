@@ -245,6 +245,7 @@ class DefaultTrainable(HPOTrainable):
             test=self.tc["test"],
             batch_size=self.tc["batch_size"],
             val_batch_size=self.tc["_val_batch_size"],
+            max_sample_size=self.tc["max_sample_size"],
         )
 
     def get_trainer(self) -> TCNTrainer:

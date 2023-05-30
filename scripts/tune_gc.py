@@ -40,18 +40,19 @@ def suggest_config(
     # fixed parameters
     # -----------------------
 
-    d("m_hidden_dim", 256)
+    d("m_hidden_dim", 512)
     d("lw_potential_attractive", 1.0)
     d("attr_pt_thld", 0.9)
     d("sb", 0.09)
     d("q_min", 0.34)
 
     d("max_edges_per_node", 256)
+    d("m_L_gc", 6)
     d("rs_max_edges", 10_000_000)
+    d("max_sample_size", 800)
 
     # Tuned parameters
     # ----------------
-    d("m_L_gc", [5, 6, 8])
     d("lr", [3e-3, 1e-3])
     d("m_h_outdim", [8, 12, 16])
     d("repulsive_radius_threshold", 1, 10)
