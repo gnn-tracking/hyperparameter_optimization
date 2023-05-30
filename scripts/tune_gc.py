@@ -46,6 +46,9 @@ def suggest_config(
     d("sb", 0.09)
     d("q_min", 0.34)
 
+    d("max_edges_per_node", 256)
+    d("rs_max_edges", 10_000_000)
+
     # Tuned parameters
     # ----------------
     d("m_L_gc", [5, 6, 8])

@@ -419,12 +419,13 @@ class ECTrainable(DefaultTrainable):
 
 
 class GCTrainer(TCNTrainer):
+    def __init__(self, *args, rs_max_edges=8_000_000, max_edges_per_node=128, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._rs_max_edges = rs_max_edges
+        self._max_edges_per_node = max_edges_per_node
+
     @torch.no_grad()
     def test_step(self, val=True, max_batches: int | None = None) -> dict[str, float]:
-        if max_batches is None:
-            max_batches = 5
-        else:
-            max_batches = min(max_batches, 5)
         self.model.eval()
         loader = self.val_loader if val else self.test_loader
         assert loader is not None
@@ -453,10 +454,10 @@ class GCTrainer(TCNTrainer):
         rs = RadiusScanner(
             model_output=mos,
             radius_range=(0.01, 5),
-            max_num_neighbors=64,
+            max_num_neighbors=self._max_edges_per_node,
             n_trials=10,
             target_fracs=(0.8, 0.85, 0.88, 0.9, 0.93, 0.95),
-            max_edges=8_000_000,
+            max_edges=self._rs_max_edges,
         )
         rs.logger.setLevel(logging.INFO)
         rsr = rs()
@@ -522,6 +523,8 @@ class GCTrainable(DefaultTrainable):
             lr=self.tc["lr"],
             lr_scheduler=self.get_lr_scheduler(),
             optimizer=self.get_optimizer(),
+            rs_max_edges=self.tc["rs_max_edges"],
+            max_edges_per_node=self.tc["max_edges_per_node"],
         )
         trainer.logger.setLevel(logging.DEBUG)
         if self.tc["scheduler"] == "cycliclr":
