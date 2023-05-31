@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 from argparse import ArgumentParser
+from functools import partial
 from math import isnan
 from typing import Any, DefaultDict
 
@@ -11,10 +12,12 @@ from gnn_tracking.training.tcn_trainer import TCNTrainer
 from ray import tune
 from rt_stoppers_contrib import NoImprovementTrialStopper
 
+from gnn_tracking_hpo.cli import add_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.defaults import suggest_default_values
 from gnn_tracking_hpo.trainable import GCTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
+from gnn_tracking_hpo.util.dict import pop
 
 
 class LWSGCTrainable(GCTrainable):
@@ -38,6 +41,9 @@ def suggest_config(
     *,
     test=False,
     fixed: dict[str, Any] | None = None,
+    gc_hash: str = "",
+    gc_epoch: int = -1,
+    gc_project: str = "",
 ) -> dict[str, Any]:
     config = get_metadata(test=test)
     config.update(fixed or {})
@@ -57,6 +63,12 @@ def suggest_config(
     d("n_graphs_val", 5)
     d("batch_size", 1)
     d("_val_batch_size", 1)
+
+    # model restore
+    if gc_hash:
+        d("gc_project", gc_project)
+        d("gc_hash", gc_hash)
+        d("gc_epoch", gc_epoch)
 
     # fixed parameters
     # -----------------------
@@ -140,9 +152,14 @@ class MyDispatcher(Dispatcher):
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
+    add_restore_options(parser, prefix="gc", name="Graph Construction Network")
     kwargs = vars(parser.parse_args())
     kwargs.pop("no_scheduler")
     assert kwargs["wandb_project"] == "gnn_tracking_gc"
+
+    this_suggest_config = partial(
+        suggest_config, **pop(kwargs, ["gc_hash", "gc_project", "gc_epoch"])
+    )
 
     nn_stopper = NoNaNStopper(
         {
@@ -159,4 +176,4 @@ if __name__ == "__main__":
         additional_stoppers=[nn_stopper],
         no_scheduler=True,
     )
-    dispatcher(LWSGCTrainable, suggest_config)
+    dispatcher(LWSGCTrainable, this_suggest_config)

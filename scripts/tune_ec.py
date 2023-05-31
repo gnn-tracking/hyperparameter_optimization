@@ -11,7 +11,7 @@ from typing import Any
 import optuna
 from rt_stoppers_contrib import NoImprovementTrialStopper
 
-from gnn_tracking_hpo.cli import add_ec_restore_options
+from gnn_tracking_hpo.cli import add_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.defaults import suggest_default_values
 from gnn_tracking_hpo.trainable import ECTrainable
@@ -102,7 +102,7 @@ class MyDispatcher(Dispatcher):
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
-    add_ec_restore_options(parser)
+    add_restore_options(parser)
     kwargs = vars(parser.parse_args())
     this_suggest_config = partial(
         suggest_config,

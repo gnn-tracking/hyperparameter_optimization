@@ -8,7 +8,7 @@ import optuna
 from gnn_tracking.training.lw_setter import SineLWSH
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 
-from gnn_tracking_hpo.cli import add_ec_restore_options, add_tc_restore_options
+from gnn_tracking_hpo.cli import add_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.defaults import suggest_default_values
 from gnn_tracking_hpo.trainable import PretrainedECTCNTrainable
@@ -127,8 +127,8 @@ class MyDispatcher(Dispatcher):
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
-    add_ec_restore_options(parser)
-    add_tc_restore_options(parser)
+    add_restore_options(parser)
+    add_restore_options(parser, prefix="tc", name="TCN")
     kwargs = vars(parser.parse_args())
     if ("ec_hash" in kwargs) ^ ("tc_hash" in kwargs):
         raise ValueError("Must specify ec_hash XOR tc_hash at the moment")

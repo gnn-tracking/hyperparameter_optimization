@@ -65,40 +65,32 @@ def add_truth_cut_options(parser: ArgumentParser) -> None:
     )
 
 
-def add_ec_restore_options(parser: ArgumentParser, required=False) -> None:
+def add_restore_options(
+    parser: ArgumentParser, required=False, prefix="ec", name="edge classifier"
+) -> None:
+    """Add options for model restoring.
+
+    Args:
+        parser: The parser to add the options to.
+        required: Whether hash and project are required
+        prefix: Prefix for the options
+        name: Name of the model to load (e.g., "edge classifier")
+    """
     parser.add_argument(
-        "--ec-hash",
+        f"--{prefix}-hash",
         required=required,
         type=str,
-        help="Hash of the edge classifier to load",
+        help=f"Hash of the {name} to load",
     )
     parser.add_argument(
-        "--ec-project",
+        f"--{prefix}-project",
         required=required,
         type=str,
-        help="Name of the folder that the edge classifier to load belongs to",
+        help=f"Name of the folder that the {name} to load belongs to",
     )
     parser.add_argument(
-        "--ec-epoch",
+        f"--{prefix}-epoch",
         type=int,
         default=-1,
-        help="Epoch of the edge classifier to load. Defaults to -1 (last epoch).",
-    )
-
-
-def add_tc_restore_options(parser: ArgumentParser, required=False) -> None:
-    parser.add_argument(
-        "--tc-hash", required=required, type=str, help="Hash of the TCN to load"
-    )
-    parser.add_argument(
-        "--tc-project",
-        required=required,
-        type=str,
-        help="Name of the folder that the TCN to load belongs to",
-    )
-    parser.add_argument(
-        "--tc-epoch",
-        type=int,
-        default=-1,
-        help="Epoch of the TCN to load. Defaults to -1 (last epoch).",
+        help=f"Epoch of the {name} to load. Defaults to -1 (last epoch).",
     )

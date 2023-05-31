@@ -301,7 +301,6 @@ class PretrainedECTCNTrainable(DefaultTrainable):
     def _update_config_from_restored_tc(self) -> None:
         if not self._is_continued_run:
             return
-        keys = ["ec_project", "ec_hash", "ec_epoch"]
         tc_config = get_config(project=self.tc["tc_project"], part=self.tc["tc_hash"])
         if not tc_config["ec_freeze"]:
             _ = (
@@ -309,7 +308,7 @@ class PretrainedECTCNTrainable(DefaultTrainable):
                 " not frozen. "
             )
             raise NotImplementedError(_)
-        for key in keys:
+        for key in ["ec_project", "ec_hash", "ec_epoch"]:
             if key in tc_config:
                 logger.debug(
                     "Setting %s to %s from restored TC configuration",
@@ -481,9 +480,9 @@ class MetricLearningGraphConstruction(nn.Module):
         self,
         *,
         node_indim: int,
-        outdim: int = 12,
-        n_layers: int,
-        layer_width: int,
+        h_outdim: int = 12,
+        L_gc: int,
+        hidden_dim: int,
         n_from_eta: int = 0,
         midway_residual: bool = False,
         midway_layer_norm: bool = False,
@@ -499,21 +498,21 @@ class MetricLearningGraphConstruction(nn.Module):
         self._relu = nn.ReLU()
 
         # Modules
-        self._layer_norm = nn.LayerNorm(layer_width)
+        self._layer_norm = nn.LayerNorm(hidden_dim)
         self._encoder1 = MLP(
             node_indim,
-            layer_width,
-            layer_width,
-            L=n_layers // 2,
+            hidden_dim,
+            hidden_dim,
+            L=L_gc // 2,
         )
         self._encoder2 = MLP(
-            layer_width,
-            layer_width,
-            layer_width,
-            L=n_layers - n_layers // 2,
+            hidden_dim,
+            hidden_dim,
+            hidden_dim,
+            L=L_gc - L_gc // 2,
         )
-        self._beta_nn = MLP(layer_width, 1, layer_width, L=1)
-        self._latent = MLP(layer_width, outdim, layer_width, L=1)
+        self._beta_nn = MLP(hidden_dim, 1, hidden_dim, L=1)
+        self._latent = MLP(hidden_dim, h_outdim, hidden_dim, L=1)
 
     def forward(self, data) -> dict[str, torch.Tensor]:
         main_latent_halfway = self._relu(self._encoder1(data.x))
@@ -531,15 +530,29 @@ class MetricLearningGraphConstruction(nn.Module):
 
 
 class GCTrainable(DefaultTrainable):
+    @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return "gc_project" in self.tc
+
     def get_model(self) -> nn.Module:
+        if self._is_continued_run:
+            return self._get_restored_model()
+        return self._get_new_model()
+
+    def _get_restored_model(self):
+        return restore_model(
+            GCTrainable,
+            tune_dir=self.tc["gc_project"],
+            run_hash=self.tc["gc_hash"],
+            epoch=self.tc.get("gc_epoch", -1),
+            freeze=False,
+        )
+
+    def _get_new_model(self) -> nn.Module:
         return MetricLearningGraphConstruction(
             node_indim=7,
-            n_layers=self.tc["m_L_gc"],
-            layer_width=self.tc["m_hidden_dim"],
-            outdim=self.tc["m_h_outdim"],
-            n_from_eta=self.tc["m_n_from_eta"],
-            midway_residual=self.tc["m_midway_residual"],
-            midway_layer_norm=self.tc["m_midway_layer_norm"],
+            **subdict_with_prefix_stripped(self.tc, "m_"),
         )
 
     def get_loss_functions(self) -> dict[str, Any]:
