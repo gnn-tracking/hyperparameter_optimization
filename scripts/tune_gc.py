@@ -133,11 +133,15 @@ class MyDispatcher(Dispatcher):
             rel_change_thld=0.01,
         )
 
+    def get_optuna_sampler(self):
+        return optuna.samplers.RandomSampler()
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
     kwargs = vars(parser.parse_args())
+    kwargs.pop("no_scheduler")
     assert kwargs["wandb_project"] == "gnn_tracking_gc"
 
     nn_stopper = NoNaNStopper(
