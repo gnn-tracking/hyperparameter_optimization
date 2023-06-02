@@ -10,6 +10,7 @@ import optuna
 from gnn_tracking.training.lw_setter import LinearLWSH
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from ray import tune
+from ray.air import CheckpointConfig
 from rt_stoppers_contrib import NoImprovementTrialStopper
 
 from gnn_tracking_hpo.cli import add_restore_options
@@ -18,6 +19,42 @@ from gnn_tracking_hpo.defaults import suggest_default_values
 from gnn_tracking_hpo.trainable import GCTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.dict import pop
+
+# class KiliansComplicatedLWS:
+#     def __init__(self, ratio_up=1.1, ratio_down=0.9, max_attr=1., max_rep=6.,
+#     target_ratio=0.2):
+#         self._ratio_up = ratio_up
+#         self._ratio_down = ratio_down
+#         self._max_attr = max_attr
+#         self._max_rep = max_rep
+#         self._target_ratio = target_ratio
+#
+#
+#     def _get_last_losses(self, trainer):
+#         if len(trainer.test_loss) == 0:
+#             return {
+#                 "attractive": float('nan'),
+#                 "repulsive": float('nan'),
+#             }
+#         return {
+#             "attractive": trainer.test_loss[-1]["potential_attractive"].item(),
+#             "repulsive": trainer.test_loss[-1]["potential_attractive"].item(),
+#         }
+#
+#     def get_lw(self, losses):
+#         if losses["attractive"] > self._max_attr:
+#
+#
+#     def __call__(
+#             self,
+#             trainer,
+#             epoch: int,
+#             batch_idx: int,
+#             model_output: dict[str, Any],
+#             data: Data,
+#     ):
+#         lw = self.get_lw(self._get_last_losses(trainer))
+#         trainer.loss_functions["potential"]["repulsive"] = lw
 
 
 class LWSGCTrainable(GCTrainable):
@@ -75,36 +112,24 @@ def suggest_config(
 
     d("m_hidden_dim", 512)
     d("lw_potential_attractive", 1.0)
-    d("attr_pt_thld", 0.9)
-    d("sb", 0.09)
-    d("q_min", 0.34)
+    # d("attr_pt_thld", 0.9)
 
     d("max_edges_per_node", 256)
-    d("m_L_gc", 6)
+    d("m_depth", 6)
     d("rs_max_edges", 10_000_000)
     d("max_sample_size", 800)
     d("lr", 1e-3)
-    d("repulsive_radius_threshold", 5)
-    d("lw_background", 5e-4)
-    d("m_midway_residual", True)
-    d("m_midway_layer_norm", False)
-    d("m_h_outdim", 12)
-    d("m_n_from_eta", 0)
+    # d("repulsive_radius_threshold", 10)
+    d("m_outdim", 8)
+    d("max_num_neighbors", 256)
 
     # Tuned parameters
     # ----------------
 
-    final_potential = d("lw_potential_repulsive", 1e-1, 1)
-
-    # d("adam_weight_decay", 0)
-    # d("adam_beta1", 0.9, 0.99)
-    # d("adam_beta2", 0.9, 0.9999)
-
-    d("lws_repulsive_llw_start_value", 5e-4)
-    if final_potential > 0.5:
-        d("lws_repulsive_llw_end", 9, 20)
-    else:
-        d("lws_repulsive_llw_end", 1, 9)
+    d("r_emb", 10)
+    d("frac_random_edges", 10)
+    d("r_emb_hinge", 10)
+    d("lw_potential_repulsive", 0.2)
 
     suggest_default_values(config, trial, hc="none", ec="none")
     return config
@@ -136,13 +161,22 @@ class NoNaNStopper(tune.Stopper):
 
 
 class MyDispatcher(Dispatcher):
-    def get_no_improvement_stopper(self) -> NoImprovementTrialStopper:
-        return NoImprovementTrialStopper(
-            metric="total",
-            patience=5,
-            mode="min",
-            grace_period=5,
-            rel_change_thld=0.01,
+    def get_no_improvement_stopper(self) -> NoImprovementTrialStopper | None:
+        return None
+        # return NoImprovementTrialStopper(
+        #     metric="n_edges_frac_segment50_80",
+        #     patience=5,
+        #     mode="min",
+        #     grace_period=10,
+        #     rel_change_thld=0.01
+        # )
+
+    def get_checkpoint_config(self) -> CheckpointConfig:
+        return CheckpointConfig(
+            checkpoint_score_attribute=self.metric,
+            checkpoint_score_order=self.comparison,
+            num_to_keep=10,
+            checkpoint_frequency=1,
         )
 
     def get_optuna_sampler(self):
@@ -163,17 +197,17 @@ if __name__ == "__main__":
 
     nn_stopper = NoNaNStopper(
         {
-            "n_edges_frac_segment50_80": (5, 3),
-            "n_edges_frac_segment50_90": (8, 3),
-            "n_edges_frac_segment50_93": (12, 4),
+            "n_edges_frac_segment50_80": (10, 3),
+            "n_edges_frac_segment50_90": (10, 3),
+            "n_edges_frac_segment50_93": (15, 4),
         }
     )
     dispatcher = MyDispatcher(
         **kwargs,
-        metric="n_edges_frac_segment50_80",
+        metric="n_edges_frac_segment50_85",
         grace_period=10,
         comparison="min",
-        additional_stoppers=[nn_stopper],
+        # additional_stoppers=[nn_stopper],
         no_scheduler=True,
     )
-    dispatcher(LWSGCTrainable, this_suggest_config)
+    dispatcher(GCTrainable, this_suggest_config)

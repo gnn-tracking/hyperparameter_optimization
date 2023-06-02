@@ -14,10 +14,12 @@ from gnn_tracking.graph_construction.radius_scanner import RadiusScanner
 from gnn_tracking.metrics.losses import (
     BackgroundLoss,
     EdgeWeightFocalLoss,
+    GraphConstructionHingeEmbeddingLoss,
     HaughtyFocalLoss,
     PotentialLoss,
 )
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
+from gnn_tracking.models.graph_construction import GraphConstructionFCNN
 from gnn_tracking.models.mlp import MLP
 from gnn_tracking.models.track_condensation_networks import (
     GraphTCN,
@@ -550,15 +552,25 @@ class GCTrainable(DefaultTrainable):
         )
 
     def _get_new_model(self) -> nn.Module:
-        return MetricLearningGraphConstruction(
-            node_indim=7,
+        return GraphConstructionFCNN(
+            in_dim=7,
             **subdict_with_prefix_stripped(self.tc, "m_"),
         )
 
     def get_loss_functions(self) -> dict[str, Any]:
         return {
-            "potential": self.get_potential_loss_function(),
-            "background": self.get_background_loss_function(),
+            "potential": (
+                GraphConstructionHingeEmbeddingLoss(
+                    r_emb=self.tc["r_emb"],
+                    r_emb_hinge=self.tc["r_emb_hinge"],
+                    frac_random_edges=self.tc["frac_random_edges"],
+                    max_num_neighbors=self.tc["max_edges_per_node"],
+                ),
+                {
+                    "attractive": self.tc["lw_potential_attractive"],
+                    "preulsive": self.tc["lw_potential_repulsive"],
+                },
+            )
         }
 
     def get_cluster_functions(self) -> dict[str, Any]:
