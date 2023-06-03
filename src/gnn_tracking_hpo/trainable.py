@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import logging
+import math
 from abc import ABC
 from functools import partial
 from pathlib import Path
@@ -421,10 +422,18 @@ class ECTrainable(DefaultTrainable):
 
 
 class GCTrainer(TCNTrainer):
-    def __init__(self, *args, rs_max_edges=8_000_000, max_edges_per_node=128, **kwargs):
+    def __init__(
+        self,
+        *args,
+        rs_max_r=5,
+        rs_max_edges=8_000_000,
+        max_edges_per_node=128,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self._rs_max_edges = rs_max_edges
         self._max_edges_per_node = max_edges_per_node
+        self._rs_max_r = rs_max_r
 
     @torch.no_grad()
     def test_step(self, val=True, max_batches: int | None = None) -> dict[str, float]:
@@ -451,21 +460,32 @@ class GCTrainer(TCNTrainer):
                 batch_metrics[f"{key}_weighted"].append(
                     value.item() * loss_weights[key]
                 )
-
             mos.append(model_output)
+        start_radii = [0.97 * self._rs_max_r, 0.99 * self._rs_max_r]
+        if self._best_cluster_params:
+            radii: list[float] = [
+                v
+                for k, v in self._best_cluster_params.items()
+                if k.endswith("_r") and not math.isnan(v)
+            ]
+            if radii:
+                start_radii = [0.9 * min(radii), max(radii), 1.1 * max(radii)]
         rs = RadiusScanner(
             model_output=mos,
-            radius_range=(0.01, 5),
+            radius_range=(0.01, self._rs_max_r),
             max_num_neighbors=self._max_edges_per_node,
             n_trials=10,
             target_fracs=(0.8, 0.85, 0.88, 0.9, 0.93, 0.95),
             max_edges=self._rs_max_edges,
+            start_radii=start_radii,
         )
-        rs.logger.setLevel(logging.INFO)
+        rs.logger.setLevel(logging.DEBUG)
         rsr = rs()
         self._rsr = rsr
+        rsr_foms = rsr.get_foms()
+        self._best_cluster_params = rsr_foms
         return (
-            rsr.get_foms()
+            rsr_foms
             | {k: np.nanmean(v) for k, v in batch_metrics.items()}
             | {
                 f"{k}_std": np.nanstd(v, ddof=1).item()
@@ -562,8 +582,6 @@ class GCTrainable(DefaultTrainable):
             "potential": (
                 GraphConstructionHingeEmbeddingLoss(
                     r_emb=self.tc["r_emb"],
-                    r_emb_hinge=self.tc["r_emb_hinge"],
-                    frac_random_edges=self.tc["frac_random_edges"],
                     max_num_neighbors=self.tc["max_edges_per_node"],
                 ),
                 {
@@ -586,6 +604,7 @@ class GCTrainable(DefaultTrainable):
             optimizer=self.get_optimizer(),
             rs_max_edges=self.tc["rs_max_edges"],
             max_edges_per_node=self.tc["max_edges_per_node"],
+            rs_max_r=self.tc["r_emb"],
         )
         trainer.logger.setLevel(logging.DEBUG)
         if self.tc["scheduler"] == "cycliclr":

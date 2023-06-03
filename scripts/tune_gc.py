@@ -90,12 +90,12 @@ def suggest_config(
 
     d("n_graphs_train", 7743)
     config["train_data_dir"] = [
-        f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v2/part_{i}"
+        f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v3/part_{i}"
         for i in range(1, 9)
     ]
     d(
         "val_data_dir",
-        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v2/part_9",
+        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v3/part_9",
     )
     d("n_graphs_val", 5)
     d("batch_size", 1)
@@ -120,16 +120,14 @@ def suggest_config(
     d("max_sample_size", 800)
     d("lr", 1e-3)
     # d("repulsive_radius_threshold", 10)
-    d("m_outdim", 8)
+    d("m_out_dim", 8)
     d("max_num_neighbors", 256)
 
     # Tuned parameters
     # ----------------
 
-    d("r_emb", 10)
-    d("frac_random_edges", 10)
-    d("r_emb_hinge", 10)
-    d("lw_potential_repulsive", 0.2)
+    d("r_emb", 1)
+    d("lw_potential_repulsive", 0.005)
 
     suggest_default_values(config, trial, hc="none", ec="none")
     return config
