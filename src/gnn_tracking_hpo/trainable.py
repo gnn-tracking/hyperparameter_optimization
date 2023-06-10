@@ -21,7 +21,10 @@ from gnn_tracking.metrics.losses import (
 )
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
 from gnn_tracking.models.edge_filter import EFDeepSet
-from gnn_tracking.models.graph_construction import GCWithEF, GraphConstructionFCNN
+from gnn_tracking.models.graph_construction import (
+    GraphConstructionFCNN,
+    MLGraphConstruction,
+)
 from gnn_tracking.models.track_condensation_networks import (
     GraphTCN,
     PreTrainedECGraphTCN,
@@ -431,8 +434,14 @@ class GCWithECTrainable(DefaultTrainable):
         return {}
 
     def get_trainer(self) -> TCNTrainer:
+        gc = self._get_gc()
+
+        def data_preproc(data):
+            return gc(data)
+
         trainer = super().get_trainer()
         trainer.ec_eval_pt_thlds = [0.0, 0.9, 1.5]
+        trainer.data_preproc = data_preproc
         return trainer
 
     @property
@@ -440,7 +449,7 @@ class GCWithECTrainable(DefaultTrainable):
         """We're restoring a model from a previous run and continuing."""
         return "ec_project" in self.tc
 
-    def _get_gc(
+    def _get_ml(
         self,
     ):
         return restore_model(
@@ -451,40 +460,40 @@ class GCWithECTrainable(DefaultTrainable):
             freeze=True,
         )
 
-    def _get_ec(self, gc_out_dim: int):
+    def _get_gc(self):
+        if self.tc["ec_model"] == "ec":
+            ratio_of_false = None
+        else:
+            ratio_of_false = self.tc["ec_ratio_of_false"]
+        return MLGraphConstruction(
+            ml=self._get_ml(),
+            max_radius=self.tc["max_radius"],
+            max_num_neighbors=self.tc["max_num_neighbors"],
+            use_embedding_features=self.tc["ec_use_embedding_features"],
+            ratio_of_false=ratio_of_false,
+            build_edge_features=self.tc["ec_model"] == "ec",
+        )
+
+    def _get_new_model(self) -> nn.Module:
+        """New model to be trained (rather than continuing training a pretrained
+        one).
+        """
+        ml = self._get_ml()
         if self.tc["ec_model"] == "ec":
             return ECForGraphTCN(
-                node_indim=14 + gc_out_dim,
-                edge_indim=(14 + gc_out_dim) * 2,
+                node_indim=14 + ml.out_dim,
+                edge_indim=(14 + ml.out_dim) * 2,
                 **subdict_with_prefix_stripped(self.tc, "m_"),
             )
         elif self.tc["ec_model"] == "deep_set_ef":
             return EFDeepSet(
-                in_dim=14 + gc_out_dim,
+                in_dim=14 + ml.out_dim,
                 hidden_dim=self.tc["m_hidden_dim"],
                 depth=self.tc["m_L_ec"],
             )
         else:
             _ = f"Unknown ec_model {self.tc['ec_model']}"
             raise ValueError(_)
-
-    def _get_new_model(self) -> nn.Module:
-        """New model to be trained (rather than continuing training a pretrained
-        one).
-        """
-        gc = self._get_gc()
-        ec = self._get_ec(gc_out_dim=gc.out_dim)
-        return GCWithEF(
-            ml=gc,
-            ef=ec,
-            max_radius=self.tc["max_radius"],
-            max_num_neighbors=self.tc["max_num_neighbors"],
-            use_embedding_features=self.tc["ec_use_embedding_features"],
-            ratio_of_false=None
-            if self.tc["ec_model"] == "ec"
-            else self.tc["ec_ratio_of_false"],
-            build_edge_features=self.tc["ec_model"] == "ec",
-        )
 
     def _get_restored_model(self) -> nn.Module:
         """Load previously trained model to continue"""
