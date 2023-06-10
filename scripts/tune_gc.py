@@ -11,7 +11,7 @@ from gnn_tracking.training.lw_setter import LinearLWSH
 from gnn_tracking.training.tcn_trainer import TCNTrainer
 from ray import tune
 from ray.air import CheckpointConfig
-from rt_stoppers_contrib import NoImprovementTrialStopper
+from rt_stoppers_contrib import NoImprovementTrialStopper, ThresholdTrialStopper
 
 from gnn_tracking_hpo.cli import add_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -88,14 +88,14 @@ def suggest_config(
     def d(key, *args, **kwargs):
         return auto_suggest_if_not_fixed(key, config, trial, *args, **kwargs)
 
-    d("n_graphs_train", 7743)
+    d("n_graphs_train", 7463)
     config["train_data_dir"] = [
-        f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v3/part_{i}"
+        f"/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v5/part_{i}"
         for i in range(1, 9)
     ]
     d(
         "val_data_dir",
-        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v3/part_9",
+        "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v5/part_9",
     )
     d("n_graphs_val", 5)
     d("batch_size", 1)
@@ -118,16 +118,20 @@ def suggest_config(
     d("m_depth", 6)
     d("rs_max_edges", 10_000_000)
     d("max_sample_size", 800)
-    d("lr", 1e-3)
     # d("repulsive_radius_threshold", 10)
-    d("m_out_dim", 8)
     d("max_num_neighbors", 256)
+    d("r_emb", 1.0)
 
     # Tuned parameters
     # ----------------
 
-    d("r_emb", 1)
-    d("lw_potential_repulsive", 0.005)
+    d("m_out_dim", 8)
+    d("lr", 1e-3)
+    d("p_attr", 2)
+    d("p_rep", 2)
+    d("m_beta", 0.4)
+    d("attr_pt_thld", 0.9)
+    d("lw_potential_repulsive", 1e-4, 1, log=True)  # 5e-2
 
     suggest_default_values(config, trial, hc="none", ec="none")
     return config
@@ -160,14 +164,13 @@ class NoNaNStopper(tune.Stopper):
 
 class MyDispatcher(Dispatcher):
     def get_no_improvement_stopper(self) -> NoImprovementTrialStopper | None:
-        return None
-        # return NoImprovementTrialStopper(
-        #     metric="n_edges_frac_segment50_80",
-        #     patience=5,
-        #     mode="min",
-        #     grace_period=10,
-        #     rel_change_thld=0.01
-        # )
+        return NoImprovementTrialStopper(
+            metric=self.metric,
+            patience=10,
+            mode=self.comparison,
+            grace_period=10,
+            rel_change_thld=0.01,
+        )
 
     def get_checkpoint_config(self) -> CheckpointConfig:
         return CheckpointConfig(
@@ -177,8 +180,8 @@ class MyDispatcher(Dispatcher):
             checkpoint_frequency=1,
         )
 
-    def get_optuna_sampler(self):
-        return optuna.samplers.RandomSampler()
+    # def get_optuna_sampler(self):
+    #     return optuna.samplers.RandomSampler()
 
 
 if __name__ == "__main__":
@@ -186,26 +189,37 @@ if __name__ == "__main__":
     add_common_options(parser)
     add_restore_options(parser, prefix="gc", name="Graph Construction Network")
     kwargs = vars(parser.parse_args())
-    kwargs.pop("no_scheduler")
     assert kwargs["wandb_project"] == "gnn_tracking_gc"
-
+    kwargs.pop("no_scheduler")
     this_suggest_config = partial(
         suggest_config, **pop(kwargs, ["gc_hash", "gc_project", "gc_epoch"])
     )
 
-    nn_stopper = NoNaNStopper(
-        {
-            "n_edges_frac_segment50_80": (10, 3),
-            "n_edges_frac_segment50_90": (10, 3),
-            "n_edges_frac_segment50_93": (15, 4),
-        }
+    # nn_stopper = NoNaNStopper(
+    #     {
+    #         "n_edges_frac_segment50_80": (10, 3),
+    #         "n_edges_frac_segment50_90": (10, 3),
+    #         "n_edges_frac_segment50_93": (15, 4),
+    #     }
+    # )
+    thld_stopper = ThresholdTrialStopper(
+        metric="max_frac_segment50",
+        mode="max",
+        thresholds={
+            # 3: 0.7,
+            # 10: 0.9,
+            10: 0.5,
+            15: 0.6,
+            20: 0.7,
+            35: 0.8,
+        },
     )
     dispatcher = MyDispatcher(
         **kwargs,
-        metric="n_edges_frac_segment50_85",
-        grace_period=10,
-        comparison="min",
-        # additional_stoppers=[nn_stopper],
+        metric="max_frac_segment50",
+        grace_period=6,
+        comparison="max",
         no_scheduler=True,
+        additional_stoppers=[thld_stopper],
     )
     dispatcher(GCTrainable, this_suggest_config)

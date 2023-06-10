@@ -20,7 +20,7 @@ from gnn_tracking.metrics.losses import (
     PotentialLoss,
 )
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
-from gnn_tracking.models.graph_construction import GraphConstructionFCNN
+from gnn_tracking.models.graph_construction import GCWithEF, GraphConstructionFCNN
 from gnn_tracking.models.mlp import MLP
 from gnn_tracking.models.track_condensation_networks import (
     GraphTCN,
@@ -421,6 +421,73 @@ class ECTrainable(DefaultTrainable):
         return self._get_new_model()
 
 
+class GCWithECTrainable(DefaultTrainable):
+    def get_loss_functions(self) -> dict[str, Any]:
+        return {
+            "edge": self.get_edge_loss_function(),
+        }
+
+    def get_cluster_functions(self) -> dict[str, Any]:
+        return {}
+
+    def get_trainer(self) -> TCNTrainer:
+        trainer = super().get_trainer()
+        trainer.ec_eval_pt_thlds = [0.0, 0.9, 1.5]
+        return trainer
+
+    @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return "ec_project" in self.tc
+
+    def _get_gc(
+        self,
+        hash,
+        tune_dir,
+        epoch=-1,
+    ):
+        return restore_model(
+            GCTrainable,
+            tune_dir=tune_dir,
+            run_hash=hash,
+            epoch=epoch,
+            freeze=True,
+        )
+
+    def _get_new_model(self) -> nn.Module:
+        """New model to be trained (rather than continuing training a pretrained
+        one).
+        """
+        gc = self._get_gc(
+            hash=self.tc["gc_hash"],
+            tune_dir=self.tc["gc_project"],
+            epoch=self.tc["gc_epoch"],
+        )
+        ec = ECForGraphTCN(
+            node_indim=14 + gc.out_dim,
+            edge_indim=(14 + gc.out_dim) * 2,
+            **subdict_with_prefix_stripped(self.tc, "m_"),
+        )
+        return GCWithEF(
+            ml=gc,
+            ef=ec,
+            max_radius=self.tc["max_radius"],
+            max_num_neighbors=self.tc["max_num_neighbors"],
+            use_embedding_features=self.tc["ec_use_embedding_features"],
+            ratio_of_false=None,
+            build_edge_features=True,
+        )
+
+    def _get_restored_model(self) -> nn.Module:
+        """Load previously trained model to continue"""
+        raise NotImplementedError
+
+    def get_model(self) -> nn.Module:
+        if self._is_continued_run:
+            return self._get_restored_model()
+        return self._get_new_model()
+
+
 class GCTrainer(TCNTrainer):
     def __init__(
         self,
@@ -472,14 +539,14 @@ class GCTrainer(TCNTrainer):
                 start_radii = [0.9 * min(radii), max(radii), 1.1 * max(radii)]
         rs = RadiusScanner(
             model_output=mos,
-            radius_range=(0.01, self._rs_max_r),
+            radius_range=(1e-6, self._rs_max_r),
             max_num_neighbors=self._max_edges_per_node,
             n_trials=10,
             target_fracs=(0.8, 0.85, 0.88, 0.9, 0.93, 0.95),
             max_edges=self._rs_max_edges,
             start_radii=start_radii,
         )
-        rs.logger.setLevel(logging.DEBUG)
+        rs.logger.setLevel(logging.INFO)
         rsr = rs()
         self._rsr = rsr
         rsr_foms = rsr.get_foms()
@@ -573,7 +640,7 @@ class GCTrainable(DefaultTrainable):
 
     def _get_new_model(self) -> nn.Module:
         return GraphConstructionFCNN(
-            in_dim=7,
+            in_dim=14,
             **subdict_with_prefix_stripped(self.tc, "m_"),
         )
 
@@ -583,10 +650,13 @@ class GCTrainable(DefaultTrainable):
                 GraphConstructionHingeEmbeddingLoss(
                     r_emb=self.tc["r_emb"],
                     max_num_neighbors=self.tc["max_edges_per_node"],
+                    attr_pt_thld=self.tc["attr_pt_thld"],
+                    p_attr=self.tc.get("p_attr", 1),
+                    p_rep=self.tc.get("p_rep", 1),
                 ),
                 {
                     "attractive": self.tc["lw_potential_attractive"],
-                    "preulsive": self.tc["lw_potential_repulsive"],
+                    "repulsive": self.tc["lw_potential_repulsive"],
                 },
             )
         }

@@ -227,7 +227,7 @@ class Dispatcher:
     def get_resources(self) -> dict[str, int]:
         return {
             "num_gpus": 1 if not self.cpu else 0,
-            "num_cpus": 6 if not self.test else 1,
+            "num_cpus": 3 if not self.test else 1,
         }
 
     def get_tuner(

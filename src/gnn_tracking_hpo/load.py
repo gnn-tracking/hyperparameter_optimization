@@ -128,6 +128,6 @@ def get_loaders(
         graph_dct,
         batch_size=batch_size,
         other_batch_size=val_batch_size,
-        cpus=6 if not test else 1,
+        cpus=3 if not test else 1,
         max_sample_size=max_sample_size if not test else 1,
     )
