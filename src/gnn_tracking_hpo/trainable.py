@@ -20,8 +20,8 @@ from gnn_tracking.metrics.losses import (
     PotentialLoss,
 )
 from gnn_tracking.models.edge_classifier import ECForGraphTCN
+from gnn_tracking.models.edge_filter import EFDeepSet
 from gnn_tracking.models.graph_construction import GCWithEF, GraphConstructionFCNN
-from gnn_tracking.models.mlp import MLP
 from gnn_tracking.models.track_condensation_networks import (
     GraphTCN,
     PreTrainedECGraphTCN,
@@ -442,40 +442,48 @@ class GCWithECTrainable(DefaultTrainable):
 
     def _get_gc(
         self,
-        hash,
-        tune_dir,
-        epoch=-1,
     ):
         return restore_model(
             GCTrainable,
-            tune_dir=tune_dir,
-            run_hash=hash,
-            epoch=epoch,
+            run_hash=self.tc["gc_hash"],
+            tune_dir=self.tc["gc_project"],
+            epoch=self.tc["gc_epoch"],
             freeze=True,
         )
+
+    def _get_ec(self, gc_out_dim: int):
+        if self.tc["ec_model"] == "ec":
+            return ECForGraphTCN(
+                node_indim=14 + gc_out_dim,
+                edge_indim=(14 + gc_out_dim) * 2,
+                **subdict_with_prefix_stripped(self.tc, "m_"),
+            )
+        elif self.tc["ec_model"] == "deep_set_ef":
+            return EFDeepSet(
+                in_dim=14 + gc_out_dim,
+                hidden_dim=self.tc["m_hidden_dim"],
+                depth=self.tc["m_L_ec"],
+            )
+        else:
+            _ = f"Unknown ec_model {self.tc['ec_model']}"
+            raise ValueError(_)
 
     def _get_new_model(self) -> nn.Module:
         """New model to be trained (rather than continuing training a pretrained
         one).
         """
-        gc = self._get_gc(
-            hash=self.tc["gc_hash"],
-            tune_dir=self.tc["gc_project"],
-            epoch=self.tc["gc_epoch"],
-        )
-        ec = ECForGraphTCN(
-            node_indim=14 + gc.out_dim,
-            edge_indim=(14 + gc.out_dim) * 2,
-            **subdict_with_prefix_stripped(self.tc, "m_"),
-        )
+        gc = self._get_gc()
+        ec = self._get_ec(gc_out_dim=gc.out_dim)
         return GCWithEF(
             ml=gc,
             ef=ec,
             max_radius=self.tc["max_radius"],
             max_num_neighbors=self.tc["max_num_neighbors"],
             use_embedding_features=self.tc["ec_use_embedding_features"],
-            ratio_of_false=None,
-            build_edge_features=True,
+            ratio_of_false=None
+            if self.tc["ec_model"] == "ec"
+            else self.tc["ec_ratio_of_false"],
+            build_edge_features=self.tc["ec_model"] == "ec",
         )
 
     def _get_restored_model(self) -> nn.Module:
@@ -559,63 +567,6 @@ class GCTrainer(TCNTrainer):
                 for k, v in batch_metrics.items()
             }
         )
-
-
-# todo: rather break down to pre-cluster-space (dim 12) and pre-beta (dim 12), apply
-#   residuals there and then do another MLP to get to the output dim
-#   use that to directly include r and eta in the beta calculation
-class MetricLearningGraphConstruction(nn.Module):
-    def __init__(
-        self,
-        *,
-        node_indim: int,
-        h_outdim: int = 12,
-        L_gc: int,
-        hidden_dim: int,
-        n_from_eta: int = 0,
-        midway_residual: bool = False,
-        midway_layer_norm: bool = False,
-    ):
-        super().__init__()
-        # Flags & settings
-        self._midway_residual = midway_residual
-        self._n_from_eta = n_from_eta
-        self._midway_layer_norm = midway_layer_norm
-
-        # Static modules
-        self._sigmoid = nn.Sigmoid()
-        self._relu = nn.ReLU()
-
-        # Modules
-        self._layer_norm = nn.LayerNorm(hidden_dim)
-        self._encoder1 = MLP(
-            node_indim,
-            hidden_dim,
-            hidden_dim,
-            L=L_gc // 2,
-        )
-        self._encoder2 = MLP(
-            hidden_dim,
-            hidden_dim,
-            hidden_dim,
-            L=L_gc - L_gc // 2,
-        )
-        self._beta_nn = MLP(hidden_dim, 1, hidden_dim, L=1)
-        self._latent = MLP(hidden_dim, h_outdim, hidden_dim, L=1)
-
-    def forward(self, data) -> dict[str, torch.Tensor]:
-        main_latent_halfway = self._relu(self._encoder1(data.x))
-        main_latent = self._encoder2(main_latent_halfway)
-        if self._midway_residual:
-            main_latent += main_latent_halfway
-        if self._midway_layer_norm:
-            main_latent = self._layer_norm(main_latent)
-        main_latent = self._relu(main_latent)
-        cluster_space = self._latent(main_latent)
-        eta = data.x[:, 3]
-        cluster_space[:, : self._n_from_eta] += eta.reshape(-1, 1)
-        beta = self._sigmoid(self._beta_nn(main_latent)).squeeze()
-        return {"H": cluster_space, "B": beta}
 
 
 class GCTrainable(DefaultTrainable):

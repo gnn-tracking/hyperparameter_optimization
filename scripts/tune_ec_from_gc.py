@@ -41,10 +41,10 @@ def suggest_config(
         "val_data_dir",
         "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v5/part_9",
     )
+    d("max_sample_size", 300)
     d("n_graphs_val", 10)
     d("batch_size", 1)
     d("_val_batch_size", 1)
-    d("ec_loss", "haughty_focal")
 
     # Getting graph construction
     # -----------------------
@@ -53,23 +53,36 @@ def suggest_config(
     d("gc_hash", gc_hash)
     d("gc_epoch", gc_epoch)
 
-    # fixed parameters
     # -----------------------
 
-    d("m_L_ec", 6)
-    d("m_residual_type", "skip1")
-    d("m_use_node_embedding", True)
-    d("m_use_intermediate_edge_embeddings", False)
-    d("m_interaction_node_dim", 64)
-    d("m_interaction_edge_dim", 64)
+    # EC
+    # d("ec_model", "ec")
+    # d("m_L_ec", 3)
+    # d("m_residual_type", "skip1")
+    # d("m_use_node_embedding", True)
+    # d("m_use_intermediate_edge_embeddings", False)
+    # d("m_interaction_node_dim", 32)
+    # d("m_interaction_edge_dim", 32)
+    # d("m_hidden_dim", 32)
+    # d("m_alpha", 0.5)
+
+    # EF DS
+    d("ec_model", "deep_set_ef")
     d("m_hidden_dim", 64)
-    d("m_alpha", 0.5)
+    d("m_L_ec", 3)
+    d("ec_ratio_of_false", 0.9)
+
+    # Loss function
+    d("ec_loss", "focal")
     d("ec_pt_thld", 0.9)
-    d("focal_alpha", 0.4)
-    d("focal_gamma", 4)
-    d("max_radius", 0.7)
+    d("focal_alpha", 0.7)
+    d("focal_gamma", 2)
+
+    # Graph construction
+    d("max_radius", 0.8)
     d("max_num_neighbors", 64)
     d("ec_use_embedding_features", True)
+    d("ratio_of_false", 1)
 
     # Tuned parameters
     # ----------------
@@ -102,6 +115,7 @@ if __name__ == "__main__":
     add_common_options(parser)
     add_restore_options(parser, required=True, prefix="gc", name="graph_construction")
     kwargs = vars(parser.parse_args())
+    assert kwargs["wandb_project"] == "gnn_tracking_ec"
     this_suggest_config = partial(
         suggest_config,
         **pop(kwargs, ["gc_hash", "gc_project", "gc_epoch"]),
