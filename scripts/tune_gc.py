@@ -16,7 +16,7 @@ from rt_stoppers_contrib import NoImprovementTrialStopper, ThresholdTrialStopper
 from gnn_tracking_hpo.cli import add_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
 from gnn_tracking_hpo.defaults import suggest_default_values
-from gnn_tracking_hpo.trainable import GCTrainable
+from gnn_tracking_hpo.trainable import MLTrainable
 from gnn_tracking_hpo.tune import Dispatcher, add_common_options
 from gnn_tracking_hpo.util.dict import pop
 
@@ -57,7 +57,7 @@ from gnn_tracking_hpo.util.dict import pop
 #         trainer.loss_functions["potential"]["repulsive"] = lw
 
 
-class LWSGCTrainable(GCTrainable):
+class LWSGCTrainable(MLTrainable):
     def get_trainer(self) -> TCNTrainer:
         trainer = super().get_trainer()
         trainer.add_hook(self.get_lws_hook(), "batch")
@@ -222,4 +222,4 @@ if __name__ == "__main__":
         no_scheduler=True,
         additional_stoppers=[thld_stopper],
     )
-    dispatcher(GCTrainable, this_suggest_config)
+    dispatcher(MLTrainable, this_suggest_config)

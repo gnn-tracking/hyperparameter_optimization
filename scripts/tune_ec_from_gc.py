@@ -56,33 +56,33 @@ def suggest_config(
     # -----------------------
 
     # EC
-    # d("ec_model", "ec")
-    # d("m_L_ec", 3)
-    # d("m_residual_type", "skip1")
-    # d("m_use_node_embedding", True)
-    # d("m_use_intermediate_edge_embeddings", False)
-    # d("m_interaction_node_dim", 32)
-    # d("m_interaction_edge_dim", 32)
-    # d("m_hidden_dim", 32)
-    # d("m_alpha", 0.5)
+    d("ec_model", "ec")
+    d("m_L_ec", 3)
+    d("m_residual_type", "skip1")
+    d("m_use_node_embedding", True)
+    d("m_use_intermediate_edge_embeddings", False)
+    d("m_interaction_node_dim", 128)
+    d("m_interaction_edge_dim", 128)
+    d("m_hidden_dim", 128)
+    d("m_alpha", 0.35)
+    d("ratio_of_false", None)
 
     # EF DS
-    d("ec_model", "deep_set_ef")
-    d("m_hidden_dim", 64)
-    d("m_L_ec", 3)
-    d("ec_ratio_of_false", 0.9)
+    # d("ec_model", "deep_set_ef")
+    # d("m_hidden_dim", 128)
+    # d("m_L_ec", 3)
+    # d("ec_ratio_of_false", 1)
 
     # Loss function
-    d("ec_loss", "focal")
+    d("ec_loss", "haughty_focal")
     d("ec_pt_thld", 0.9)
-    d("focal_alpha", 0.7)
+    d("focal_alpha", 0.5)
     d("focal_gamma", 2)
 
     # Graph construction
     d("max_radius", 0.8)
     d("max_num_neighbors", 64)
     d("ec_use_embedding_features", True)
-    d("ratio_of_false", 1)
 
     # Tuned parameters
     # ----------------

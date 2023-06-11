@@ -72,13 +72,13 @@ def reduced_dbscan_scan(
         guide=guide,
         metrics=common_metrics,
         min_samples_range=(1, 1),
-        eps_range=(0.95, 1.0),
+        eps_range=(0.2, 1.0),
         **version_dependent_kwargs,
     )
-    if epoch < 8:
-        n_trials = 12
+    if epoch < 5:
+        n_trials = 6
     elif epoch % 4 == 0:
-        n_trials = 12
+        n_trials = 6
     else:
         n_trials = 1
     return dbss.scan(

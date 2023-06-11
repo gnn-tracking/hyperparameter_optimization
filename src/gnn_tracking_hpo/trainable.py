@@ -453,7 +453,7 @@ class GCWithECTrainable(DefaultTrainable):
         self,
     ):
         return restore_model(
-            GCTrainable,
+            MLTrainable,
             run_hash=self.tc["gc_hash"],
             tune_dir=self.tc["gc_project"],
             epoch=self.tc["gc_epoch"],
@@ -505,7 +505,7 @@ class GCWithECTrainable(DefaultTrainable):
         return self._get_new_model()
 
 
-class GCTrainer(TCNTrainer):
+class MLTrainer(TCNTrainer):
     def __init__(
         self,
         *args,
@@ -578,7 +578,7 @@ class GCTrainer(TCNTrainer):
         )
 
 
-class GCTrainable(DefaultTrainable):
+class MLTrainable(DefaultTrainable):
     @property
     def _is_continued_run(self) -> bool:
         """We're restoring a model from a previous run and continuing."""
@@ -591,7 +591,7 @@ class GCTrainable(DefaultTrainable):
 
     def _get_restored_model(self):
         return restore_model(
-            GCTrainable,
+            MLTrainable,
             tune_dir=self.tc["gc_project"],
             run_hash=self.tc["gc_hash"],
             epoch=self.tc.get("gc_epoch", -1),
@@ -625,7 +625,7 @@ class GCTrainable(DefaultTrainable):
         return {}
 
     def get_trainer(self) -> TCNTrainer:
-        trainer = GCTrainer(
+        trainer = MLTrainer(
             model=self.get_model(),
             loaders=self.get_loaders(),
             loss_functions=self.get_loss_functions(),
@@ -640,4 +640,79 @@ class GCTrainable(DefaultTrainable):
         if self.tc["scheduler"] == "cycliclr":
             logger.info("Setting lr_scheduler_step to batch")
             trainer.lr_scheduler_step = "batch"
+        return trainer
+
+
+class TCNFromGCTrainable(DefaultTrainable):
+    @property
+    def _is_continued_run(self) -> bool:
+        """We're restoring a model from a previous run and continuing."""
+        return False
+
+    @property
+    def _need_edge_loss(self) -> bool:
+        return False
+
+    def get_loss_functions(self) -> dict[str, tuple[nn.Module, Any]]:
+        loss_functions = super().get_loss_functions()
+        if not self._need_edge_loss:
+            loss_functions.pop("edge")
+        return loss_functions
+
+    def _get_ml(
+        self,
+    ):
+        return restore_model(
+            MLTrainable,
+            run_hash=self.tc["gc_hash"],
+            tune_dir=self.tc["gc_project"],
+            epoch=self.tc["gc_epoch"],
+            freeze=True,
+        )
+
+    def _get_gc(self):
+        return MLGraphConstruction(
+            ml=self._get_ml(),
+            max_radius=self.tc["max_radius"],
+            max_num_neighbors=self.tc["max_num_neighbors"],
+            use_embedding_features=self.tc["ec_use_embedding_features"],
+            ratio_of_false=None,
+            build_edge_features=self.tc["ec_model"] == "ec",
+        )
+
+    def _get_ec(self):
+        return restore_model(
+            GCWithECTrainable,
+            self.tc["ec_project"],
+            self.tc["ec_hash"],
+            self.tc["ec_epoch"],
+            freeze=self.tc["ec_freeze"],
+            config_update={
+                "node_indim": (14 + 8),
+                "edge_indim": (14 + 8) * 2,
+            },
+        )
+
+    def _get_new_model(self) -> nn.Module:
+        return PreTrainedECGraphTCN(
+            self._get_ec(),
+            node_indim=(14 + 8),
+            edge_indim=(14 + 8) * 2,
+            **subdict_with_prefix_stripped(self.tc, "m_"),
+        )
+
+    def get_model(self) -> nn.Module:
+        if self._is_continued_run:
+            raise NotImplementedError
+        return self._get_new_model()
+
+    def get_trainer(self) -> TCNTrainer:
+        gc = self._get_gc()
+
+        def data_preproc(data):
+            return gc(data)
+
+        trainer = super().get_trainer()
+        trainer.ec_eval_pt_thlds = [0.0, 0.9, 1.5]
+        trainer.data_preproc = data_preproc
         return trainer
