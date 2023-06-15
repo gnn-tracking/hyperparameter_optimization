@@ -5,6 +5,7 @@ from functools import partial
 from typing import Any
 
 import optuna
+from rt_stoppers_contrib import ThresholdTrialStopper
 
 from gnn_tracking_hpo.cli import add_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata
@@ -24,6 +25,9 @@ def suggest_config(
     gc_project: str = "",
     gc_hash: str = "",
     gc_epoch: int = -1,
+    tc_project: str = "",
+    tc_hash: str = "",
+    tc_epoch: int = -1,
     test=False,
     fixed: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -46,14 +50,19 @@ def suggest_config(
         "/scratch/gpfs/IOJALVO/gnn-tracking/object_condensation/point_clouds_v5/part_9",
     )
     d("max_sample_size", 300)
-    d("n_graphs_val", 2)
+    d("n_graphs_val", 5)
     d("batch_size", 1)
     d("_val_batch_size", 1)
 
     d("sector", sector)
 
+    if tc_project:
+        d("tc_project", tc_project)
+        d("tc_hash", tc_hash)
+        d("tc_epoch", tc_epoch)
+
     d("m_mask_orphan_nodes", False)
-    d("m_use_ec_embeddings_for_hc", False)
+    d("m_use_ec_embeddings_for_hc", True)
     d("m_feed_edge_weights", True)
 
     # Graph construction
@@ -74,9 +83,9 @@ def suggest_config(
     # Keep one fixed because of normalization invariance
     d("lw_potential_attractive", 1.0)
 
-    d("m_hidden_dim", 128)
-    d("m_h_dim", 128)
-    d("m_e_dim", 128)
+    d("m_hidden_dim", 192)
+    d("m_h_dim", 192)
+    d("m_e_dim", 192)
     d("node_indim", 14 + 8)
     d("edge_indim", (14 + 8) * 2)
 
@@ -86,22 +95,21 @@ def suggest_config(
     d("q_min", 0.34)
     d("sb", 0.09)
     d("m_alpha_hc", 0.63)
-    d("lw_background", 0.0041)
     d("m_h_outdim", 12)
     ec_freeze = d("ec_freeze", True)
+    d("lw_background", 0.0041)
 
     if not ec_freeze:
         d("lw_edge", 2_000)
 
     d("repulsive_radius_threshold", 1)
-    d("lr", [7e-4])
-    d("m_ec_threshold", 0.20)
+    d("lr", 1e-3)
     d("m_L_hc", 3)
 
     # Tuned hyperparameters
     # ---------------------
-
-    d("lw_potential_repulsive", [0.5])
+    d("m_ec_threshold", [0.2, 0.25, 0.3, 0.35])
+    d("lw_potential_repulsive", 0.3, 1.5)
     # d("lws_repulsive_sine_amplitude", [-0.10, -0.15, -0.20])
     # d("lws_repulsive_sine_period", [2, 4])
     # d("lws_repulsive_sine_amplitude_halflife", [4, 6])
@@ -119,22 +127,35 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     add_common_options(parser)
     add_restore_options(parser)
-    add_restore_options(parser, prefix="gc", name="graph construction")
+    add_restore_options(parser, prefix="gc", name="graph construction", required=True)
+    add_restore_options(parser, prefix="tc", name="track condensor to restore")
     kwargs = vars(parser.parse_args())
     this_suggest_config = partial(
         suggest_config,
         **pop(
             kwargs,
-            ["ec_hash", "ec_project", "ec_epoch", "gc_hash", "gc_project", "gc_epoch"],
+            [
+                "ec_hash",
+                "ec_project",
+                "ec_epoch",
+                "gc_hash",
+                "gc_project",
+                "gc_epoch",
+                "tc_hash",
+                "tc_project",
+                "tc_epoch",
+            ],
         ),
     )
+    kwargs.pop("no_scheduler")
     dispatcher = Dispatcher(
         grace_period=10,
-        no_improvement_patience=3,
+        no_improvement_patience=10,
         metric="trk.double_majority_pt0.9",
-        # additional_stoppers=[
-        #     MaximumIterationStopper(10),
-        # ],
+        no_scheduler=True,
+        additional_stoppers=[
+            ThresholdTrialStopper("trk.double_majority_pt0.9", thresholds={10: 0.5})
+        ],
         **kwargs,
     )
     dispatcher(

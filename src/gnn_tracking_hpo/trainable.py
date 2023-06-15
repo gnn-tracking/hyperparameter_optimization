@@ -30,6 +30,7 @@ from gnn_tracking.models.track_condensation_networks import (
     PreTrainedECGraphTCN,
 )
 from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.utils.device import guess_device
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.seeds import fix_seeds
 from ray import tune
@@ -647,7 +648,7 @@ class TCNFromGCTrainable(DefaultTrainable):
     @property
     def _is_continued_run(self) -> bool:
         """We're restoring a model from a previous run and continuing."""
-        return False
+        return "tc_project" in self.tc
 
     @property
     def _need_edge_loss(self) -> bool:
@@ -701,9 +702,19 @@ class TCNFromGCTrainable(DefaultTrainable):
             **subdict_with_prefix_stripped(self.tc, "m_"),
         )
 
+    def _get_restored_model(self):
+        model = self._get_new_model()
+        checkpoint_path = find_checkpoint(
+            self.tc["tc_project"], self.tc["tc_hash"], self.tc["tc_epoch"]
+        )
+        device = guess_device()
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        return model
+
     def get_model(self) -> nn.Module:
         if self._is_continued_run:
-            raise NotImplementedError
+            return self._get_restored_model()
         return self._get_new_model()
 
     def get_trainer(self) -> TCNTrainer:
