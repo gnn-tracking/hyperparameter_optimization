@@ -1,6 +1,6 @@
 <div align="center">
 
-# GNN Tracking Hyperparameter Optimization
+# [DEPRECATED] GNN Tracking Hyperparameter Optimization (this will probably change completely very soon)
 
 [![Documentation Status](https://readthedocs.org/projects/gnn-tracking-hpo/badge/?version=latest)](https://gnn-tracking-hpo.readthedocs.io/en/latest/?badge=latest)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/gnn-tracking/hyperparameter_optimization/main.svg)](https://results.pre-commit.ci/latest/github/gnn-tracking/hyperparameter_optimization/main)
