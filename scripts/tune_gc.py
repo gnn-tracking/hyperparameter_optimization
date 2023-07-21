@@ -8,7 +8,7 @@ from typing import Any, DefaultDict
 
 import optuna
 from gnn_tracking.training.lw_setter import LinearLWSH
-from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.training.tc import TCNTrainer
 from ray import tune
 from ray.air import CheckpointConfig
 from rt_stoppers_contrib import NoImprovementTrialStopper, ThresholdTrialStopper

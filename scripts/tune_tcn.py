@@ -6,7 +6,7 @@ from typing import Any
 
 import optuna
 from gnn_tracking.training.lw_setter import SineLWSH
-from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.training.tc import TCNTrainer
 
 from gnn_tracking_hpo.cli import add_restore_options
 from gnn_tracking_hpo.config import auto_suggest_if_not_fixed, get_metadata

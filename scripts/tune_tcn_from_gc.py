@@ -103,13 +103,13 @@ def suggest_config(
         d("lw_edge", 2_000)
 
     d("repulsive_radius_threshold", 1)
-    d("lr", 1e-3)
+    d("lr", 5e-4)
     d("m_L_hc", 3)
 
     # Tuned hyperparameters
     # ---------------------
-    d("m_ec_threshold", [0.2, 0.25, 0.3, 0.35])
-    d("lw_potential_repulsive", 0.3, 1.5)
+    d("m_ec_threshold", 0.2)
+    d("lw_potential_repulsive", 0.1, 1.5)
     # d("lws_repulsive_sine_amplitude", [-0.10, -0.15, -0.20])
     # d("lws_repulsive_sine_period", [2, 4])
     # d("lws_repulsive_sine_amplitude_halflife", [4, 6])

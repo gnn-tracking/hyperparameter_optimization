@@ -29,7 +29,7 @@ from gnn_tracking.models.track_condensation_networks import (
     GraphTCN,
     PreTrainedECGraphTCN,
 )
-from gnn_tracking.training.tcn_trainer import TCNTrainer
+from gnn_tracking.training.tc import TCNTrainer
 from gnn_tracking.utils.device import guess_device
 from gnn_tracking.utils.dictionaries import subdict_with_prefix_stripped
 from gnn_tracking.utils.seeds import fix_seeds
