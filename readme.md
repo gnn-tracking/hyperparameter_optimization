@@ -1,6 +1,6 @@
 <div align="center">
 
-# [DEPRECATED] GNN Tracking Hyperparameter Optimization (this will probably change completely very soon)
+# [DEPRECATED] GNN Tracking Hyperparameter Optimization
 
 [![Documentation Status](https://readthedocs.org/projects/gnn-tracking-hpo/badge/?version=latest)](https://gnn-tracking-hpo.readthedocs.io/en/latest/?badge=latest)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/gnn-tracking/hyperparameter_optimization/main.svg)](https://results.pre-commit.ci/latest/github/gnn-tracking/hyperparameter_optimization/main)
@@ -10,6 +10,8 @@
 <img width="1042" alt="Screenshot of wandb" src="https://user-images.githubusercontent.com/13602468/200128053-403ba2ac-7b52-4822-a34a-f154f38cb874.png">
 
 </div>
+
+**DEPRECATED: PLEASE USE https://github.com/gnn-tracking/hyperparameter_optimization2 INSTEAD**
 
 This repository hosts submission scripts and framework for hyperparameter optimization
 of the models defined in [the main library](https://github.com/gnn-tracking/gnn_tracking).
